@@ -1,18 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LoginDialog } from './login-dialog';
 
 export function Header() {
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLoginSuccess = () => {
     setIsLoginDialogOpen(false);
     router.push('/admin');
   };
+
+  const handleLogout = () => {
+    router.push('/');
+  };
+
+  const isAdminPage = pathname === '/admin';
 
   return (
     <>
@@ -21,13 +28,19 @@ export function Header() {
           <h1 className="text-2xl font-bold text-primary">PT. FARIKA RIAU PERKASA</h1>
           <p className="text-sm text-muted-foreground">Sistem Kontrol Otomatisasi Produksi Batching Plant</p>
         </div>
-        <Button variant="outline" onClick={() => setIsLoginDialogOpen(true)}>Admin Login</Button>
+        {isAdminPage ? (
+          <Button variant="outline" onClick={handleLogout}>Keluar</Button>
+        ) : (
+          <Button variant="outline" onClick={() => setIsLoginDialogOpen(true)}>Admin Login</Button>
+        )}
       </header>
-      <LoginDialog 
-        open={isLoginDialogOpen}
-        onOpenChange={setIsLoginDialogOpen}
-        onLoginSuccess={handleLoginSuccess}
-      />
+      {!isAdminPage && (
+        <LoginDialog 
+          open={isLoginDialogOpen}
+          onOpenChange={setIsLoginDialogOpen}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      )}
     </>
   );
 }
