@@ -170,7 +170,7 @@ export function Dashboard() {
 
     return () => clearInterval(interval);
 
-  }, [powerOn, operasiMode, autoProcessState, targetWeights, aggregateWeight, airWeight, semenWeight]);
+  }, [powerOn, operasiMode, autoProcessState, targetWeights]);
 
   return (
     <div className="space-y-4">
