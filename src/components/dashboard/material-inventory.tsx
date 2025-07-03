@@ -1,41 +1,58 @@
-import type { Material } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface MaterialInventoryProps {
-  materials: Material[];
+interface WeightDisplayProps {
+  title: string;
+  value: string;
+  unit: string;
+  target: string;
+  complete: string;
 }
 
-export function MaterialInventory({ materials }: MaterialInventoryProps) {
+function WeightDisplay({ title, value, unit, target, complete }: WeightDisplayProps) {
   return (
-    <Card className="col-span-1">
-      <CardHeader>
-        <CardTitle>Material Inventory</CardTitle>
+    <Card>
+      <CardHeader className="p-3">
+        <CardTitle className="text-center text-primary uppercase text-sm tracking-wider">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-6">
-        {materials.map(material => {
-          const percentage = (material.quantity / material.capacity) * 100;
-          const isLow = material.quantity < material.lowLevelThreshold;
-          return (
-            <div key={material.id} className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-medium">
-                  <material.Icon className="h-5 w-5 text-muted-foreground" data-ai-hint={material.id === 'sand' ? 'sand' : undefined}/>
-                  <span>{material.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {isLow && <Badge variant="destructive">Low</Badge>}
-                  <span className="text-muted-foreground">
-                    {material.quantity.toLocaleString()} / {material.capacity.toLocaleString()} {material.unit}
-                  </span>
-                </div>
-              </div>
-              <Progress value={percentage} aria-label={`${material.name} inventory level`} />
-            </div>
-          );
-        })}
+      <CardContent className="p-3 pt-0">
+        <div className="digital-display">
+          <div className="digital-display-value">{value}</div>
+          <div className="digital-display-unit">{unit}</div>
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
+          <span>Target: {target}</span>
+          <span>Complete: {complete}</span>
+        </div>
       </CardContent>
     </Card>
+  );
+}
+
+
+export function WeightDisplayPanel() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <WeightDisplay 
+        title="Aggregate (Pasir + Batu)"
+        value="0.0"
+        unit="Kg"
+        target="1858.0 Kg"
+        complete="0.0% Complete"
+      />
+      <WeightDisplay 
+        title="Air"
+        value="0.0"
+        unit="Kg"
+        target="185.0 Kg"
+        complete="0.0% Complete"
+      />
+       <WeightDisplay 
+        title="Semen"
+        value="0.0"
+        unit="Kg"
+        target="325.0 Kg"
+        complete="0.0% Complete"
+      />
+    </div>
   );
 }

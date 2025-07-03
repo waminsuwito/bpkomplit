@@ -1,12 +1,13 @@
-import { Building } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function Header() {
   return (
-    <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 z-10">
-      <div className="flex items-center gap-2">
-        <Building className="h-6 w-6 text-primary" />
-        <h1 className="text-xl font-semibold">batching-alchemy-control</h1>
+    <header className="sticky top-0 flex h-20 items-center justify-between gap-4 border-b border-primary/20 bg-background px-6 z-10">
+      <div>
+        <h1 className="text-2xl font-bold text-primary">PT. FARIKA RIAU PERKASA</h1>
+        <p className="text-sm text-muted-foreground">Sistem Kontrol Otomatisasi Produksi Batching Plant</p>
       </div>
+      <Button variant="outline">Admin Login</Button>
     </header>
   );
 }
