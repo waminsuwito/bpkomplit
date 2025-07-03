@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils";
 
@@ -15,7 +14,7 @@ function ControlGroup({ title, children, className }: { title: string, children:
     )
 }
 
-type ManualControlsState = {
+export type ManualControlsState = {
   pasir1: boolean;
   pasir2: boolean;
   batu1: boolean;
@@ -30,24 +29,15 @@ type ManualControlsState = {
   klakson: boolean;
 }
 
-export function ManualControlPanel() {
-  const [activeControls, setActiveControls] = useState<ManualControlsState>({
-    pasir1: false, pasir2: false, batu1: false, batu2: false, airTimbang: false, airBuang: false, silo1: false, semen: false, pintuBuka: false, pintuTutup: false, konveyor: false, klakson: false
-  });
+interface ManualControlPanelProps {
+    activeControls: ManualControlsState;
+    handleToggle: (key: keyof ManualControlsState) => void;
+    handlePress: (key: keyof ManualControlsState, isPressed: boolean) => void;
+}
 
-  const handleToggle = (key: keyof ManualControlsState) => {
-    setActiveControls(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+export function ManualControlPanel({ activeControls, handleToggle, handlePress }: ManualControlPanelProps) {
 
-  const handlePress = (key: keyof ManualControlsState, isPressed: boolean) => {
-    // Only update if state is different to avoid re-renders on mouse-leave etc.
-    if (activeControls[key] !== isPressed) {
-      setActiveControls(prev => ({ ...prev, [key]: isPressed }));
-    }
-  };
-
-  // For standard silver buttons
-  const MomentaryButton = ({ controlKey, children }: { controlKey: keyof ManualControlsState, children: React.ReactNode }) => (
+  const MomentaryButton = ({ controlKey, children, className }: { controlKey: keyof ManualControlsState, children: React.ReactNode, className?: string }) => (
     <Button
       onMouseDown={() => handlePress(controlKey, true)}
       onMouseUp={() => handlePress(controlKey, false)}
@@ -55,16 +45,17 @@ export function ManualControlPanel() {
       onTouchStart={() => handlePress(controlKey, true)}
       onTouchEnd={() => handlePress(controlKey, false)}
       variant={activeControls[controlKey] ? 'default' : 'secondary'}
+      className={className}
     >
       {children}
     </Button>
   );
   
-  // For standard silver buttons
-  const ToggleButton = ({ controlKey, children }: { controlKey: keyof ManualControlsState, children: React.ReactNode }) => (
+  const ToggleButton = ({ controlKey, children, className }: { controlKey: keyof ManualControlsState, children: React.ReactNode, className?: string }) => (
     <Button 
       onClick={() => handleToggle(controlKey)}
       variant={activeControls[controlKey] ? 'default' : 'secondary'}
+      className={className}
     >
       {children}
     </Button>
@@ -84,53 +75,36 @@ export function ManualControlPanel() {
         
         <ControlGroup title="Air">
             <ToggleButton controlKey="airTimbang">AIR TIMBANG</ToggleButton>
-            <Button onClick={() => handleToggle('airBuang')} className={cn("font-bold", activeControls.airBuang ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")}>AIR BUANG</Button>
+            <ToggleButton controlKey="airBuang" className={cn("font-bold", activeControls.airBuang && "bg-accent hover:bg-accent/90 text-accent-foreground")}>AIR BUANG</ToggleButton>
         </ControlGroup>
 
         <ControlGroup title="Semen">
             <ToggleButton controlKey="silo1">SILO 1</ToggleButton>
-            <Button onClick={() => handleToggle('semen')} className={cn("font-bold", activeControls.semen ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")}>SEMEN</Button>
+            <ToggleButton controlKey="semen" className={cn("font-bold", activeControls.semen && "bg-accent hover:bg-accent/90 text-accent-foreground")}>SEMEN</ToggleButton>
         </ControlGroup>
 
         <div className="grid grid-rows-3 gap-4">
             <ControlGroup title="Mixer" className="row-span-1">
                 <div className="grid grid-cols-2 gap-2">
-                    <Button 
-                      onMouseDown={() => handlePress('pintuBuka', true)} 
-                      onMouseUp={() => handlePress('pintuBuka', false)} 
-                      onMouseLeave={() => handlePress('pintuBuka', false)}
-                      onTouchStart={() => handlePress('pintuBuka', true)}
-                      onTouchEnd={() => handlePress('pintuBuka', false)}
+                    <MomentaryButton 
+                      controlKey="pintuBuka"
                       className={cn("text-white font-bold text-xs", activeControls.pintuBuka ? 'bg-green-700' : 'bg-green-600 hover:bg-green-700')}
                     >
                       PINTU BUKA
-                    </Button>
-                    <Button 
-                      onMouseDown={() => handlePress('pintuTutup', true)} 
-                      onMouseUp={() => handlePress('pintuTutup', false)} 
-                      onMouseLeave={() => handlePress('pintuTutup', false)}
-                      onTouchStart={() => handlePress('pintuTutup', true)}
-                      onTouchEnd={() => handlePress('pintuTutup', false)}
+                    </MomentaryButton>
+                    <MomentaryButton 
+                      controlKey="pintuTutup"
                       className={cn("text-white font-bold text-xs", activeControls.pintuTutup ? 'bg-red-700' : 'bg-red-600 hover:bg-red-700')}
                     >
                       PINTU TUTUP
-                    </Button>
+                    </MomentaryButton>
                 </div>
             </ControlGroup>
             <ControlGroup title="Konveyor" className="row-span-1">
-                 <Button onClick={() => handleToggle('konveyor')} className={cn("font-bold text-xs", activeControls.konveyor ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")}>KONVEYOR</Button>
+                 <ToggleButton controlKey="konveyor" className={cn("font-bold text-xs", activeControls.konveyor && "bg-accent hover:bg-accent/90 text-accent-foreground")}>KONVEYOR</ToggleButton>
             </ControlGroup>
              <ControlGroup title="System" className="row-span-1">
-                 <Button 
-                    onMouseDown={() => handlePress('klakson', true)} 
-                    onMouseUp={() => handlePress('klakson', false)} 
-                    onMouseLeave={() => handlePress('klakson', false)}
-                    onTouchStart={() => handlePress('klakson', true)}
-                    onTouchEnd={() => handlePress('klakson', false)}
-                    className={cn("font-bold text-xs", activeControls.klakson ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")}
-                  >
-                   KLAKSON
-                  </Button>
+                 <MomentaryButton controlKey="klakson" className={cn("font-bold text-xs", activeControls.klakson ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")}>KLAKSON</MomentaryButton>
             </ControlGroup>
         </div>
     </div>

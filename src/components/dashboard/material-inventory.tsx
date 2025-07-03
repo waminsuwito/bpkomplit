@@ -1,14 +1,16 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface WeightDisplayProps {
   title: string;
-  value: string;
+  value: number;
   unit: string;
-  target: string;
-  complete: string;
+  target: number;
 }
 
-function WeightDisplay({ title, value, unit, target, complete }: WeightDisplayProps) {
+function WeightDisplay({ title, value, unit, target }: WeightDisplayProps) {
+  const percentage = target > 0 ? ((value / target) * 100).toFixed(1) : "0.0";
+  const formattedValue = value.toFixed(1);
+
   return (
     <Card>
       <CardHeader className="p-3">
@@ -16,12 +18,12 @@ function WeightDisplay({ title, value, unit, target, complete }: WeightDisplayPr
       </CardHeader>
       <CardContent className="p-3 pt-0">
         <div className="digital-display">
-          <div className="digital-display-value">{value}</div>
+          <div className="digital-display-value">{formattedValue}</div>
           <div className="digital-display-unit">{unit}</div>
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
-          <span>Target: {target}</span>
-          <span>Complete: {complete}</span>
+          <span>Target: {target.toFixed(1)} {unit}</span>
+          <span>Complete: {percentage}% Complete</span>
         </div>
       </CardContent>
     </Card>
@@ -29,29 +31,26 @@ function WeightDisplay({ title, value, unit, target, complete }: WeightDisplayPr
 }
 
 
-export function WeightDisplayPanel() {
+export function WeightDisplayPanel({ aggregateWeight, airWeight, semenWeight }: { aggregateWeight: number, airWeight: number, semenWeight: number }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <WeightDisplay 
         title="Aggregate (Pasir + Batu)"
-        value="0.0"
+        value={aggregateWeight}
         unit="Kg"
-        target="1858.0 Kg"
-        complete="0.0% Complete"
+        target={1858.0}
       />
       <WeightDisplay 
         title="Air"
-        value="0.0"
+        value={airWeight}
         unit="Kg"
-        target="185.0 Kg"
-        complete="0.0% Complete"
+        target={185.0}
       />
        <WeightDisplay 
         title="Semen"
-        value="0.0"
+        value={semenWeight}
         unit="Kg"
-        target="325.0 Kg"
-        complete="0.0% Complete"
+        target={325.0}
       />
     </div>
   );
