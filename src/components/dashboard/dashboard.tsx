@@ -145,7 +145,7 @@ export function Dashboard() {
     }, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [powerOn, operasiMode]);
+  }, [powerOn, operasiMode, activeControls]);
 
 
   // This effect handles AUTO mode
@@ -208,18 +208,20 @@ export function Dashboard() {
       </div>
 
       {/* Bottom Section */}
-      <div>
-        <h2 className="text-lg font-semibold uppercase text-primary/80 tracking-widest mb-2">
-          Manual Controls
-        </h2>
-        <ManualControlPanel
-          activeControls={activeControls}
-          handleToggle={handleToggle}
-          handlePress={handlePress}
-          handleSiloChange={handleSiloChange}
-          disabled={!powerOn || operasiMode === 'AUTO'}
-        />
-      </div>
+      {operasiMode === 'MANUAL' && (
+        <div>
+          <h2 className="text-lg font-semibold uppercase text-primary/80 tracking-widest mb-2">
+            Manual Controls
+          </h2>
+          <ManualControlPanel
+            activeControls={activeControls}
+            handleToggle={handleToggle}
+            handlePress={handlePress}
+            handleSiloChange={handleSiloChange}
+            disabled={!powerOn || operasiMode === 'AUTO'}
+          />
+        </div>
+      )}
     </div>
   );
 }
