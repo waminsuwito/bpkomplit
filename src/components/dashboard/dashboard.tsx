@@ -5,6 +5,7 @@ import { WeightDisplayPanel } from './material-inventory';
 import { ControlPanel } from './batch-control';
 import { StatusPanel } from './ai-advisor';
 import { ManualControlPanel, type ManualControlsState } from './batch-history';
+import type { JobMixFormula } from '@/components/admin/job-mix-form';
 
 // Define rates for weight change, units per second
 const AGGREGATE_RATE = 50; // kg/s
@@ -13,11 +14,30 @@ const SEMEN_RATE = 30;     // kg/s
 const CONVEYOR_DISCHARGE_RATE = 60; // kg/s
 const UPDATE_INTERVAL = 100; // ms
 
+const initialFormulas: JobMixFormula[] = [
+  { id: '1', mutuBeton: 'K225', pasir: 765, batu: 1029, air: 215, semen: 371 },
+  { id: '2', mutuBeton: 'K300', pasir: 698, batu: 1047, air: 215, semen: 413 },
+  { id: '3', mutuBeton: 'K350', pasir: 681, batu: 1021, air: 215, semen: 439 },
+];
+
 export function Dashboard() {
   const [aggregateWeight, setAggregateWeight] = useState(0);
   const [airWeight, setAirWeight] = useState(0);
   const [semenWeight, setSemenWeight] = useState(0);
   const [powerOn, setPowerOn] = useState(true);
+  
+  const [formulas] = useState<JobMixFormula[]>(initialFormulas);
+  const [targetWeights, setTargetWeights] = useState(() => {
+    const firstFormula = formulas[0];
+    if (firstFormula) {
+      return {
+        aggregate: firstFormula.pasir + firstFormula.batu,
+        air: firstFormula.air,
+        semen: firstFormula.semen,
+      };
+    }
+    return { aggregate: 0, air: 0, semen: 0 };
+  });
 
   const [activeControls, setActiveControls] = useState<ManualControlsState>({
     pasir1: false, pasir2: false, batu1: false, batu2: false,
@@ -105,12 +125,20 @@ export function Dashboard() {
             aggregateWeight={aggregateWeight}
             airWeight={airWeight}
             semenWeight={semenWeight}
+            targetAggregate={targetWeights.aggregate}
+            targetAir={targetWeights.air}
+            targetSemen={targetWeights.semen}
           />
         </div>
 
         {/* Middle Section */}
         <div className="col-span-9">
-          <ControlPanel powerOn={powerOn} setPowerOn={setPowerOn} />
+          <ControlPanel
+            powerOn={powerOn}
+            setPowerOn={setPowerOn}
+            formulas={formulas}
+            setTargetWeights={setTargetWeights}
+          />
         </div>
         <div className="col-span-3">
           <StatusPanel />

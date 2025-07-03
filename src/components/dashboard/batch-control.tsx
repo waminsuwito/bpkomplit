@@ -7,14 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { JobMixFormula } from '@/components/admin/job-mix-form';
 
 interface ControlPanelProps {
   powerOn: boolean;
   setPowerOn: (on: boolean) => void;
+  formulas: JobMixFormula[];
+  setTargetWeights: (weights: { aggregate: number; air: number; semen: number }) => void;
 }
 
-export function ControlPanel({ powerOn, setPowerOn }: ControlPanelProps) {
-  const [mutuBeton, setMutuBeton] = useState('k225');
+export function ControlPanel({ powerOn, setPowerOn, formulas, setTargetWeights }: ControlPanelProps) {
+  const [selectedFormulaId, setSelectedFormulaId] = useState(formulas[0]?.id || '');
   const [namaPelanggan, setNamaPelanggan] = useState('');
   const [lokasiProyek, setLokasiProyek] = useState('');
   const [targetVolume, setTargetVolume] = useState(1);
@@ -30,6 +33,17 @@ export function ControlPanel({ powerOn, setPowerOn }: ControlPanelProps) {
       setJumlahMixing(0);
     }
   }, [targetVolume]);
+
+  useEffect(() => {
+    const selectedFormula = formulas.find(f => f.id === selectedFormulaId);
+    if (selectedFormula) {
+      setTargetWeights({
+        aggregate: (selectedFormula.pasir + selectedFormula.batu) * targetVolume,
+        air: selectedFormula.air * targetVolume,
+        semen: selectedFormula.semen * targetVolume,
+      });
+    }
+  }, [selectedFormulaId, targetVolume, formulas, setTargetWeights]);
   
   const handleProcessControl = (action: string) => {
     console.log(`Process: ${action} | Mode: ${operasiMode}`);
@@ -49,12 +63,14 @@ export function ControlPanel({ powerOn, setPowerOn }: ControlPanelProps) {
         <CardContent className="pt-6 space-y-4">
           <div>
             <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
-            <Select value={mutuBeton} onValueChange={setMutuBeton} disabled={!powerOn}>
+            <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId} disabled={!powerOn}>
               <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="k225">K225</SelectItem>
-                <SelectItem value="k300">K300</SelectItem>
-                <SelectItem value="k350">K350</SelectItem>
+                {formulas.map((formula) => (
+                  <SelectItem key={formula.id} value={formula.id}>
+                    {formula.mutuBeton}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -73,7 +89,7 @@ export function ControlPanel({ powerOn, setPowerOn }: ControlPanelProps) {
         <CardContent className="pt-6 space-y-4">
            <div>
             <Label htmlFor="target-volume" className="text-xs text-muted-foreground">TARGET VOLUME (M³)</Label>
-            <Input id="target-volume" type="number" value={targetVolume} onChange={(e) => setTargetVolume(Number(e.target.value) > 0 ? Number(e.target.value) : 0)} min="0" disabled={!powerOn} />
+            <Input id="target-volume" type="number" value={targetVolume} onChange={(e) => setTargetVolume(Number(e.target.value) > 0 ? Number(e.target.value) : 1)} min="1" disabled={!powerOn} />
           </div>
            <div>
             <Label htmlFor="jumlah-mixing" className="text-xs text-muted-foreground">JUMLAH MIXING</Label>
