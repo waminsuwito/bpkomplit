@@ -54,7 +54,7 @@ export function ControlPanel({
         semen: selectedFormula.semen * scaleFactor,
       });
     }
-  }, [selectedFormulaId, targetVolume, formulas, setTargetWeights]);
+  }, [selectedFormulaId, targetVolume, formulas]);
 
   const handleKlaksonPress = (isPressed: boolean) => {
     if (isPressed) {
