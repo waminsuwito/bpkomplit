@@ -3,8 +3,20 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'BatchWise',
-  description: 'Software for controlling batching plants',
+  title: 'batching-alchemy-control',
+  description: 'Lovable Generated Project',
+  authors: [{ name: 'Lovable' }],
+  openGraph: {
+    title: 'batching-alchemy-control',
+    description: 'Lovable Generated Project',
+    type: 'website',
+    images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@lovable_dev',
+    images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
+  },
 };
 
 export default function RootLayout({
