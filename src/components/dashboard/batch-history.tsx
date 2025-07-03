@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 function ControlGroup({ title, children, className }: { title: string, children: React.ReactNode, className?: string }) {
     return (
@@ -21,7 +23,8 @@ export type ManualControlsState = {
   batu2: boolean;
   airTimbang: boolean;
   airBuang: boolean;
-  silo1: boolean;
+  selectedSilo: string;
+  semenTimbang: boolean;
   semen: boolean;
   pintuBuka: boolean;
   pintuTutup: boolean;
@@ -33,6 +36,7 @@ interface ManualControlPanelProps {
     activeControls: ManualControlsState;
     handleToggle: (key: keyof ManualControlsState) => void;
     handlePress: (key: keyof ManualControlsState, isPressed: boolean) => void;
+    handleSiloChange: (silo: string) => void;
 }
 
 const MomentaryButton = ({ 
@@ -83,7 +87,7 @@ const ToggleButton = ({
   </Button>
 );
 
-export function ManualControlPanel({ activeControls, handleToggle, handlePress }: ManualControlPanelProps) {
+export function ManualControlPanel({ activeControls, handleToggle, handlePress, handleSiloChange }: ManualControlPanelProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -103,8 +107,28 @@ export function ManualControlPanel({ activeControls, handleToggle, handlePress }
         </ControlGroup>
 
         <ControlGroup title="Semen">
-            <ToggleButton controlKey="silo1" handleToggle={handleToggle} isActive={activeControls.silo1}>SILO 1</ToggleButton>
-            <ToggleButton controlKey="semen" handleToggle={handleToggle} isActive={activeControls.semen} className={cn("font-bold", activeControls.semen && "bg-accent hover:bg-accent/90 text-accent-foreground")}>SEMEN</ToggleButton>
+            <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground px-1">PILIH SILO</Label>
+                <Select onValueChange={handleSiloChange} defaultValue={activeControls.selectedSilo}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Pilih silo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="silo1">Silo 1</SelectItem>
+                        <SelectItem value="silo2">Silo 2</SelectItem>
+                        <SelectItem value="silo3">Silo 3</SelectItem>
+                        <SelectItem value="silo4">Silo 4</SelectItem>
+                        <SelectItem value="silo5">Silo 5</SelectItem>
+                        <SelectItem value="silo6">Silo 6</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <ToggleButton controlKey="semenTimbang" handleToggle={handleToggle} isActive={activeControls.semenTimbang}>
+                TIMBANG SEMEN
+            </ToggleButton>
+            <ToggleButton controlKey="semen" handleToggle={handleToggle} isActive={activeControls.semen} className={cn("font-bold", activeControls.semen && "bg-accent hover:bg-accent/90 text-accent-foreground")}>
+                BUANG SEMEN
+            </ToggleButton>
         </ControlGroup>
 
         <div className="grid grid-rows-3 gap-4">

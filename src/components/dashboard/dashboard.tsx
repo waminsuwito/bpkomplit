@@ -20,19 +20,28 @@ export function Dashboard() {
 
   const [activeControls, setActiveControls] = useState<ManualControlsState>({
     pasir1: false, pasir2: false, batu1: false, batu2: false,
-    airTimbang: false, airBuang: false, silo1: false, semen: false,
+    airTimbang: false, airBuang: false, 
+    selectedSilo: 'silo1',
+    semenTimbang: false,
+    semen: false,
     pintuBuka: false, pintuTutup: false, konveyor: false, klakson: false
   });
 
   const handleToggle = (key: keyof ManualControlsState) => {
-    setActiveControls(prev => ({ ...prev, [key]: !prev[key] }));
+    const currentValue = activeControls[key];
+    if (typeof currentValue === 'boolean') {
+      setActiveControls(prev => ({ ...prev, [key]: !currentValue }));
+    }
   };
 
   const handlePress = (key: keyof ManualControlsState, isPressed: boolean) => {
-    // Only update if state is different to avoid re-renders
     if (activeControls[key] !== isPressed) {
       setActiveControls(prev => ({ ...prev, [key]: isPressed }));
     }
+  };
+  
+  const handleSiloChange = (silo: string) => {
+    setActiveControls(prev => ({ ...prev, selectedSilo: silo }));
   };
 
   useEffect(() => {
@@ -55,7 +64,7 @@ export function Dashboard() {
       }
 
       // Semen Weighing & Discharging
-      if (activeControls.silo1) {
+      if (activeControls.semenTimbang) {
         setSemenWeight(prev => prev + (SEMEN_RATE * (UPDATE_INTERVAL / 1000)));
       }
       if (activeControls.semen) {
@@ -97,6 +106,7 @@ export function Dashboard() {
           activeControls={activeControls}
           handleToggle={handleToggle}
           handlePress={handlePress}
+          handleSiloChange={handleSiloChange}
         />
       </div>
     </div>
