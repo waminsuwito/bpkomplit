@@ -23,29 +23,29 @@
     --border: 180 90% 40% / 0.3;
     --input: 214.3 31.8% 91.4%;
     --ring: 180 90% 40%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 224 16% 12%;
+    --background: 224 20% 10%;
     --foreground: 210 40% 98%;
-    --card: 223 16% 16%;
+    --card: 224 16% 14%;
     --card-foreground: 210 40% 98%;
-    --popover: 224 16% 12%;
+    --popover: 224 20% 10%;
     --popover-foreground: 210 40% 98%;
-    --primary: 180 90% 40%;
-    --primary-foreground: 224 16% 12%;
+    --primary: 200 95% 55%;
+    --primary-foreground: 224 20% 10%;
     --secondary: 223 16% 22%;
     --secondary-foreground: 210 40% 98%;
     --muted: 223 16% 22%;
     --muted-foreground: 215.4 16.3% 56.9%;
     --accent: 45 93% 58%;
-    --accent-foreground: 224 16% 12%;
+    --accent-foreground: 224 20% 10%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
-    --border: 180 90% 40% / 0.3;
+    --border: 200 95% 55% / 0.2;
     --input: 223 16% 22%;
-    --ring: 180 90% 40%;
+    --ring: 200 95% 55%;
   }
 }
 
@@ -74,14 +74,17 @@
 
 @layer components {
   .digital-display {
-    @apply bg-black border-2 border-primary/50 p-4 rounded-lg text-center font-mono;
-    box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+    @apply bg-black/75 border-2 border-primary/50 p-4 rounded-lg text-center font-mono;
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5), inset 0 0 5px hsl(var(--primary) / 0.3);
   }
   .digital-display-value {
-    @apply text-5xl font-bold text-green-400;
+    @apply text-5xl font-bold;
+    color: hsl(var(--primary));
+    text-shadow: 0 0 8px hsl(var(--primary) / 0.8);
   }
   .digital-display-unit {
-    @apply text-xl text-green-400;
+    @apply text-xl opacity-80;
+    color: hsl(var(--primary));
   }
   .control-card {
     @apply bg-card rounded-lg p-3 flex flex-col gap-2;

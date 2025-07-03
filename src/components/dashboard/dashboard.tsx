@@ -6,6 +6,7 @@ import { ControlPanel } from './batch-control';
 import { StatusPanel } from './ai-advisor';
 import { ManualControlPanel, type ManualControlsState } from './batch-history';
 import type { JobMixFormula } from '@/components/admin/job-mix-form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Define rates for weight change, units per second
 const AGGREGATE_RATE = 250; // kg/s
@@ -365,18 +366,20 @@ export function Dashboard() {
       </div>
 
       {operasiMode === 'MANUAL' && (
-        <div>
-          <h2 className="text-lg font-semibold uppercase text-primary/80 tracking-widest mb-2">
-            Manual Controls
-          </h2>
-          <ManualControlPanel
-            activeControls={activeControls}
-            handleToggle={handleToggle}
-            handlePress={handlePress}
-            handleSiloChange={handleSiloChange}
-            disabled={!powerOn || operasiMode === 'AUTO'}
-          />
-        </div>
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Manual Controls</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ManualControlPanel
+              activeControls={activeControls}
+              handleToggle={handleToggle}
+              handlePress={handlePress}
+              handleSiloChange={handleSiloChange}
+              disabled={!powerOn || operasiMode === 'AUTO'}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
   );

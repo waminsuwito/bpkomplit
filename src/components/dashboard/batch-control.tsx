@@ -119,9 +119,9 @@ export function ControlPanel({
            </div>
            <div className="text-center text-primary uppercase text-sm tracking-wider font-semibold pt-4 mb-2">Kontrol Proses</div>
            <div className="grid grid-cols-3 gap-2">
-             <Button onClick={() => handleProcessControl('START')} className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>START</Button>
-             <Button onClick={() => handleProcessControl('PAUSE')} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>PAUSE</Button>
-             <Button onClick={() => handleProcessControl('STOP')} className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>STOP</Button>
+             <Button onClick={() => handleProcessControl('START')} className="font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>START</Button>
+             <Button onClick={() => handleProcessControl('PAUSE')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>PAUSE</Button>
+             <Button onClick={() => handleProcessControl('STOP')} variant="destructive" className="font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>STOP</Button>
            </div>
             <Button 
               onMouseDown={() => handleKlaksonPress(true)} 
@@ -134,7 +134,7 @@ export function ControlPanel({
             >
               KLAKSON
             </Button>
-            <Button onClick={() => setPowerOn(!powerOn)} className={cn("w-full font-bold", powerOn ? "bg-green-600 hover:bg-green-700 text-white blink" : "bg-red-600 hover:bg-red-700 text-white")}>
+            <Button onClick={() => setPowerOn(!powerOn)} variant={powerOn ? 'default' : 'destructive'} className={cn("w-full font-bold", powerOn && "blink")}>
                 POWER {powerOn ? 'ON' : 'OFF'}
             </Button>
         </CardContent>
