@@ -14,16 +14,26 @@ interface ControlPanelProps {
   setPowerOn: (on: boolean) => void;
   formulas: JobMixFormula[];
   setTargetWeights: (weights: { aggregate: number; air: number; semen: number }) => void;
+  operasiMode: 'MANUAL' | 'AUTO';
+  setOperasiMode: (mode: 'MANUAL' | 'AUTO') => void;
+  handleProcessControl: (action: 'START' | 'PAUSE' | 'STOP') => void;
 }
 
-export function ControlPanel({ powerOn, setPowerOn, formulas, setTargetWeights }: ControlPanelProps) {
+export function ControlPanel({
+  powerOn,
+  setPowerOn,
+  formulas,
+  setTargetWeights,
+  operasiMode,
+  setOperasiMode,
+  handleProcessControl
+}: ControlPanelProps) {
   const [selectedFormulaId, setSelectedFormulaId] = useState(formulas[0]?.id || '');
   const [namaPelanggan, setNamaPelanggan] = useState('');
   const [lokasiProyek, setLokasiProyek] = useState('');
   const [targetVolume, setTargetVolume] = useState(1);
   const [jumlahMixing, setJumlahMixing] = useState(1);
   const [slump, setSlump] = useState(12);
-  const [operasiMode, setOperasiMode] = useState('MANUAL');
 
   useEffect(() => {
     const volumePerMix = 3.5;
@@ -37,18 +47,14 @@ export function ControlPanel({ powerOn, setPowerOn, formulas, setTargetWeights }
   useEffect(() => {
     const selectedFormula = formulas.find(f => f.id === selectedFormulaId);
     if (selectedFormula) {
+      const scaleFactor = targetVolume > 0 ? targetVolume : 0;
       setTargetWeights({
-        aggregate: (selectedFormula.pasir + selectedFormula.batu) * targetVolume,
-        air: selectedFormula.air * targetVolume,
-        semen: selectedFormula.semen * targetVolume,
+        aggregate: (selectedFormula.pasir + selectedFormula.batu) * scaleFactor,
+        air: selectedFormula.air * scaleFactor,
+        semen: selectedFormula.semen * scaleFactor,
       });
     }
   }, [selectedFormulaId, targetVolume, formulas, setTargetWeights]);
-  
-  const handleProcessControl = (action: string) => {
-    console.log(`Process: ${action} | Mode: ${operasiMode}`);
-    // Future logic for start, pause, stop would go here
-  };
 
   const handleKlaksonPress = (isPressed: boolean) => {
     if (isPressed) {
@@ -113,9 +119,9 @@ export function ControlPanel({ powerOn, setPowerOn, formulas, setTargetWeights }
            </div>
            <div className="text-center text-primary uppercase text-sm tracking-wider font-semibold pt-4 mb-2">Kontrol Proses</div>
            <div className="grid grid-cols-3 gap-2">
-             <Button onClick={() => handleProcessControl('START')} className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs col-span-1" disabled={!powerOn}>START</Button>
-             <Button onClick={() => handleProcessControl('PAUSE')} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs col-span-1" disabled={!powerOn}>PAUSE</Button>
-             <Button onClick={() => handleProcessControl('STOP')} className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs col-span-1" disabled={!powerOn}>STOP</Button>
+             <Button onClick={() => handleProcessControl('START')} className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>START</Button>
+             <Button onClick={() => handleProcessControl('PAUSE')} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>PAUSE</Button>
+             <Button onClick={() => handleProcessControl('STOP')} className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>STOP</Button>
            </div>
             <Button 
               onMouseDown={() => handleKlaksonPress(true)} 
