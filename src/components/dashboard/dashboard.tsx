@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { WeightDisplayPanel } from './material-inventory';
 import { ControlPanel } from './batch-control';
 import { StatusPanel } from './ai-advisor';
@@ -52,25 +52,25 @@ export function Dashboard() {
   const [autoProcessState, setAutoProcessState] = useState<'idle' | 'running' | 'paused'>('idle');
 
 
-  const handleToggle = (key: keyof ManualControlsState) => {
+  const handleToggle = useCallback((key: keyof ManualControlsState) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
     const currentValue = activeControls[key];
     if (typeof currentValue === 'boolean') {
       setActiveControls(prev => ({ ...prev, [key]: !currentValue }));
     }
-  };
+  }, [powerOn, operasiMode, activeControls]);
 
-  const handlePress = (key: keyof ManualControlsState, isPressed: boolean) => {
+  const handlePress = useCallback((key: keyof ManualControlsState, isPressed: boolean) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
     if (activeControls[key] !== isPressed) {
       setActiveControls(prev => ({ ...prev, [key]: isPressed }));
     }
-  };
+  }, [powerOn, operasiMode, activeControls]);
 
-  const handleSiloChange = (silo: string) => {
+  const handleSiloChange = useCallback((silo: string) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
     setActiveControls(prev => ({ ...prev, selectedSilo: silo }));
-  };
+  }, [powerOn, operasiMode]);
   
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
     if (!powerOn || operasiMode !== 'AUTO') return;
@@ -115,34 +115,37 @@ export function Dashboard() {
 
     const interval = setInterval(() => {
       // Aggregate Weighing
-      if (activeControls.pasir1 || activeControls.pasir2 || activeControls.batu1 || activeControls.batu2) {
-        setAggregateWeight(prev => prev + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000)));
-      }
-      // Conveyor Discharging
-      if (activeControls.konveyor) {
-        setAggregateWeight(prev => Math.max(0, prev - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
-      }
-
-      // Air Weighing & Discharging
-      if (activeControls.airTimbang) {
-        setAirWeight(prev => prev + (AIR_RATE * (UPDATE_INTERVAL / 1000)));
-      }
-      if (activeControls.airBuang) {
-        setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
-      }
-
-      // Semen Weighing & Discharging
-      if (activeControls.semenTimbang) {
-        setSemenWeight(prev => prev + (SEMEN_RATE * (UPDATE_INTERVAL / 1000)));
-      }
-      if (activeControls.semen) {
-        setSemenWeight(prev => Math.max(0, prev - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
-      }
+      setActiveControls(prev => {
+        if (prev.pasir1 || prev.pasir2 || prev.batu1 || prev.batu2) {
+          setAggregateWeight(w => w + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000)));
+        }
+        // Conveyor Discharging
+        if (prev.konveyor) {
+          setAggregateWeight(w => Math.max(0, w - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+  
+        // Air Weighing & Discharging
+        if (prev.airTimbang) {
+          setAirWeight(w => w + (AIR_RATE * (UPDATE_INTERVAL / 1000)));
+        }
+        if (prev.airBuang) {
+          setAirWeight(w => Math.max(0, w - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+  
+        // Semen Weighing & Discharging
+        if (prev.semenTimbang) {
+          setSemenWeight(w => w + (SEMEN_RATE * (UPDATE_INTERVAL / 1000)));
+        }
+        if (prev.semen) {
+          setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+        return prev;
+      })
 
     }, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [activeControls, powerOn, operasiMode]);
+  }, [powerOn, operasiMode]);
 
 
   // This effect handles AUTO mode
@@ -170,7 +173,7 @@ export function Dashboard() {
 
     return () => clearInterval(interval);
 
-  }, [powerOn, operasiMode, autoProcessState, targetWeights]);
+  }, [powerOn, operasiMode, autoProcessState, targetWeights, aggregateWeight, airWeight, semenWeight]);
 
   return (
     <div className="space-y-4">

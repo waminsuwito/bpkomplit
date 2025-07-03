@@ -128,7 +128,7 @@ export function ControlPanel({
               onMouseUp={() => handleKlaksonPress(false)}
               onMouseLeave={() => handleKlaksonPress(false)}
               onTouchStart={() => handleKlaksonPress(true)}
-              onTouchEnd={() => handleKlacsonPress(false)}
+              onTouchEnd={() => handleKlaksonPress(false)}
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold"
               disabled={!powerOn}
             >
