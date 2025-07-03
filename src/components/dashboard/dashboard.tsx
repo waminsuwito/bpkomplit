@@ -270,7 +270,7 @@ export function Dashboard() {
           />
         </div>
         <div className="col-span-3">
-          <StatusPanel />
+          <StatusPanel autoProcessStep={autoProcessStep} operasiMode={operasiMode} />
         </div>
       </div>
 
