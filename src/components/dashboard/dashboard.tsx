@@ -20,6 +20,17 @@ const initialFormulas: JobMixFormula[] = [
   { id: '3', mutuBeton: 'K350', pasir: 681, batu: 1021, air: 215, semen: 439 },
 ];
 
+type AutoProcessStep =
+  | 'idle'
+  | 'paused'
+  | 'weighing-aggregates'
+  | 'weighing-all'
+  | 'weighing-complete'
+  | 'discharging-aggregates'
+  | 'discharging-water'
+  | 'discharging-all'
+  | 'complete';
+
 export function Dashboard() {
   const [aggregateWeight, setAggregateWeight] = useState(0);
   const [airWeight, setAirWeight] = useState(0);
@@ -49,8 +60,8 @@ export function Dashboard() {
   });
 
   const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('MANUAL');
-  const [autoProcessState, setAutoProcessState] = useState<'idle' | 'running' | 'paused'>('idle');
-
+  const [autoProcessStep, setAutoProcessStep] = useState<AutoProcessStep>('idle');
+  const [pausedStep, setPausedStep] = useState<AutoProcessStep>('idle');
 
   const handleToggle = useCallback((key: keyof ManualControlsState) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
@@ -76,16 +87,21 @@ export function Dashboard() {
     if (!powerOn || operasiMode !== 'AUTO') return;
 
     if (action === 'START') {
-      if (autoProcessState === 'idle') {
+      if (autoProcessStep === 'idle' || autoProcessStep === 'complete') {
         setAggregateWeight(0);
         setAirWeight(0);
         setSemenWeight(0);
+        setAutoProcessStep('weighing-aggregates');
+      } else if (autoProcessStep === 'paused') {
+        setAutoProcessStep(pausedStep);
       }
-      setAutoProcessState('running');
     } else if (action === 'PAUSE') {
-      setAutoProcessState('paused');
+      if (autoProcessStep !== 'paused' && autoProcessStep !== 'idle') {
+        setPausedStep(autoProcessStep);
+        setAutoProcessStep('paused');
+      }
     } else if (action === 'STOP') {
-      setAutoProcessState('idle');
+      setAutoProcessStep('idle');
       setAggregateWeight(0);
       setAirWeight(0);
       setSemenWeight(0);
@@ -94,7 +110,6 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!powerOn) {
-      // If power is off, reset all active controls and weights
       setActiveControls(prev => ({
         ...prev,
         pasir1: false, pasir2: false, batu1: false, batu2: false,
@@ -106,33 +121,26 @@ export function Dashboard() {
       setAggregateWeight(0);
       setAirWeight(0);
       setSemenWeight(0);
-      setAutoProcessState('idle');
+      setAutoProcessStep('idle');
       return;
     }
     
-    // This effect handles MANUAL mode
     if (operasiMode !== 'MANUAL') return;
 
     const interval = setInterval(() => {
-      // Aggregate Weighing
       setActiveControls(prev => {
         if (prev.pasir1 || prev.pasir2 || prev.batu1 || prev.batu2) {
           setAggregateWeight(w => w + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000)));
         }
-        // Conveyor Discharging
         if (prev.konveyor) {
           setAggregateWeight(w => Math.max(0, w - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
         }
-  
-        // Air Weighing & Discharging
         if (prev.airTimbang) {
           setAirWeight(w => w + (AIR_RATE * (UPDATE_INTERVAL / 1000)));
         }
         if (prev.airBuang) {
           setAirWeight(w => Math.max(0, w - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
         }
-  
-        // Semen Weighing & Discharging
         if (prev.semenTimbang) {
           setSemenWeight(w => w + (SEMEN_RATE * (UPDATE_INTERVAL / 1000)));
         }
@@ -147,38 +155,98 @@ export function Dashboard() {
     return () => clearInterval(interval);
   }, [powerOn, operasiMode, activeControls]);
 
+  // --- AUTO MODE EFFECTS ---
 
-  // This effect handles AUTO mode
+  // 1. Effect for timed state transitions
   useEffect(() => {
-    if (!powerOn || operasiMode !== 'AUTO' || autoProcessState !== 'running') {
-      return;
+    if (!powerOn || operasiMode !== 'AUTO' || autoProcessStep === 'paused' || autoProcessStep === 'idle') return;
+
+    let timer: NodeJS.Timeout;
+
+    switch (autoProcessStep) {
+      case 'weighing-aggregates':
+        timer = setTimeout(() => setAutoProcessStep('weighing-all'), 2000);
+        break;
+      case 'weighing-complete':
+        timer = setTimeout(() => setAutoProcessStep('discharging-aggregates'), 3000);
+        break;
+      case 'discharging-aggregates':
+        timer = setTimeout(() => setAutoProcessStep('discharging-water'), 7000);
+        break;
+      case 'discharging-water':
+        timer = setTimeout(() => setAutoProcessStep('discharging-all'), 10000);
+        break;
     }
 
-    const allComplete =
-      aggregateWeight >= targetWeights.aggregate &&
-      airWeight >= targetWeights.air &&
-      semenWeight >= targetWeights.semen;
+    return () => clearTimeout(timer);
+  }, [autoProcessStep, powerOn, operasiMode]);
 
-    if (allComplete) {
-      setAutoProcessState('idle');
-      console.log('Auto batch completed!');
+  // 2. Effect for weight simulation
+  useEffect(() => {
+    if (!powerOn || operasiMode !== 'AUTO' || ['idle', 'paused', 'complete', 'weighing-complete'].includes(autoProcessStep)) {
       return;
     }
 
     const interval = setInterval(() => {
-      setAggregateWeight(prev => prev < targetWeights.aggregate ? Math.min(targetWeights.aggregate, prev + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000))) : prev);
-      setAirWeight(prev => prev < targetWeights.air ? Math.min(targetWeights.air, prev + (AIR_RATE * (UPDATE_INTERVAL / 1000))) : prev);
-      setSemenWeight(prev => prev < targetWeights.semen ? Math.min(targetWeights.semen, prev + (SEMEN_RATE * (UPDATE_INTERVAL / 1000))) : prev);
+      // Weighing
+      if (autoProcessStep === 'weighing-aggregates' || autoProcessStep === 'weighing-all') {
+        setAggregateWeight(prev => Math.min(targetWeights.aggregate, prev + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000))));
+        if (autoProcessStep === 'weighing-all') {
+          setAirWeight(prev => Math.min(targetWeights.air, prev + (AIR_RATE * (UPDATE_INTERVAL / 1000))));
+          setSemenWeight(prev => Math.min(targetWeights.semen, prev + (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+      }
+
+      // Discharging
+      if (autoProcessStep.startsWith('discharging-')) {
+        setAggregateWeight(prev => Math.max(0, prev - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
+        if (autoProcessStep === 'discharging-water' || autoProcessStep === 'discharging-all') {
+          setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+        if (autoProcessStep === 'discharging-all') {
+          setSemenWeight(prev => Math.max(0, prev - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+      }
     }, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
+  }, [autoProcessStep, powerOn, operasiMode, targetWeights]);
 
-  }, [powerOn, operasiMode, autoProcessState, targetWeights, aggregateWeight, airWeight, semenWeight]);
+  // 3. Effect for completion checks to trigger state transitions
+  useEffect(() => {
+    if (!powerOn || operasiMode !== 'AUTO') return;
+
+    if (autoProcessStep === 'weighing-all') {
+      const isWeighingComplete =
+        aggregateWeight >= targetWeights.aggregate &&
+        airWeight >= targetWeights.air &&
+        semenWeight >= targetWeights.semen;
+
+      if (isWeighingComplete) {
+        setAutoProcessStep('weighing-complete');
+      }
+    }
+
+    if (autoProcessStep.startsWith('discharging-')) {
+      const isDischargeComplete =
+        aggregateWeight <= 0.1 &&
+        airWeight <= 0.1 &&
+        semenWeight <= 0.1;
+      
+      if (isDischargeComplete) {
+        console.log('Auto batch completed!');
+        setAggregateWeight(0);
+        setAirWeight(0);
+        setSemenWeight(0);
+        setAutoProcessStep('complete');
+      }
+    }
+  }, [aggregateWeight, airWeight, semenWeight, targetWeights, autoProcessStep, powerOn, operasiMode]);
+
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-12 gap-4">
-        {/* Top Section */}
         <div className="col-span-12">
           <WeightDisplayPanel
             aggregateWeight={aggregateWeight}
@@ -190,7 +258,6 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Middle Section */}
         <div className="col-span-9">
           <ControlPanel
             powerOn={powerOn}
@@ -207,7 +274,6 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Bottom Section */}
       {operasiMode === 'MANUAL' && (
         <div>
           <h2 className="text-lg font-semibold uppercase text-primary/80 tracking-widest mb-2">
