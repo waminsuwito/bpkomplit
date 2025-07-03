@@ -1,5 +1,8 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import type { ManualControlsState } from './batch-history';
 
 type AutoProcessStep =
   | 'idle'
@@ -15,18 +18,45 @@ type AutoProcessStep =
 interface StatusPanelProps {
   autoProcessStep: AutoProcessStep;
   operasiMode: 'MANUAL' | 'AUTO';
+  activeControls: ManualControlsState;
 }
 
-export function StatusPanel({ autoProcessStep, operasiMode }: StatusPanelProps) {
+export function StatusPanel({ autoProcessStep, operasiMode, activeControls }: StatusPanelProps) {
     const getStatusMessage = () => {
-    if (operasiMode === 'MANUAL') {
+      if (operasiMode === 'MANUAL') {
+        const activeMessages: string[] = [];
+        const controlLabels: { [key in keyof Partial<ManualControlsState>]?: string } = {
+          pasir1: "Pasir 1",
+          pasir2: "Pasir 2",
+          batu1: "Batu 1",
+          batu2: "Batu 2",
+          airTimbang: "Air Timbang",
+          airBuang: "Air Buang",
+          semenTimbang: "Semen Timbang",
+          semen: "Semen Buang",
+          pintuBuka: "Pintu Buka",
+          pintuTutup: "Pintu Tutup",
+          konveyor: "Konveyor",
+          klakson: "Klakson",
+        };
+
+        (Object.keys(controlLabels) as Array<keyof ManualControlsState>).forEach(key => {
+          if (activeControls[key] === true) {
+            activeMessages.push(`${controlLabels[key]} ON`);
+          }
+        });
+
+        if (activeMessages.length > 0) {
+          return activeMessages.map((msg, index) => <p key={index}>{msg}</p>);
+        }
+
         return (
             <>
                 <p>Mode Operasi: MANUAL</p>
                 <p>Menunggu perintah operator...</p>
             </>
         )
-    }
+      }
 
     switch (autoProcessStep) {
         case 'idle':
@@ -60,7 +90,7 @@ export function StatusPanel({ autoProcessStep, operasiMode }: StatusPanelProps) 
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-center text-muted-foreground text-sm h-32 flex flex-col justify-center items-center font-semibold">
+        <div className="text-center text-muted-foreground text-sm h-32 flex flex-col justify-center items-center font-semibold overflow-y-auto">
           {getStatusMessage()}
         </div>
         <Separator className="my-4 bg-primary/20" />
