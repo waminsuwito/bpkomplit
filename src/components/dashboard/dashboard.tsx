@@ -130,14 +130,14 @@ export function Dashboard() {
     };
     const autoStepMessages: { [key in AutoProcessStep]: string | null } = {
         idle: null,
-        paused: 'AUTO: Proses dijeda oleh operator.',
-        'weighing-aggregates': 'AUTO: Menimbang Pasir & Batu...',
-        'weighing-all': 'AUTO: Menimbang Air & Semen...',
-        'weighing-complete': 'AUTO: Penimbangan Selesai. Menunggu...',
-        'discharging-aggregates': 'AUTO: Menuang Pasir & Batu...',
-        'discharging-water': 'AUTO: Menuang Air...',
-        'discharging-all': 'AUTO: Menuang Semen & Mixing...',
-        complete: 'AUTO: Proses Batching Selesai.',
+        paused: 'Proses dijeda oleh operator.',
+        'weighing-aggregates': 'Menimbang Pasir & Batu...',
+        'weighing-all': 'Menimbang Air & Semen...',
+        'weighing-complete': 'Penimbangan Selesai. Menunggu...',
+        'discharging-aggregates': 'Menuang Pasir & Batu...',
+        'discharging-water': 'Menuang Air...',
+        'discharging-all': 'Menuang Semen & Mixing...',
+        complete: 'Proses Batching Selesai.',
     };
     const activityColors = ['text-green-400', 'text-cyan-400', 'text-yellow-400', 'text-orange-400', 'text-pink-400', 'text-violet-400'];
     
@@ -169,12 +169,12 @@ export function Dashboard() {
     }
     
     if (newMessages.length > 0) {
-        setActivityLog(prev => [...prev, ...newMessages].slice(-30));
+        setActivityLog(prev => [...prev, ...newMessages].slice(-3));
     }
 
     prevControlsRef.current = activeControls;
     prevAutoStepRef.current = autoProcessStep;
-  }, [activeControls, autoProcessStep, operasiMode, powerOn]);
+  }, [activeControls, autoProcessStep, operasiMode, powerOn, activityLog.length]);
 
   // Effect to clear log on power off or mode change
   useEffect(() => {
