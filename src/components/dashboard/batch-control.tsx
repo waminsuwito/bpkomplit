@@ -54,7 +54,7 @@ export function ControlPanel({
         semen: selectedFormula.semen * scaleFactor,
       });
     }
-  }, [selectedFormulaId, targetVolume, formulas]);
+  }, [selectedFormulaId, targetVolume, formulas, setTargetWeights]);
 
   const handleKlaksonPress = (isPressed: boolean) => {
     if (isPressed) {
@@ -70,7 +70,7 @@ export function ControlPanel({
           <div>
             <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
             <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId} disabled={!powerOn}>
-              <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
+              <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectValue>
               <SelectContent>
                 {formulas.map((formula) => (
                   <SelectItem key={formula.id} value={formula.id}>
