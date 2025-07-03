@@ -17,6 +17,7 @@ export function Dashboard() {
   const [aggregateWeight, setAggregateWeight] = useState(0);
   const [airWeight, setAirWeight] = useState(0);
   const [semenWeight, setSemenWeight] = useState(0);
+  const [powerOn, setPowerOn] = useState(true);
 
   const [activeControls, setActiveControls] = useState<ManualControlsState>({
     pasir1: false, pasir2: false, batu1: false, batu2: false,
@@ -28,6 +29,7 @@ export function Dashboard() {
   });
 
   const handleToggle = (key: keyof ManualControlsState) => {
+    if (!powerOn) return;
     const currentValue = activeControls[key];
     if (typeof currentValue === 'boolean') {
       setActiveControls(prev => ({ ...prev, [key]: !currentValue }));
@@ -35,16 +37,34 @@ export function Dashboard() {
   };
 
   const handlePress = (key: keyof ManualControlsState, isPressed: boolean) => {
+    if (!powerOn) return;
     if (activeControls[key] !== isPressed) {
       setActiveControls(prev => ({ ...prev, [key]: isPressed }));
     }
   };
   
   const handleSiloChange = (silo: string) => {
+    if (!powerOn) return;
     setActiveControls(prev => ({ ...prev, selectedSilo: silo }));
   };
 
   useEffect(() => {
+    if (!powerOn) {
+      // If power is off, reset all active controls and weights
+      setActiveControls(prev => ({
+        ...prev,
+        pasir1: false, pasir2: false, batu1: false, batu2: false,
+        airTimbang: false, airBuang: false, 
+        semenTimbang: false, semen: false,
+        konveyor: false, klakson: false,
+        pintuBuka: false, pintuTutup: false
+      }));
+      setAggregateWeight(0);
+      setAirWeight(0);
+      setSemenWeight(0);
+      return;
+    }
+
     const interval = setInterval(() => {
       // Aggregate Weighing
       if (activeControls.pasir1 || activeControls.pasir2 || activeControls.batu1 || activeControls.batu2) {
@@ -74,7 +94,7 @@ export function Dashboard() {
     }, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [activeControls]);
+  }, [activeControls, powerOn]);
 
   return (
     <div className="space-y-4">
@@ -90,7 +110,7 @@ export function Dashboard() {
 
         {/* Middle Section */}
         <div className="col-span-9">
-          <ControlPanel />
+          <ControlPanel powerOn={powerOn} setPowerOn={setPowerOn} />
         </div>
         <div className="col-span-3">
           <StatusPanel />
@@ -107,6 +127,7 @@ export function Dashboard() {
           handleToggle={handleToggle}
           handlePress={handlePress}
           handleSiloChange={handleSiloChange}
+          disabled={!powerOn}
         />
       </div>
     </div>

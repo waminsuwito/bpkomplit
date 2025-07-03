@@ -8,7 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export function ControlPanel() {
+interface ControlPanelProps {
+  powerOn: boolean;
+  setPowerOn: (on: boolean) => void;
+}
+
+export function ControlPanel({ powerOn, setPowerOn }: ControlPanelProps) {
   const [mutuBeton, setMutuBeton] = useState('k225');
   const [namaPelanggan, setNamaPelanggan] = useState('');
   const [lokasiProyek, setLokasiProyek] = useState('');
@@ -16,7 +21,6 @@ export function ControlPanel() {
   const [jumlahMixing, setJumlahMixing] = useState(1);
   const [slump, setSlump] = useState(12);
   const [operasiMode, setOperasiMode] = useState('MANUAL');
-  const [powerOn, setPowerOn] = useState(true);
 
   useEffect(() => {
     const volumePerMix = 3.5;
@@ -45,7 +49,7 @@ export function ControlPanel() {
         <CardContent className="pt-6 space-y-4">
           <div>
             <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
-            <Select value={mutuBeton} onValueChange={setMutuBeton}>
+            <Select value={mutuBeton} onValueChange={setMutuBeton} disabled={!powerOn}>
               <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="k225">K225</SelectItem>
@@ -56,11 +60,11 @@ export function ControlPanel() {
           </div>
           <div>
             <Label htmlFor="nama-pelanggan" className="text-xs text-muted-foreground">NAMA PELANGGAN</Label>
-             <Input id="nama-pelanggan" placeholder="Masukkan nama pelanggan" value={namaPelanggan} onChange={e => setNamaPelanggan(e.target.value)} />
+             <Input id="nama-pelanggan" placeholder="Masukkan nama pelanggan" value={namaPelanggan} onChange={e => setNamaPelanggan(e.target.value)} disabled={!powerOn} />
           </div>
           <div>
             <Label htmlFor="lokasi-proyek" className="text-xs text-muted-foreground">LOKASI PROYEK</Label>
-             <Input id="lokasi-proyek" placeholder="Masukkan lokasi proyek" value={lokasiProyek} onChange={e => setLokasiProyek(e.target.value)} />
+             <Input id="lokasi-proyek" placeholder="Masukkan lokasi proyek" value={lokasiProyek} onChange={e => setLokasiProyek(e.target.value)} disabled={!powerOn} />
           </div>
         </CardContent>
       </Card>
@@ -69,7 +73,7 @@ export function ControlPanel() {
         <CardContent className="pt-6 space-y-4">
            <div>
             <Label htmlFor="target-volume" className="text-xs text-muted-foreground">TARGET VOLUME (M³)</Label>
-            <Input id="target-volume" type="number" value={targetVolume} onChange={(e) => setTargetVolume(Number(e.target.value) > 0 ? Number(e.target.value) : 0)} min="0" />
+            <Input id="target-volume" type="number" value={targetVolume} onChange={(e) => setTargetVolume(Number(e.target.value) > 0 ? Number(e.target.value) : 0)} min="0" disabled={!powerOn} />
           </div>
            <div>
             <Label htmlFor="jumlah-mixing" className="text-xs text-muted-foreground">JUMLAH MIXING</Label>
@@ -78,7 +82,7 @@ export function ControlPanel() {
           </div>
           <div>
             <Label htmlFor="slump" className="text-xs text-muted-foreground">SLUMP (CM)</Label>
-            <Input id="slump" type="number" value={slump} onChange={(e) => setSlump(Number(e.target.value))} />
+            <Input id="slump" type="number" value={slump} onChange={(e) => setSlump(Number(e.target.value))} disabled={!powerOn}/>
           </div>
         </CardContent>
       </Card>
@@ -88,14 +92,14 @@ export function ControlPanel() {
         <CardContent className="pt-6 space-y-2">
            <div className="text-center text-primary uppercase text-sm tracking-wider font-semibold mb-2">Mode Operasi</div>
            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => setOperasiMode('MANUAL')} variant={operasiMode === 'MANUAL' ? 'default' : 'secondary'} className="font-bold">MANUAL</Button>
-              <Button onClick={() => setOperasiMode('AUTO')} variant={operasiMode === 'AUTO' ? 'default' : 'secondary'} className="font-bold">AUTO</Button>
+              <Button onClick={() => setOperasiMode('MANUAL')} variant={operasiMode === 'MANUAL' ? 'default' : 'secondary'} className="font-bold" disabled={!powerOn}>MANUAL</Button>
+              <Button onClick={() => setOperasiMode('AUTO')} variant={operasiMode === 'AUTO' ? 'default' : 'secondary'} className="font-bold" disabled={!powerOn}>AUTO</Button>
            </div>
            <div className="text-center text-primary uppercase text-sm tracking-wider font-semibold pt-4 mb-2">Kontrol Proses</div>
            <div className="grid grid-cols-3 gap-2">
-             <Button onClick={() => handleProcessControl('START')} className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs col-span-1">START</Button>
-             <Button onClick={() => handleProcessControl('PAUSE')} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs col-span-1">PAUSE</Button>
-             <Button onClick={() => handleProcessControl('STOP')} className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs col-span-1">STOP</Button>
+             <Button onClick={() => handleProcessControl('START')} className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs col-span-1" disabled={!powerOn}>START</Button>
+             <Button onClick={() => handleProcessControl('PAUSE')} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs col-span-1" disabled={!powerOn}>PAUSE</Button>
+             <Button onClick={() => handleProcessControl('STOP')} className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs col-span-1" disabled={!powerOn}>STOP</Button>
            </div>
             <Button 
               onMouseDown={() => handleKlaksonPress(true)} 
@@ -104,10 +108,11 @@ export function ControlPanel() {
               onTouchStart={() => handleKlaksonPress(true)}
               onTouchEnd={() => handleKlaksonPress(false)}
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold"
+              disabled={!powerOn}
             >
               KLAKSON
             </Button>
-            <Button onClick={() => setPowerOn(!powerOn)} className={cn("w-full font-bold", powerOn ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white")}>
+            <Button onClick={() => setPowerOn(!powerOn)} className={cn("w-full font-bold", powerOn ? "bg-green-600 hover:bg-green-700 text-white blink" : "bg-red-600 hover:bg-red-700 text-white")}>
                 POWER {powerOn ? 'ON' : 'OFF'}
             </Button>
         </CardContent>
