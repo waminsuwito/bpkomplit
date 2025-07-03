@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { WeightDisplayPanel } from './material-inventory';
 import { ControlPanel } from './batch-control';
 import { StatusPanel } from './ai-advisor';
@@ -62,6 +62,10 @@ export function Dashboard() {
   const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('MANUAL');
   const [autoProcessStep, setAutoProcessStep] = useState<AutoProcessStep>('idle');
   const [pausedStep, setPausedStep] = useState<AutoProcessStep>('idle');
+  
+  const [activityLog, setActivityLog] = useState<{ message: string; id: number; color: string; timestamp: string }[]>([]);
+  const prevControlsRef = useRef<ManualControlsState>();
+  const prevAutoStepRef = useRef<AutoProcessStep>();
 
   const handleToggle = useCallback((key: keyof ManualControlsState) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
@@ -107,6 +111,88 @@ export function Dashboard() {
       setSemenWeight(0);
     }
   };
+
+  // Effect for logging activities
+  useEffect(() => {
+    const controlLabels: { [key in keyof Omit<ManualControlsState, 'selectedSilo'>]: { on: string; off: string } } = {
+        pasir1: { on: 'Menimbang Pasir 1 ON', off: 'Penimbangan Pasir 1 Selesai' },
+        pasir2: { on: 'Menimbang Pasir 2 ON', off: 'Penimbangan Pasir 2 Selesai' },
+        batu1: { on: 'Menimbang Batu 1 ON', off: 'Penimbangan Batu 1 Selesai' },
+        batu2: { on: 'Menimbang Batu 2 ON', off: 'Penimbangan Batu 2 Selesai' },
+        airTimbang: { on: 'Mengisi Air Timbang ON', off: 'Pengisian Air Timbang Selesai' },
+        airBuang: { on: 'Membuang Air ON', off: 'Pembuangan Air Selesai' },
+        semenTimbang: { on: 'Menimbang Semen ON', off: 'Penimbangan Semen Selesai' },
+        semen: { on: 'Membuang Semen ON', off: 'Pembuangan Semen Selesai' },
+        pintuBuka: { on: 'Membuka Pintu Mixer', off: 'Pintu Mixer Normal' },
+        pintuTutup: { on: 'Menutup Pintu Mixer', off: 'Pintu Mixer Normal' },
+        konveyor: { on: 'Konveyor ON', off: 'Konveyor OFF' },
+        klakson: { on: 'Klakson ON', off: 'Klakson OFF' },
+    };
+    const autoStepMessages: { [key in AutoProcessStep]: string | null } = {
+        idle: null,
+        paused: 'AUTO: Proses dijeda oleh operator.',
+        'weighing-aggregates': 'AUTO: Menimbang Pasir & Batu...',
+        'weighing-all': 'AUTO: Menimbang Air & Semen...',
+        'weighing-complete': 'AUTO: Penimbangan Selesai. Menunggu...',
+        'discharging-aggregates': 'AUTO: Menuang Pasir & Batu...',
+        'discharging-water': 'AUTO: Menuang Air...',
+        'discharging-all': 'AUTO: Menuang Semen & Mixing...',
+        complete: 'AUTO: Proses Batching Selesai.',
+    };
+    const activityColors = ['text-green-400', 'text-cyan-400', 'text-yellow-400', 'text-orange-400', 'text-pink-400', 'text-violet-400'];
+    
+    const newMessages: { message: string; id: number; color: string; timestamp: string }[] = [];
+
+    const addMessage = (message: string) => {
+        const color = activityColors[(activityLog.length + newMessages.length) % activityColors.length];
+        newMessages.push({
+            message,
+            id: Date.now() + Math.random(),
+            color: color,
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        });
+    };
+
+    const prevControls = prevControlsRef.current;
+    if (operasiMode === 'MANUAL' && prevControls && powerOn) {
+        (Object.keys(controlLabels) as Array<keyof typeof controlLabels>).forEach(key => {
+            if (activeControls[key] !== prevControls[key]) {
+                addMessage(activeControls[key] ? controlLabels[key].on : controlLabels[key].off);
+            }
+        });
+    }
+
+    const prevAutoStep = prevAutoStepRef.current;
+    if (operasiMode === 'AUTO' && prevAutoStep !== autoProcessStep && powerOn) {
+        const message = autoStepMessages[autoProcessStep];
+        if (message) addMessage(message);
+    }
+    
+    if (newMessages.length > 0) {
+        setActivityLog(prev => [...prev, ...newMessages].slice(-30));
+    }
+
+    prevControlsRef.current = activeControls;
+    prevAutoStepRef.current = autoProcessStep;
+  }, [activeControls, autoProcessStep, operasiMode, powerOn]);
+
+  // Effect to clear log on power off or mode change
+  useEffect(() => {
+    if (!powerOn) {
+        setActivityLog([]);
+    } else {
+        const initialMessage = operasiMode === 'AUTO' ? 'Mode AUTO diaktifkan.' : 'Mode MANUAL diaktifkan.';
+        const color = 'text-primary';
+        setActivityLog([{
+            message: initialMessage,
+            id: Date.now(),
+            color,
+            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        }]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [powerOn, operasiMode]);
+
 
   useEffect(() => {
     if (!powerOn) {
@@ -271,9 +357,7 @@ export function Dashboard() {
         </div>
         <div className="col-span-3">
           <StatusPanel 
-            autoProcessStep={autoProcessStep} 
-            operasiMode={operasiMode}
-            activeControls={activeControls}
+            log={activityLog}
           />
         </div>
       </div>
