@@ -70,7 +70,7 @@ export function ControlPanel({
           <div>
             <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
             <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId} disabled={!powerOn}>
-              <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectValue>
+              <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
               <SelectContent>
                 {formulas.map((formula) => (
                   <SelectItem key={formula.id} value={formula.id}>
@@ -128,7 +128,7 @@ export function ControlPanel({
               onMouseUp={() => handleKlaksonPress(false)}
               onMouseLeave={() => handleKlaksonPress(false)}
               onTouchStart={() => handleKlaksonPress(true)}
-              onTouchEnd={() => handleKlaksonPress(false)}
+              onTouchEnd={() => handleKlacsonPress(false)}
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold"
               disabled={!powerOn}
             >
