@@ -92,6 +92,7 @@ export function Dashboard() {
 
     if (action === 'START') {
       if (autoProcessStep === 'idle' || autoProcessStep === 'complete') {
+        setActivityLog([]); // Clear log on new mix
         setAggregateWeight(0);
         setAirWeight(0);
         setSemenWeight(0);
@@ -109,6 +110,7 @@ export function Dashboard() {
       setAggregateWeight(0);
       setAirWeight(0);
       setSemenWeight(0);
+      setActivityLog([]); // Also clear log on stop
     }
   };
 
@@ -290,7 +292,7 @@ export function Dashboard() {
           setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
         }
         if (autoProcessStep === 'discharging-all') {
-          setSemenWeight(prev => Math.max(0, prev - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
+          setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
         }
       }
     }, UPDATE_INTERVAL);
