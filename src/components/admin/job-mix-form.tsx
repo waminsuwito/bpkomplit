@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -26,9 +27,20 @@ const formSchema = z.object({
   semen: z.coerce.number().positive({ message: 'Weight must be a positive number.' }),
 });
 
-export function JobMixForm() {
+export type JobMixValues = z.infer<typeof formSchema>;
+export interface JobMixFormula extends JobMixValues {
+  id: string;
+}
+
+interface JobMixFormProps {
+  onSave: (data: JobMixValues) => void;
+  onCancel: () => void;
+  formulaToEdit: JobMixFormula | null;
+}
+
+export function JobMixForm({ onSave, onCancel, formulaToEdit }: JobMixFormProps) {
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<JobMixValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       mutuBeton: '',
@@ -39,14 +51,31 @@ export function JobMixForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real app, you would save this data to a database.
-    console.log('New Job Mix Formula:', values);
+  useEffect(() => {
+    if (formulaToEdit) {
+      form.reset(formulaToEdit);
+    } else {
+      form.reset({
+        mutuBeton: '',
+        pasir: 0,
+        batu: 0,
+        air: 0,
+        semen: 0,
+      });
+    }
+  }, [formulaToEdit, form]);
+
+  const isEditing = !!formulaToEdit;
+
+  function onSubmit(values: JobMixValues) {
+    onSave(values);
     toast({
-      title: 'Formula Saved',
-      description: `Job mix for ${values.mutuBeton} has been saved successfully.`,
+      title: isEditing ? 'Formula Updated' : 'Formula Saved',
+      description: `Job mix for ${values.mutuBeton} has been ${isEditing ? 'updated' : 'saved'} successfully.`,
     });
-    form.reset();
+    if (!isEditing) {
+      form.reset();
+    }
   }
 
   return (
@@ -121,8 +150,9 @@ export function JobMixForm() {
             )}
             />
         </div>
-        <div className="flex justify-end">
-          <Button type="submit">Save Formula</Button>
+        <div className="flex justify-end gap-2">
+          {isEditing && <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>}
+          <Button type="submit">{isEditing ? 'Update Formula' : 'Save Formula'}</Button>
         </div>
       </form>
     </Form>
