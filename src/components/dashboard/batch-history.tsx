@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function ControlGroup({ title, children, className }: { title: string, children: React.ReactNode, className?: string }) {
@@ -35,52 +35,76 @@ interface ManualControlPanelProps {
     handlePress: (key: keyof ManualControlsState, isPressed: boolean) => void;
 }
 
-export function ManualControlPanel({ activeControls, handleToggle, handlePress }: ManualControlPanelProps) {
+const MomentaryButton = ({ 
+  controlKey, 
+  children, 
+  className, 
+  handlePress, 
+  isActive 
+}: { 
+  controlKey: keyof ManualControlsState, 
+  children: React.ReactNode, 
+  className?: string,
+  handlePress: (key: keyof ManualControlsState, isPressed: boolean) => void,
+  isActive: boolean,
+}) => (
+  <Button
+    onMouseDown={() => handlePress(controlKey, true)}
+    onMouseUp={() => handlePress(controlKey, false)}
+    onMouseLeave={() => handlePress(controlKey, false)}
+    onTouchStart={() => handlePress(controlKey, true)}
+    onTouchEnd={() => handlePress(controlKey, false)}
+    variant={isActive ? 'default' : 'secondary'}
+    className={className}
+  >
+    {children}
+  </Button>
+);
 
-  const MomentaryButton = ({ controlKey, children, className }: { controlKey: keyof ManualControlsState, children: React.ReactNode, className?: string }) => (
-    <Button
-      onMouseDown={() => handlePress(controlKey, true)}
-      onMouseUp={() => handlePress(controlKey, false)}
-      onMouseLeave={() => handlePress(controlKey, false)}
-      onTouchStart={() => handlePress(controlKey, true)}
-      onTouchEnd={() => handlePress(controlKey, false)}
-      variant={activeControls[controlKey] ? 'default' : 'secondary'}
-      className={className}
-    >
-      {children}
-    </Button>
-  );
-  
-  const ToggleButton = ({ controlKey, children, className }: { controlKey: keyof ManualControlsState, children: React.ReactNode, className?: string }) => (
-    <Button 
-      onClick={() => handleToggle(controlKey)}
-      variant={activeControls[controlKey] ? 'default' : 'secondary'}
-      className={className}
-    >
-      {children}
-    </Button>
-  );
+const ToggleButton = ({ 
+  controlKey, 
+  children, 
+  className,
+  handleToggle,
+  isActive
+}: { 
+  controlKey: keyof ManualControlsState, 
+  children: React.ReactNode, 
+  className?: string,
+  handleToggle: (key: keyof ManualControlsState) => void,
+  isActive: boolean,
+}) => (
+  <Button 
+    onClick={() => handleToggle(controlKey)}
+    variant={isActive ? 'default' : 'secondary'}
+    className={className}
+  >
+    {children}
+  </Button>
+);
+
+export function ManualControlPanel({ activeControls, handleToggle, handlePress }: ManualControlPanelProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <ControlGroup title="Aggregate Halus">
-            <MomentaryButton controlKey="pasir1">PASIR 1</MomentaryButton>
-            <MomentaryButton controlKey="pasir2">PASIR 2</MomentaryButton>
+            <MomentaryButton controlKey="pasir1" handlePress={handlePress} isActive={activeControls.pasir1}>PASIR 1</MomentaryButton>
+            <MomentaryButton controlKey="pasir2" handlePress={handlePress} isActive={activeControls.pasir2}>PASIR 2</MomentaryButton>
         </ControlGroup>
 
         <ControlGroup title="Aggregate Kasar">
-            <MomentaryButton controlKey="batu1">BATU 1</MomentaryButton>
-            <MomentaryButton controlKey="batu2">BATU 2</MomentaryButton>
+            <MomentaryButton controlKey="batu1" handlePress={handlePress} isActive={activeControls.batu1}>BATU 1</MomentaryButton>
+            <MomentaryButton controlKey="batu2" handlePress={handlePress} isActive={activeControls.batu2}>BATU 2</MomentaryButton>
         </ControlGroup>
         
         <ControlGroup title="Air">
-            <ToggleButton controlKey="airTimbang">AIR TIMBANG</ToggleButton>
-            <ToggleButton controlKey="airBuang" className={cn("font-bold", activeControls.airBuang && "bg-accent hover:bg-accent/90 text-accent-foreground")}>AIR BUANG</ToggleButton>
+            <ToggleButton controlKey="airTimbang" handleToggle={handleToggle} isActive={activeControls.airTimbang}>AIR TIMBANG</ToggleButton>
+            <ToggleButton controlKey="airBuang" handleToggle={handleToggle} isActive={activeControls.airBuang} className={cn("font-bold", activeControls.airBuang && "bg-accent hover:bg-accent/90 text-accent-foreground")}>AIR BUANG</ToggleButton>
         </ControlGroup>
 
         <ControlGroup title="Semen">
-            <ToggleButton controlKey="silo1">SILO 1</ToggleButton>
-            <ToggleButton controlKey="semen" className={cn("font-bold", activeControls.semen && "bg-accent hover:bg-accent/90 text-accent-foreground")}>SEMEN</ToggleButton>
+            <ToggleButton controlKey="silo1" handleToggle={handleToggle} isActive={activeControls.silo1}>SILO 1</ToggleButton>
+            <ToggleButton controlKey="semen" handleToggle={handleToggle} isActive={activeControls.semen} className={cn("font-bold", activeControls.semen && "bg-accent hover:bg-accent/90 text-accent-foreground")}>SEMEN</ToggleButton>
         </ControlGroup>
 
         <div className="grid grid-rows-3 gap-4">
@@ -88,12 +112,16 @@ export function ManualControlPanel({ activeControls, handleToggle, handlePress }
                 <div className="grid grid-cols-2 gap-2">
                     <MomentaryButton 
                       controlKey="pintuBuka"
+                      handlePress={handlePress}
+                      isActive={activeControls.pintuBuka}
                       className={cn("text-white font-bold text-xs", activeControls.pintuBuka ? 'bg-green-700' : 'bg-green-600 hover:bg-green-700')}
                     >
                       PINTU BUKA
                     </MomentaryButton>
                     <MomentaryButton 
                       controlKey="pintuTutup"
+                      handlePress={handlePress}
+                      isActive={activeControls.pintuTutup}
                       className={cn("text-white font-bold text-xs", activeControls.pintuTutup ? 'bg-red-700' : 'bg-red-600 hover:bg-red-700')}
                     >
                       PINTU TUTUP
@@ -101,10 +129,10 @@ export function ManualControlPanel({ activeControls, handleToggle, handlePress }
                 </div>
             </ControlGroup>
             <ControlGroup title="Konveyor" className="row-span-1">
-                 <ToggleButton controlKey="konveyor" className={cn("font-bold text-xs", activeControls.konveyor && "bg-accent hover:bg-accent/90 text-accent-foreground")}>KONVEYOR</ToggleButton>
+                 <ToggleButton controlKey="konveyor" handleToggle={handleToggle} isActive={activeControls.konveyor} className={cn("font-bold text-xs", activeControls.konveyor && "bg-accent hover:bg-accent/90 text-accent-foreground")}>KONVEYOR</ToggleButton>
             </ControlGroup>
              <ControlGroup title="System" className="row-span-1">
-                 <MomentaryButton controlKey="klakson" className={cn("font-bold text-xs", activeControls.klakson ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")}>KLAKSON</MomentaryButton>
+                 <MomentaryButton controlKey="klakson" handlePress={handlePress} isActive={activeControls.klakson} className={cn("font-bold text-xs", activeControls.klakson ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")}>KLAKSON</MomentaryButton>
             </ControlGroup>
         </div>
     </div>
