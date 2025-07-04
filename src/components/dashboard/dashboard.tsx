@@ -71,6 +71,30 @@ export function Dashboard() {
   const prevControlsRef = useRef<ManualControlsState>();
   const prevAutoStepRef = useRef<AutoProcessStep>();
 
+  const handleSetPowerOn = (isOn: boolean) => {
+    if (!isOn) {
+      // Logic for turning OFF
+      setActiveControls({
+        pasir1: false, pasir2: false, batu1: false, batu2: false,
+        airTimbang: false, airBuang: false,
+        selectedSilo: 'silo1',
+        semenTimbang: false,
+        semen: false,
+        pintuBuka: false, pintuTutup: false, 
+        konveyorBawah: false, 
+        konveyorAtas: false, 
+        klakson: false
+      });
+      setAggregateWeight(0);
+      setAirWeight(0);
+      setSemenWeight(0);
+      setAutoProcessStep('idle');
+      setActivityLog([]);
+    }
+    // Set power state for both ON and OFF
+    setPowerOn(isOn);
+  };
+
   const handleToggle = useCallback((key: keyof ManualControlsState) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
     setActiveControls(prev => {
@@ -188,7 +212,8 @@ export function Dashboard() {
                 ...msg,
                 color: activityColors[(prevLog.length + index) % activityColors.length]
             }));
-            return [...prevLog, ...newLogWithColors].slice(-3);
+            const combinedLog = [...prevLog, ...newLogWithColors];
+            return combinedLog.slice(-3);
         });
     }
 
@@ -196,42 +221,23 @@ export function Dashboard() {
     prevAutoStepRef.current = autoProcessStep;
   }, [activeControls, autoProcessStep, operasiMode, powerOn]);
 
-  // Effect to clear log on power off or mode change
+  // Effect to log mode changes when power is on
   useEffect(() => {
-    if (!powerOn) {
-        setActivityLog([]);
-    } else {
-        const initialMessage = operasiMode === 'AUTO' ? 'Mode AUTO diaktifkan.' : 'Mode MANUAL diaktifkan.';
-        const color = 'text-primary';
-        setActivityLog([{
-            message: initialMessage,
-            id: Date.now(),
-            color,
-            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-        }]);
-    }
+    if (!powerOn) return;
+    const initialMessage = operasiMode === 'AUTO' ? 'Mode AUTO diaktifkan.' : 'Mode MANUAL diaktifkan.';
+    const color = 'text-primary';
+    setActivityLog([{
+        message: initialMessage,
+        id: Date.now(),
+        color,
+        timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    }]);
   }, [powerOn, operasiMode]);
 
 
   // Effect for Manual Mode Weight Simulation
   useEffect(() => {
-    if (!powerOn) {
-      setActiveControls(prev => ({
-        ...prev,
-        pasir1: false, pasir2: false, batu1: false, batu2: false,
-        airTimbang: false, airBuang: false,
-        semenTimbang: false, semen: false,
-        konveyorBawah: false, konveyorAtas: false, klakson: false,
-        pintuBuka: false, pintuTutup: false
-      }));
-      setAggregateWeight(0);
-      setAirWeight(0);
-      setSemenWeight(0);
-      setAutoProcessStep('idle');
-      return;
-    }
-    
-    if (operasiMode !== 'MANUAL') return;
+    if (!powerOn || operasiMode !== 'MANUAL') return;
 
     const interval = setInterval(() => {
       if (activeControls.pasir1 || activeControls.pasir2 || activeControls.batu1 || activeControls.batu2) {
@@ -363,7 +369,7 @@ export function Dashboard() {
         <div className="col-span-9">
           <ControlPanel
             powerOn={powerOn}
-            setPowerOn={setPowerOn}
+            setPowerOn={handleSetPowerOn}
             formulas={formulas}
             setTargetWeights={setTargetWeights}
             operasiMode={operasiMode}
