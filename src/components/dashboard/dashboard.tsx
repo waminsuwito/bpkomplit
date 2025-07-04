@@ -14,7 +14,6 @@ const AIR_RATE = 50;       // kg/s
 const SEMEN_RATE = 100;     // kg/s
 const CONVEYOR_DISCHARGE_RATE = 300; // kg/s
 const UPDATE_INTERVAL = 100; // ms
-const MIXING_DURATION_SECONDS = 60; // seconds
 
 const initialFormulas: JobMixFormula[] = [
   { id: '1', mutuBeton: 'K225', pasir: 765, batu: 1029, air: 215, semen: 371 },
@@ -39,6 +38,7 @@ export function Dashboard() {
   const [semenWeight, setSemenWeight] = useState(0);
   const [powerOn, setPowerOn] = useState(true);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [mixingTime, setMixingTime] = useState(60);
 
   const [formulas] = useState<JobMixFormula[]>(initialFormulas);
   const [targetWeights, setTargetWeights] = useState(() => {
@@ -260,7 +260,7 @@ export function Dashboard() {
   useEffect(() => {
     if (autoProcessStep === 'discharging-all' && powerOn && operasiMode === 'AUTO') {
       if (countdown === null) {
-        setCountdown(MIXING_DURATION_SECONDS);
+        setCountdown(mixingTime);
       }
 
       if (countdown !== null && countdown > 0) {
@@ -274,7 +274,7 @@ export function Dashboard() {
         setCountdown(null);
       }
     }
-  }, [countdown, autoProcessStep, powerOn, operasiMode]);
+  }, [countdown, autoProcessStep, powerOn, operasiMode, mixingTime]);
 
   // 1. Effect for timed state transitions
   useEffect(() => {
@@ -395,7 +395,9 @@ export function Dashboard() {
           <StatusPanel 
             log={activityLog}
             countdown={countdown}
-            mixingTime={MIXING_DURATION_SECONDS}
+            mixingTime={mixingTime}
+            setMixingTime={setMixingTime}
+            disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
           />
         </div>
       </div>
