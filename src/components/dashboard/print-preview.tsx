@@ -86,10 +86,16 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell className="border py-1">Pasir + Batu (Aggregate)</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{targetWeights.aggregate.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{actualWeights.aggregate.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{(actualWeights.aggregate - targetWeights.aggregate).toFixed(1)}</TableCell>
+                    <TableCell className="border py-1">Pasir</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{targetWeights.pasir.toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{actualWeights.pasir.toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{(actualWeights.pasir - targetWeights.pasir).toFixed(1)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="border py-1">Batu</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{targetWeights.batu.toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{actualWeights.batu.toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{(actualWeights.batu - targetWeights.batu).toFixed(1)}</TableCell>
                   </TableRow>
                    <TableRow>
                     <TableCell className="border py-1">Semen</TableCell>

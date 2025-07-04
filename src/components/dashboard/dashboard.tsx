@@ -34,7 +34,8 @@ const initialFormulas: JobMixFormula[] = [
 type AutoProcessStep =
   | 'idle'
   | 'paused'
-  | 'weighing-aggregates'
+  | 'weighing-pasir'
+  | 'weighing-batu'
   | 'weighing-all'
   | 'weighing-complete'
   | 'discharging-aggregates'
@@ -67,7 +68,9 @@ export function Dashboard() {
   });
 
   const [formulas] = useState<JobMixFormula[]>(initialFormulas);
-  const [targetWeights, setTargetWeights] = useState({ aggregate: 0, air: 0, semen: 0 });
+  const [targetWeights, setTargetWeights] = useState({ pasir: 0, batu: 0, air: 0, semen: 0 });
+  const [actualIndividualWeights, setActualIndividualWeights] = useState({ pasir: 0, batu: 0 });
+
   const [jobInfo, setJobInfo] = useState({
     selectedFormulaId: formulas[0]?.id || '',
     namaPelanggan: 'PT. JAYA KONSTRUKSI',
@@ -83,7 +86,8 @@ export function Dashboard() {
     if (selectedFormula) {
       const scaleFactor = jobInfo.targetVolume > 0 ? jobInfo.targetVolume : 0;
       setTargetWeights({
-        aggregate: (selectedFormula.pasir + selectedFormula.batu) * scaleFactor,
+        pasir: selectedFormula.pasir * scaleFactor,
+        batu: selectedFormula.batu * scaleFactor,
         air: selectedFormula.air * scaleFactor,
         semen: selectedFormula.semen * scaleFactor,
       });
@@ -138,6 +142,7 @@ export function Dashboard() {
     setAggregateWeight(0);
     setAirWeight(0);
     setSemenWeight(0);
+    setActualIndividualWeights({ pasir: 0, batu: 0 });
     setWeighingPhases({ aggregate: 'idle', air: 'idle', semen: 'idle' });
     setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
     setTimerMode('idle');
@@ -210,7 +215,7 @@ export function Dashboard() {
         resetAutoProcess();
         setShowPrintPreview(false); // Hide previous print preview
         setWeighingPhases({ aggregate: 'fast', air: 'idle', semen: 'idle' });
-        setAutoProcessStep('weighing-aggregates');
+        setAutoProcessStep('weighing-pasir');
       } else if (autoProcessStep === 'paused') {
         setAutoProcessStep(pausedStep);
       }
@@ -245,8 +250,9 @@ export function Dashboard() {
     const autoStepMessages: { [key in AutoProcessStep]: string | null } = {
         idle: null,
         paused: 'Proses dijeda oleh operator.',
-        'weighing-aggregates': 'Menimbang Pasir & Batu (Cepat)...',
-        'weighing-all': 'Menimbang semua material...',
+        'weighing-pasir': 'Menimbang Pasir...',
+        'weighing-batu': 'Menimbang Batu...',
+        'weighing-all': 'Menimbang Air & Semen...',
         'weighing-complete': 'Penimbangan Selesai. Menunggu...',
         'discharging-aggregates': 'Menuang Pasir & Batu...',
         'discharging-water': 'Menuang Air...',
@@ -288,8 +294,14 @@ export function Dashboard() {
 
     const prevAutoStep = prevAutoStepRef.current;
     if (operasiMode === 'AUTO' && prevAutoStep !== autoProcessStep && powerOn) {
-       if (autoProcessStep === 'weighing-aggregates' && weighingPhases.aggregate === 'jogging') {
-        logActivity('Menimbang Pasir & Batu (Lambat)...');
+       if (weighingPhases.aggregate === 'jogging') {
+        if (autoProcessStep === 'weighing-pasir') {
+          logActivity('Menimbang Pasir (Lambat)...');
+        } else if (autoProcessStep === 'weighing-batu') {
+          logActivity('Menimbang Batu (Lambat)...');
+        } else {
+          logActivity(autoStepMessages[autoProcessStep]);
+        }
       } else {
         logActivity(autoStepMessages[autoProcessStep]);
       }
@@ -355,6 +367,7 @@ export function Dashboard() {
     airWeight,
     semenWeight,
     joggingValues,
+    actualIndividualWeights,
   });
 
   useEffect(() => {
@@ -366,6 +379,7 @@ export function Dashboard() {
       airWeight,
       semenWeight,
       joggingValues,
+      actualIndividualWeights,
     };
   });
 
@@ -448,12 +462,6 @@ export function Dashboard() {
     let timer: NodeJS.Timeout;
 
     switch (autoProcessStep) {
-      case 'weighing-aggregates':
-        timer = setTimeout(() => {
-          setAutoProcessStep('weighing-all');
-          setWeighingPhases(prev => ({...prev, air: 'fast', semen: 'fast' }));
-        }, 2000);
-        break;
       case 'weighing-complete':
         timer = setTimeout(() => setAutoProcessStep('discharging-aggregates'), 3000);
         break;
@@ -494,11 +502,17 @@ export function Dashboard() {
               mutuBeton: selectedFormula?.mutuBeton || 'N/A',
               targetVolume: jobInfo.targetVolume,
               slump: jobInfo.slump,
-              targetWeights: autoProcessStateRef.current.targetWeights,
+              targetWeights: {
+                pasir: autoProcessStateRef.current.targetWeights.pasir,
+                batu: autoProcessStateRef.current.targetWeights.batu,
+                semen: autoProcessStateRef.current.targetWeights.semen,
+                air: autoProcessStateRef.current.targetWeights.air,
+              },
               actualWeights: {
-                  aggregate: aggregateWeight,
-                  air: airWeight,
-                  semen: semenWeight,
+                pasir: autoProcessStateRef.current.actualIndividualWeights.pasir,
+                batu: autoProcessStateRef.current.actualIndividualWeights.batu,
+                semen: autoProcessStateRef.current.semenWeight,
+                air: autoProcessStateRef.current.airWeight,
               },
               timestamp: new Date(),
           });
@@ -508,7 +522,7 @@ export function Dashboard() {
     }
 
     return () => clearTimeout(timer);
-  }, [autoProcessStep, powerOn, operasiMode, formulas, jobInfo, aggregateWeight, airWeight, semenWeight]);
+  }, [autoProcessStep, powerOn, operasiMode, formulas, jobInfo]);
 
   // Effect to manage actuators during auto mode post-mixing sequence
   useEffect(() => {
@@ -563,34 +577,49 @@ export function Dashboard() {
       const now = Date.now();
       const nextPhases = { ...weighingPhases };
       let phaseChanged = false;
-
-      const checkPhase = (
-          material: 'aggregate' | 'air' | 'semen',
-          weight: number,
-          target: number,
-          tolerance: number
-      ) => {
-          const phase = nextPhases[material];
-          const joggingStartWeight = target - joggingValues[material];
-
-          if (phase === 'fast' && weight >= joggingStartWeight) {
-              nextPhases[material] = 'paused';
-              pauseStartTimeRef.current[material] = now;
-              phaseChanged = true;
-          } else if (phase === 'paused' && now - pauseStartTimeRef.current[material] > WEIGHING_PAUSE_S * 1000) {
-              nextPhases[material] = 'jogging';
-              phaseChanged = true;
-          } else if (phase === 'jogging' && weight >= target - tolerance) {
-              nextPhases[material] = 'done';
-              phaseChanged = true;
-          }
-      };
       
       if (autoProcessStep.startsWith('weighing-')) {
-          if (nextPhases.aggregate !== 'done') checkPhase('aggregate', aggregateWeight, targetWeights.aggregate, AGGREGATE_TOLERANCE_KG);
+          if (nextPhases.aggregate !== 'done' && (autoProcessStep === 'weighing-pasir' || autoProcessStep === 'weighing-batu')) {
+              const currentTarget = autoProcessStep === 'weighing-pasir' 
+                  ? targetWeights.pasir 
+                  : targetWeights.pasir + targetWeights.batu;
+              
+              const joggingStartWeight = currentTarget - joggingValues.aggregate;
+
+              if (nextPhases.aggregate === 'fast' && aggregateWeight >= joggingStartWeight) {
+                  nextPhases.aggregate = 'paused';
+                  pauseStartTimeRef.current.aggregate = now;
+                  phaseChanged = true;
+              } else if (nextPhases.aggregate === 'paused' && now - pauseStartTimeRef.current.aggregate > WEIGHING_PAUSE_S * 1000) {
+                  nextPhases.aggregate = 'jogging';
+                  phaseChanged = true;
+              } else if (nextPhases.aggregate === 'jogging' && aggregateWeight >= currentTarget - AGGREGATE_TOLERANCE_KG) {
+                  nextPhases.aggregate = 'done';
+                  phaseChanged = true;
+              }
+          }
+
           if (autoProcessStep === 'weighing-all') {
-              if (nextPhases.air !== 'done') checkPhase('air', airWeight, targetWeights.air, AIR_TOLERANCE_KG);
-              if (nextPhases.semen !== 'done') checkPhase('semen', semenWeight, targetWeights.semen, SEMEN_TOLERANCE_KG);
+              if (nextPhases.air !== 'done') {
+                const joggingStartWeight = targetWeights.air - joggingValues.air;
+                if (nextPhases.air === 'fast' && airWeight >= joggingStartWeight) {
+                  nextPhases.air = 'paused'; pauseStartTimeRef.current.air = now; phaseChanged = true;
+                } else if (nextPhases.air === 'paused' && now - pauseStartTimeRef.current.air > WEIGHING_PAUSE_S * 1000) {
+                  nextPhases.air = 'jogging'; phaseChanged = true;
+                } else if (nextPhases.air === 'jogging' && airWeight >= targetWeights.air - AIR_TOLERANCE_KG) {
+                  nextPhases.air = 'done'; phaseChanged = true;
+                }
+              }
+              if (nextPhases.semen !== 'done') {
+                const joggingStartWeight = targetWeights.semen - joggingValues.semen;
+                if (nextPhases.semen === 'fast' && semenWeight >= joggingStartWeight) {
+                  nextPhases.semen = 'paused'; pauseStartTimeRef.current.semen = now; phaseChanged = true;
+                } else if (nextPhases.semen === 'paused' && now - pauseStartTimeRef.current.semen > WEIGHING_PAUSE_S * 1000) {
+                  nextPhases.semen = 'jogging'; phaseChanged = true;
+                } else if (nextPhases.semen === 'jogging' && semenWeight >= targetWeights.semen - SEMEN_TOLERANCE_KG) {
+                  nextPhases.semen = 'done'; phaseChanged = true;
+                }
+              }
           }
       }
       
@@ -598,12 +627,20 @@ export function Dashboard() {
           setWeighingPhases(nextPhases);
       }
       
-      if (
-          autoProcessStep === 'weighing-all' &&
-          nextPhases.aggregate === 'done' &&
-          nextPhases.air === 'done' &&
-          nextPhases.semen === 'done'
-      ) {
+      // --- Step Transition Logic ---
+      if (autoProcessStep === 'weighing-pasir' && nextPhases.aggregate === 'done') {
+          setActualIndividualWeights({ pasir: aggregateWeight, batu: 0 });
+          setWeighingPhases(prev => ({ ...prev, aggregate: 'fast' })); // Reset for batu
+          setAutoProcessStep('weighing-batu');
+          return;
+      }
+      if (autoProcessStep === 'weighing-batu' && nextPhases.aggregate === 'done') {
+          setActualIndividualWeights(prev => ({ ...prev, batu: aggregateWeight - prev.pasir }));
+          setWeighingPhases(prev => ({ ...prev, aggregate: 'idle', air: 'fast', semen: 'fast' }));
+          setAutoProcessStep('weighing-all');
+          return;
+      }
+      if (autoProcessStep === 'weighing-all' && nextPhases.air === 'done' && nextPhases.semen === 'done') {
           setAutoProcessStep('weighing-complete');
           return;
       }
@@ -615,14 +652,19 @@ export function Dashboard() {
       }
 
       // --- Weight Simulation Logic (uses nextPhases to react immediately) ---
-      if (nextPhases.aggregate === 'fast') setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
-      if (nextPhases.aggregate === 'jogging' && isJoggingOn) setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
+      if (nextPhases.aggregate === 'fast' || (nextPhases.aggregate === 'jogging' && isJoggingOn)) {
+          if (autoProcessStep === 'weighing-pasir' || autoProcessStep === 'weighing-batu') {
+            setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
+          }
+      }
 
-      if (nextPhases.air === 'fast') setAirWeight(w => w + AIR_RATE * (UPDATE_INTERVAL / 1000));
-      if (nextPhases.air === 'jogging' && isJoggingOn) setAirWeight(w => w + AIR_RATE * (UPDATE_INTERVAL / 1000));
+      if (nextPhases.air === 'fast' || (nextPhases.air === 'jogging' && isJoggingOn)) {
+          setAirWeight(w => w + AIR_RATE * (UPDATE_INTERVAL / 1000));
+      }
 
-      if (nextPhases.semen === 'fast') setSemenWeight(w => w + SEMEN_RATE * (UPDATE_INTERVAL / 1000));
-      if (nextPhases.semen === 'jogging' && isJoggingOn) setSemenWeight(w => w + SEMEN_RATE * (UPDATE_INTERVAL / 1000));
+      if (nextPhases.semen === 'fast' || (nextPhases.semen === 'jogging' && isJoggingOn)) {
+        setSemenWeight(w => w + SEMEN_RATE * (UPDATE_INTERVAL / 1000));
+      }
 
       // Discharging simulation
       if (autoProcessStep.startsWith('discharging-')) {
@@ -648,7 +690,7 @@ export function Dashboard() {
             aggregateWeight={aggregateWeight}
             airWeight={airWeight}
             semenWeight={semenWeight}
-            targetAggregate={targetWeights.aggregate}
+            targetAggregate={targetWeights.pasir + targetWeights.batu}
             targetAir={targetWeights.air}
             targetSemen={targetWeights.semen}
             joggingValues={joggingValues}
