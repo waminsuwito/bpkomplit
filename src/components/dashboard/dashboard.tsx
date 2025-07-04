@@ -87,6 +87,7 @@ export function Dashboard() {
     air: WeighingPhase;
     semen: WeighingPhase;
   }>({ aggregate: 'idle', air: 'idle', semen: 'idle' });
+
   const pauseStartTimeRef = useRef({ aggregate: 0, air: 0, semen: 0 });
   const jogTickRef = useRef(0);
   
@@ -282,6 +283,26 @@ export function Dashboard() {
   }, [powerOn, operasiMode, activeControls]);
 
   // --- AUTO MODE EFFECTS ---
+  
+  const autoProcessStateRef = useRef({
+    autoProcessStep,
+    weighingPhases,
+    targetWeights,
+    aggregateWeight,
+    airWeight,
+    semenWeight,
+  });
+
+  useEffect(() => {
+    autoProcessStateRef.current = {
+      autoProcessStep,
+      weighingPhases,
+      targetWeights,
+      aggregateWeight,
+      airWeight,
+      semenWeight,
+    };
+  });
 
   // Effect for Countdown timer
   useEffect(() => {
@@ -309,7 +330,7 @@ export function Dashboard() {
     }
   }, [countdown, autoProcessStep, powerOn, operasiMode, mixingTime, aggregateWeight, airWeight, semenWeight]);
 
-  // 1. Effect for timed state transitions (mostly for discharge sequence)
+  // Effect for timed state transitions (mostly for discharge sequence)
   useEffect(() => {
     if (!powerOn || operasiMode !== 'AUTO' || autoProcessStep === 'paused' || autoProcessStep === 'idle') return;
 
@@ -336,92 +357,99 @@ export function Dashboard() {
     return () => clearTimeout(timer);
   }, [autoProcessStep, powerOn, operasiMode]);
 
-  // 2. Effect for weight & discharge simulation
+  // Combined Effect for weight simulation AND phase transitions
   useEffect(() => {
-    if (!powerOn || operasiMode !== 'AUTO' || ['idle', 'paused', 'complete'].includes(autoProcessStep)) {
-      return;
-    }
-
     const interval = setInterval(() => {
+      const { 
+        autoProcessStep, 
+        weighingPhases, 
+        targetWeights,
+        aggregateWeight,
+        airWeight,
+        semenWeight
+      } = autoProcessStateRef.current;
+
+      if (!powerOn || operasiMode !== 'AUTO' || ['idle', 'paused', 'complete'].includes(autoProcessStep)) {
+        return;
+      }
+      
       jogTickRef.current = (jogTickRef.current + UPDATE_INTERVAL) % (JOG_UPDATE_INTERVAL_MS * 2);
       const isJoggingOn = jogTickRef.current < JOG_UPDATE_INTERVAL_MS;
 
-      // Weighing simulation
-      if (weighingPhases.aggregate === 'fast') setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
-      if (weighingPhases.aggregate === 'jogging' && isJoggingOn) setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
+      // --- Phase Transition Logic ---
+      const now = Date.now();
+      const nextPhases = { ...weighingPhases };
+      let phaseChanged = false;
 
-      if (weighingPhases.air === 'fast') setAirWeight(w => w + AIR_RATE * (UPDATE_INTERVAL / 1000));
-      if (weighingPhases.air === 'jogging' && isJoggingOn) setAirWeight(w => w + AIR_RATE * (UPDATE_INTERVAL / 1000));
+      const checkPhase = (
+          material: 'aggregate' | 'air' | 'semen',
+          weight: number,
+          target: number,
+          tolerance: number
+      ) => {
+          const phase = nextPhases[material];
+          if (phase === 'fast' && weight >= target * FAST_FILL_TARGET_PERCENT) {
+              nextPhases[material] = 'paused';
+              pauseStartTimeRef.current[material] = now;
+              phaseChanged = true;
+          } else if (phase === 'paused' && now - pauseStartTimeRef.current[material] > WEIGHING_PAUSE_S * 1000) {
+              nextPhases[material] = 'jogging';
+              phaseChanged = true;
+          } else if (phase === 'jogging' && weight >= target - tolerance) {
+              nextPhases[material] = 'done';
+              phaseChanged = true;
+              if (material === 'aggregate') setAggregateWeight(target);
+              if (material === 'air') setAirWeight(target);
+              if (material === 'semen') setSemenWeight(target);
+          }
+      };
+      
+      if (autoProcessStep.startsWith('weighing-')) {
+          if (nextPhases.aggregate !== 'done') checkPhase('aggregate', aggregateWeight, targetWeights.aggregate, AGGREGATE_TOLERANCE_KG);
+          if (autoProcessStep === 'weighing-all') {
+              if (nextPhases.air !== 'done') checkPhase('air', airWeight, targetWeights.air, AIR_TOLERANCE_KG);
+              if (nextPhases.semen !== 'done') checkPhase('semen', semenWeight, targetWeights.semen, SEMEN_TOLERANCE_KG);
+          }
+      }
+      
+      if (phaseChanged) {
+          setWeighingPhases(nextPhases);
+      }
+      
+      if (
+          autoProcessStep === 'weighing-all' &&
+          nextPhases.aggregate === 'done' &&
+          nextPhases.air === 'done' &&
+          nextPhases.semen === 'done'
+      ) {
+          setAutoProcessStep('weighing-complete');
+          return;
+      }
 
-      if (weighingPhases.semen === 'fast') setSemenWeight(w => w + SEMEN_RATE * (UPDATE_INTERVAL / 1000));
-      if (weighingPhases.semen === 'jogging' && isJoggingOn) setSemenWeight(w => w + SEMEN_RATE * (UPDATE_INTERVAL / 1000));
+      // --- Weight Simulation Logic (uses nextPhases to react immediately) ---
+      if (nextPhases.aggregate === 'fast') setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
+      if (nextPhases.aggregate === 'jogging' && isJoggingOn) setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
+
+      if (nextPhases.air === 'fast') setAirWeight(w => w + AIR_RATE * (UPDATE_INTERVAL / 1000));
+      if (nextPhases.air === 'jogging' && isJoggingOn) setAirWeight(w => w + AIR_RATE * (UPDATE_INTERVAL / 1000));
+
+      if (nextPhases.semen === 'fast') setSemenWeight(w => w + SEMEN_RATE * (UPDATE_INTERVAL / 1000));
+      if (nextPhases.semen === 'jogging' && isJoggingOn) setSemenWeight(w => w + SEMEN_RATE * (UPDATE_INTERVAL / 1000));
 
       // Discharging simulation
       if (autoProcessStep.startsWith('discharging-')) {
-        setAggregateWeight(prev => Math.max(0, prev - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
-        if (autoProcessStep === 'discharging-water' || autoProcessStep === 'discharging-all') {
-          setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
-        }
-        if (autoProcessStep === 'discharging-all') {
-          setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
-        }
+          setAggregateWeight(prev => Math.max(0, prev - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
+          if (autoProcessStep === 'discharging-water' || autoProcessStep === 'discharging-all') {
+            setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
+          }
+          if (autoProcessStep === 'discharging-all') {
+            setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
+          }
       }
     }, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [autoProcessStep, powerOn, operasiMode, weighingPhases]);
-
-  // 3. Effect for weighing phase transitions and completion checks
-  useEffect(() => {
-    if (!powerOn || operasiMode !== 'AUTO' || !autoProcessStep.startsWith('weighing-')) return;
-    
-    const now = Date.now();
-    let phaseChanged = false;
-    const nextPhases = {...weighingPhases};
-
-    const checkPhase = (
-        material: 'aggregate' | 'air' | 'semen',
-        weight: number,
-        target: number,
-        tolerance: number
-    ) => {
-        const phase = nextPhases[material];
-        if (phase === 'fast' && weight >= target * FAST_FILL_TARGET_PERCENT) {
-            nextPhases[material] = 'paused';
-            pauseStartTimeRef.current[material] = now;
-            phaseChanged = true;
-        } else if (phase === 'paused' && now - pauseStartTimeRef.current[material] > WEIGHING_PAUSE_S * 1000) {
-            nextPhases[material] = 'jogging';
-            phaseChanged = true;
-        } else if (phase === 'jogging' && weight >= target - tolerance) {
-            nextPhases[material] = 'done';
-            phaseChanged = true;
-            if (material === 'aggregate') setAggregateWeight(target);
-            if (material === 'air') setAirWeight(target);
-            if (material === 'semen') setSemenWeight(target);
-        }
-    };
-
-    if (nextPhases.aggregate !== 'done') checkPhase('aggregate', aggregateWeight, targetWeights.aggregate, AGGREGATE_TOLERANCE_KG);
-    if (autoProcessStep === 'weighing-all') {
-        if (nextPhases.air !== 'done') checkPhase('air', airWeight, targetWeights.air, AIR_TOLERANCE_KG);
-        if (nextPhases.semen !== 'done') checkPhase('semen', semenWeight, targetWeights.semen, SEMEN_TOLERANCE_KG);
-    }
-    
-    if (phaseChanged) {
-        setWeighingPhases(nextPhases);
-    }
-    
-    // Check for overall completion of weighing
-    if (
-        autoProcessStep === 'weighing-all' &&
-        nextPhases.aggregate === 'done' &&
-        nextPhases.air === 'done' &&
-        nextPhases.semen === 'done'
-    ) {
-        setAutoProcessStep('weighing-complete');
-    }
-  }, [aggregateWeight, airWeight, semenWeight, autoProcessStep, powerOn, operasiMode, targetWeights, weighingPhases]);
+  }, [powerOn, operasiMode]);
 
 
   return (
