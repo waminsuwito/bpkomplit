@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { WeightDisplayPanel } from './material-inventory';
 import { ControlPanel } from './batch-control';
-import { StatusPanel } from './ai-advisor';
+import { StatusPanel, type TimerDisplayState } from './status-panel';
 import { ManualControlPanel, type ManualControlsState } from './batch-history';
 import type { JobMixFormula } from '@/components/admin/job-mix-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,14 +47,20 @@ type AutoProcessStep =
   | 'complete';
 
 type WeighingPhase = 'idle' | 'fast' | 'paused' | 'jogging' | 'done';
+type TimerMode = 'idle' | 'mixing' | 'unloading' | 'closing';
 
 export function Dashboard() {
   const [aggregateWeight, setAggregateWeight] = useState(0);
   const [airWeight, setAirWeight] = useState(0);
   const [semenWeight, setSemenWeight] = useState(0);
   const [powerOn, setPowerOn] = useState(true);
-  const [countdown, setCountdown] = useState<number | null>(null);
   const [mixingTime, setMixingTime] = useState(15);
+  const [timerDisplay, setTimerDisplay] = useState<TimerDisplayState>({
+    value: mixingTime,
+    total: mixingTime,
+    label: 'Waktu Mixing',
+    colorClass: 'text-primary',
+  });
 
   const [formulas] = useState<JobMixFormula[]>(initialFormulas);
   const [targetWeights, setTargetWeights] = useState(() => {
@@ -90,6 +96,7 @@ export function Dashboard() {
   const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('MANUAL');
   const [autoProcessStep, setAutoProcessStep] = useState<AutoProcessStep>('idle');
   const [pausedStep, setPausedStep] = useState<AutoProcessStep>('idle');
+  const [timerMode, setTimerMode] = useState<TimerMode>('idle');
   
   const [activityLog, setActivityLog] = useState<{ message: string; id: number; color: string; timestamp: string }[]>([]);
   
@@ -112,8 +119,8 @@ export function Dashboard() {
     setAirWeight(0);
     setSemenWeight(0);
     setWeighingPhases({ aggregate: 'idle', air: 'idle', semen: 'idle' });
-    setCountdown(null);
-  }, []);
+    setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
+  }, [mixingTime]);
 
   const handleSetPowerOn = (isOn: boolean) => {
     setPowerOn(isOn);
@@ -333,27 +340,67 @@ export function Dashboard() {
     };
   });
 
-  // Effect for Countdown timer
+  // Effect for setting timer display based on auto process step
   useEffect(() => {
-    if (autoProcessStep === 'mixing' && powerOn && operasiMode === 'AUTO') {
-      if (countdown === null) {
-        setCountdown(mixingTime);
+    if (!powerOn || operasiMode !== 'AUTO' || autoProcessStep === 'paused') {
+      if (autoProcessStep === 'idle' || autoProcessStep === 'complete' || !powerOn) {
+         setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
+         setTimerMode('idle');
       }
+      return;
+    };
 
-      if (countdown !== null && countdown > 0) {
-        const timer = setTimeout(() => {
-          setCountdown(c => (c !== null ? c - 1 : null));
-        }, 1000);
-        return () => clearTimeout(timer);
-      } else if (countdown === 0) {
-        setAutoProcessStep('unloading_door_open_1');
-      }
-    } else {
-      if (countdown !== null) {
-        setCountdown(null);
-      }
+    switch (autoProcessStep) {
+      case 'mixing':
+        setTimerMode('mixing');
+        setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
+        break;
+      case 'unloading_door_open_1':
+        if (timerMode !== 'unloading') {
+          setTimerMode('unloading');
+          const totalUnloadTime = 2 + 5 + 2 + 10; // open1 + pause1 + open2 + pause2
+          setTimerDisplay({ value: 0, total: totalUnloadTime, label: 'Pintu Mixer Buka', colorClass: 'text-destructive' });
+        }
+        break;
+      case 'unloading_door_close':
+        if (timerMode !== 'closing') {
+          setTimerMode('closing');
+          const totalCloseTime = 5;
+          setTimerDisplay({ value: totalCloseTime, total: totalCloseTime, label: 'Pintu Mixer Tutup', colorClass: 'text-success' });
+        }
+        break;
+      case 'complete':
+      case 'idle':
+        setTimerMode('idle');
+        setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
+        break;
     }
-  }, [countdown, autoProcessStep, powerOn, operasiMode, mixingTime]);
+  }, [autoProcessStep, powerOn, operasiMode, mixingTime, timerMode]);
+  
+  // Effect for running the timer every second
+  useEffect(() => {
+    if (timerMode === 'idle' || autoProcessStep === 'paused' || autoProcessStep === 'idle' || !powerOn) return;
+
+    const timer = setInterval(() => {
+        setTimerDisplay(prev => {
+            if (timerMode === 'mixing' || timerMode === 'closing') { // Countdown
+                const newValue = prev.value - 1;
+                if (newValue < 0) {
+                  if (timerMode === 'mixing') setAutoProcessStep('unloading_door_open_1');
+                  return prev;
+                }
+                return { ...prev, value: newValue };
+            } else if (timerMode === 'unloading') { // Count-up
+                const newValue = prev.value + 1;
+                if (newValue > prev.total) return prev;
+                return { ...prev, value: newValue };
+            }
+            return prev;
+        });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timerMode, autoProcessStep, powerOn]);
 
   // Effect for timed state transitions (discharge sequence and unload sequence)
   useEffect(() => {
@@ -565,7 +612,7 @@ export function Dashboard() {
         <div className="col-span-3">
           <StatusPanel 
             log={activityLog}
-            countdown={countdown}
+            timerDisplay={timerDisplay}
             mixingTime={mixingTime}
             setMixingTime={setMixingTime}
             disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
