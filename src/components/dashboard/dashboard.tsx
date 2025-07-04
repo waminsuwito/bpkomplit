@@ -583,9 +583,6 @@ export function Dashboard() {
           } else if (phase === 'jogging' && weight >= target - tolerance) {
               nextPhases[material] = 'done';
               phaseChanged = true;
-              if (material === 'aggregate') setAggregateWeight(target);
-              if (material === 'air') setAirWeight(target);
-              if (material === 'semen') setSemenWeight(target);
           }
       };
       
