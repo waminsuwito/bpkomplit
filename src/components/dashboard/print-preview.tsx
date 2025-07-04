@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import Image from 'next/image';
 
@@ -16,7 +16,7 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
     window.print();
   };
   
-  if (!data) return null;
+  if (!data || !data.startTime || !data.endTime) return null;
 
   const {
     namaPelanggan,
@@ -26,9 +26,13 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
     slump,
     targetWeights,
     actualWeights,
-    timestamp,
+    startTime,
+    endTime,
     jobId
   } = data;
+
+  const totalTarget = Object.values<number>(targetWeights).reduce((sum, val) => sum + val, 0);
+  const totalActual = Object.values<number>(actualWeights).reduce((sum, val) => sum + val, 0);
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
@@ -51,8 +55,9 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
             </div>
             <div className="text-right text-xs">
               <p><span className="font-bold">Job Order</span>: <span className="font-mono">{jobId}</span></p>
-              <p><span className="font-bold">Tanggal</span>: <span className="font-mono">{new Date(timestamp).toLocaleDateString('id-ID')}</span></p>
-              <p><span className="font-bold">Waktu</span>: <span className="font-mono">{new Date(timestamp).toLocaleTimeString('id-ID')}</span></p>
+              <p><span className="font-bold">Tanggal</span>: <span className="font-mono">{new Date(startTime).toLocaleDateString('id-ID')}</span></p>
+              <p><span className="font-bold">Waktu Mulai</span>: <span className="font-mono">{new Date(startTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span></p>
+              <p><span className="font-bold">Waktu Selesai</span>: <span className="font-mono">{new Date(endTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span></p>
             </div>
           </header>
 
@@ -110,6 +115,14 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
                     <TableCell className="text-right border py-1 font-mono">{(actualWeights.air - targetWeights.air).toFixed(1)}</TableCell>
                   </TableRow>
                 </TableBody>
+                <TableFooter>
+                  <TableRow className="font-bold bg-gray-100">
+                    <TableCell className="border py-1">Total</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{totalTarget.toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{totalActual.toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{(totalActual - totalTarget).toFixed(1)}</TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           </main>
