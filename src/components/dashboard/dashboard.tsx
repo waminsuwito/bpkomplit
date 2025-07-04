@@ -73,18 +73,23 @@ export function Dashboard() {
 
   const handleToggle = useCallback((key: keyof ManualControlsState) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
-    const currentValue = activeControls[key];
-    if (typeof currentValue === 'boolean') {
-      setActiveControls(prev => ({ ...prev, [key]: !currentValue }));
-    }
-  }, [powerOn, operasiMode, activeControls]);
+    setActiveControls(prev => {
+      if (typeof prev[key] === 'boolean') {
+        return { ...prev, [key]: !prev[key] };
+      }
+      return prev;
+    });
+  }, [powerOn, operasiMode]);
 
   const handlePress = useCallback((key: keyof ManualControlsState, isPressed: boolean) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
-    if (activeControls[key] !== isPressed) {
-      setActiveControls(prev => ({ ...prev, [key]: isPressed }));
-    }
-  }, [powerOn, operasiMode, activeControls]);
+    setActiveControls(prev => {
+      if (prev[key] !== isPressed) {
+        return { ...prev, [key]: isPressed };
+      }
+      return prev;
+    });
+  }, [powerOn, operasiMode]);
 
   const handleSiloChange = useCallback((silo: string) => {
     if (!powerOn || operasiMode !== 'MANUAL') return;
@@ -201,6 +206,7 @@ export function Dashboard() {
   }, [powerOn, operasiMode]);
 
 
+  // Effect for Manual Mode Weight Simulation
   useEffect(() => {
     if (!powerOn) {
       setActiveControls(prev => ({
@@ -221,28 +227,24 @@ export function Dashboard() {
     if (operasiMode !== 'MANUAL') return;
 
     const interval = setInterval(() => {
-      setActiveControls(prev => {
-        if (prev.pasir1 || prev.pasir2 || prev.batu1 || prev.batu2) {
-          setAggregateWeight(w => w + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000)));
-        }
-        if (prev.konveyorBawah || prev.konveyorAtas) {
-          setAggregateWeight(w => Math.max(0, w - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
-        }
-        if (prev.airTimbang) {
-          setAirWeight(w => w + (AIR_RATE * (UPDATE_INTERVAL / 1000)));
-        }
-        if (prev.airBuang) {
-          setAirWeight(w => Math.max(0, w - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
-        }
-        if (prev.semenTimbang) {
-          setSemenWeight(w => w + (SEMEN_RATE * (UPDATE_INTERVAL / 1000)));
-        }
-        if (prev.semen) {
-          setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
-        }
-        return prev;
-      })
-
+      if (activeControls.pasir1 || activeControls.pasir2 || activeControls.batu1 || activeControls.batu2) {
+        setAggregateWeight(w => w + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000)));
+      }
+      if (activeControls.konveyorBawah || activeControls.konveyorAtas) {
+        setAggregateWeight(w => Math.max(0, w - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
+      }
+      if (activeControls.airTimbang) {
+        setAirWeight(w => w + (AIR_RATE * (UPDATE_INTERVAL / 1000)));
+      }
+      if (activeControls.airBuang) {
+        setAirWeight(w => Math.max(0, w - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
+      }
+      if (activeControls.semenTimbang) {
+        setSemenWeight(w => w + (SEMEN_RATE * (UPDATE_INTERVAL / 1000)));
+      }
+      if (activeControls.semen) {
+        setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
+      }
     }, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
