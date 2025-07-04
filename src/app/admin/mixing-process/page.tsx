@@ -7,9 +7,9 @@ import { MixingProcessForm, type MixingProcessConfig } from '@/components/admin/
 export default function MixingProcessPage() {
   const [mixingProcess, setMixingProcess] = useState<MixingProcessConfig>({
     steps: [
-      { id: 'aggregates', name: 'Pasir & Batu', delay: 7 },
-      { id: 'water', name: 'Air', delay: 3 },
-      { id: 'semen', name: 'Semen & Mixing', delay: 60 },
+      { id: 'aggregates', name: 'Pasir & Batu', startDelay: 0, actionDelay: 7 },
+      { id: 'water', name: 'Air', startDelay: 0, actionDelay: 3 },
+      { id: 'semen', name: 'Semen & Mixing', startDelay: 0, actionDelay: 60 },
     ],
   });
 
@@ -22,7 +22,9 @@ export default function MixingProcessPage() {
       <Card>
           <CardHeader>
               <CardTitle>Mixing Proses</CardTitle>
-              <CardDescription>Atur urutan dan jeda waktu untuk proses mixing otomatis.</CardDescription>
+              <CardDescription>
+                Atur waktu tunda untuk memulai penimbangan dan jeda antar proses penuangan material untuk fleksibilitas yang lebih tinggi.
+              </CardDescription>
           </CardHeader>
           <CardContent>
               <MixingProcessForm 
