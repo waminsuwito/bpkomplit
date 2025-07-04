@@ -38,8 +38,14 @@ type AutoProcessStep =
   | 'discharging-water'
   | 'discharging-semen'
   | 'mixing'
+  | 'unloading_door_open_1'
+  | 'unloading_pause_1'
+  | 'unloading_door_open_2'
+  | 'unloading_pause_2'
+  | 'unloading_door_close'
+  | 'unloading_klakson'
   | 'complete';
-  
+
 type WeighingPhase = 'idle' | 'fast' | 'paused' | 'jogging' | 'done';
 
 export function Dashboard() {
@@ -110,6 +116,7 @@ export function Dashboard() {
   }, []);
 
   const handleSetPowerOn = (isOn: boolean) => {
+    setPowerOn(isOn);
     if (!isOn) {
       resetAutoProcess();
       setActiveControls({
@@ -125,7 +132,6 @@ export function Dashboard() {
       });
       setActivityLog([]);
     }
-    setPowerOn(isOn);
   };
 
   const handleToggle = useCallback((key: keyof ManualControlsState) => {
@@ -211,6 +217,12 @@ export function Dashboard() {
         'discharging-water': 'Menuang Air...',
         'discharging-semen': 'Menuang Semen...',
         mixing: 'Proses mixing berjalan...',
+        unloading_door_open_1: 'Membuka pintu mixer (tahap 1)...',
+        unloading_pause_1: 'Jeda pengosongan...',
+        unloading_door_open_2: 'Membuka pintu mixer (tahap 2)...',
+        unloading_pause_2: 'Jeda pengosongan akhir...',
+        unloading_door_close: 'Menutup pintu mixer...',
+        unloading_klakson: 'Memberi sinyal proses selesai...',
         complete: 'Proses Batching Selesai.',
     };
     
@@ -334,7 +346,7 @@ export function Dashboard() {
         }, 1000);
         return () => clearTimeout(timer);
       } else if (countdown === 0) {
-        setAutoProcessStep('complete');
+        setAutoProcessStep('unloading_door_open_1');
       }
     } else {
       if (countdown !== null) {
@@ -343,7 +355,7 @@ export function Dashboard() {
     }
   }, [countdown, autoProcessStep, powerOn, operasiMode, mixingTime]);
 
-  // Effect for timed state transitions (mostly for discharge sequence)
+  // Effect for timed state transitions (discharge sequence and unload sequence)
   useEffect(() => {
     if (!powerOn || operasiMode !== 'AUTO' || autoProcessStep === 'paused' || autoProcessStep === 'idle') return;
 
@@ -365,10 +377,58 @@ export function Dashboard() {
       case 'discharging-water':
         timer = setTimeout(() => setAutoProcessStep('discharging-semen'), 10000);
         break;
+      // Unloading sequence
+      case 'unloading_door_open_1':
+        timer = setTimeout(() => setAutoProcessStep('unloading_pause_1'), 2000);
+        break;
+      case 'unloading_pause_1':
+        timer = setTimeout(() => setAutoProcessStep('unloading_door_open_2'), 5000);
+        break;
+      case 'unloading_door_open_2':
+        timer = setTimeout(() => setAutoProcessStep('unloading_pause_2'), 2000);
+        break;
+      case 'unloading_pause_2':
+        timer = setTimeout(() => setAutoProcessStep('unloading_door_close'), 10000);
+        break;
+      case 'unloading_door_close':
+        timer = setTimeout(() => setAutoProcessStep('unloading_klakson'), 5000);
+        break;
+      case 'unloading_klakson':
+        timer = setTimeout(() => setAutoProcessStep('complete'), 2000);
+        break;
     }
 
     return () => clearTimeout(timer);
   }, [autoProcessStep, powerOn, operasiMode]);
+
+  // Effect to manage actuators during auto mode post-mixing sequence
+  useEffect(() => {
+      if (!powerOn || operasiMode !== 'AUTO') {
+          return;
+      }
+      
+      const prevStep = prevAutoStepRef.current;
+      const isUnloadingStep = autoProcessStep.startsWith('unloading');
+      
+      // If we are in an unloading step, set the correct actuators
+      if (isUnloadingStep) {
+          setActiveControls(prev => ({
+              ...prev,
+              pintuBuka: autoProcessStep === 'unloading_door_open_1' || autoProcessStep === 'unloading_door_open_2',
+              pintuTutup: autoProcessStep === 'unloading_door_close',
+              klakson: autoProcessStep === 'unloading_klakson',
+          }));
+      } else if (prevStep && prevStep.startsWith('unloading')) {
+          // If we just transitioned *out* of an unloading step (e.g., to 'complete' or 'idle'),
+          // ensure all unload actuators are turned off.
+          setActiveControls(prev => ({
+              ...prev,
+              pintuBuka: false,
+              pintuTutup: false,
+              klakson: false,
+          }));
+      }
+  }, [autoProcessStep, operasiMode, powerOn]);
 
   // Combined Effect for weight simulation AND phase transitions
   useEffect(() => {
@@ -383,7 +443,7 @@ export function Dashboard() {
         joggingValues
       } = autoProcessStateRef.current;
 
-      if (!powerOn || operasiMode !== 'AUTO' || ['idle', 'paused', 'complete'].includes(autoProcessStep)) {
+      if (!powerOn || operasiMode !== 'AUTO' || ['idle', 'paused', 'complete'].includes(autoProcessStep) || autoProcessStep.startsWith('unloading')) {
         return;
       }
       
