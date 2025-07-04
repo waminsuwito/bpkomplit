@@ -14,6 +14,7 @@ const AIR_RATE = 50;       // kg/s
 const SEMEN_RATE = 100;     // kg/s
 const CONVEYOR_DISCHARGE_RATE = 300; // kg/s
 const UPDATE_INTERVAL = 100; // ms
+const MIXING_DURATION_SECONDS = 60; // seconds
 
 const initialFormulas: JobMixFormula[] = [
   { id: '1', mutuBeton: 'K225', pasir: 765, batu: 1029, air: 215, semen: 371 },
@@ -37,6 +38,7 @@ export function Dashboard() {
   const [airWeight, setAirWeight] = useState(0);
   const [semenWeight, setSemenWeight] = useState(0);
   const [powerOn, setPowerOn] = useState(true);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const [formulas] = useState<JobMixFormula[]>(initialFormulas);
   const [targetWeights, setTargetWeights] = useState(() => {
@@ -74,6 +76,7 @@ export function Dashboard() {
   const handleSetPowerOn = (isOn: boolean) => {
     if (!isOn) {
       // Logic for turning OFF
+      handleProcessControl('STOP');
       setActiveControls({
         pasir1: false, pasir2: false, batu1: false, batu2: false,
         airTimbang: false, airBuang: false,
@@ -85,10 +88,6 @@ export function Dashboard() {
         konveyorAtas: false, 
         klakson: false
       });
-      setAggregateWeight(0);
-      setAirWeight(0);
-      setSemenWeight(0);
-      setAutoProcessStep('idle');
       setActivityLog([]);
     }
     // Set power state for both ON and OFF
@@ -175,55 +174,47 @@ export function Dashboard() {
         'discharging-all': 'Menuang Semen & Mixing...',
         complete: 'Proses Batching Selesai.',
     };
-    const activityColors = ['text-green-400', 'text-cyan-400', 'text-yellow-400', 'text-orange-400', 'text-pink-400', 'text-violet-400'];
     
-    const messagesToLog: { message: string; id: number; color: string; timestamp: string }[] = [];
-
+    const logActivity = (message: string | null) => {
+      if (!message) return;
+      const activityColors = ['text-green-400', 'text-cyan-400', 'text-yellow-400', 'text-orange-400', 'text-pink-400', 'text-violet-400'];
+      setActivityLog(prevLog => {
+        const newEntry = {
+          message,
+          id: Date.now() + Math.random(),
+          color: activityColors[prevLog.length % activityColors.length],
+          timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        };
+        const updatedLog = [...prevLog, newEntry];
+        return updatedLog.slice(-3);
+      });
+    };
+    
     const prevControls = prevControlsRef.current;
     if (operasiMode === 'MANUAL' && prevControls && powerOn) {
-        (Object.keys(controlLabels) as Array<keyof typeof controlLabels>).forEach(key => {
-            if (activeControls[key] !== prevControls[key]) {
-                messagesToLog.push({
-                    message: activeControls[key] ? controlLabels[key].on : controlLabels[key].off,
-                    id: Date.now() + Math.random(),
-                    color: '', // Will be set in the updater function
-                    timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                });
-            }
-        });
+      (Object.keys(controlLabels) as Array<keyof typeof controlLabels>).forEach(key => {
+        if (activeControls[key] !== prevControls[key]) {
+          logActivity(activeControls[key] ? controlLabels[key].on : controlLabels[key].off);
+        }
+      });
     }
 
     const prevAutoStep = prevAutoStepRef.current;
     if (operasiMode === 'AUTO' && prevAutoStep !== autoProcessStep && powerOn) {
-        const message = autoStepMessages[autoProcessStep];
-        if (message) {
-             messagesToLog.push({
-                message,
-                id: Date.now() + Math.random(),
-                color: '', // Will be set in the updater function
-                timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-            });
-        }
+      logActivity(autoStepMessages[autoProcessStep]);
     }
     
-    if (messagesToLog.length > 0) {
-        setActivityLog(prevLog => {
-            const newLogWithColors = messagesToLog.map((msg, index) => ({
-                ...msg,
-                color: activityColors[(prevLog.length + index) % activityColors.length]
-            }));
-            const combinedLog = [...prevLog, ...newLogWithColors];
-            return combinedLog.slice(-3);
-        });
-    }
-
     prevControlsRef.current = activeControls;
     prevAutoStepRef.current = autoProcessStep;
+
   }, [activeControls, autoProcessStep, operasiMode, powerOn]);
 
   // Effect to log mode changes when power is on
   useEffect(() => {
-    if (!powerOn) return;
+    if (!powerOn) {
+        setActivityLog([]);
+        return;
+    };
     const initialMessage = operasiMode === 'AUTO' ? 'Mode AUTO diaktifkan.' : 'Mode MANUAL diaktifkan.';
     const color = 'text-primary';
     setActivityLog([{
@@ -264,6 +255,26 @@ export function Dashboard() {
   }, [powerOn, operasiMode, activeControls]);
 
   // --- AUTO MODE EFFECTS ---
+
+    // Effect for Countdown timer
+  useEffect(() => {
+    if (autoProcessStep === 'discharging-all' && powerOn && operasiMode === 'AUTO') {
+      if (countdown === null) {
+        setCountdown(MIXING_DURATION_SECONDS);
+      }
+
+      if (countdown !== null && countdown > 0) {
+        const timer = setTimeout(() => {
+          setCountdown(c => (c !== null ? c - 1 : null));
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      if (countdown !== null) {
+        setCountdown(null);
+      }
+    }
+  }, [countdown, autoProcessStep, powerOn, operasiMode]);
 
   // 1. Effect for timed state transitions
   useEffect(() => {
@@ -322,7 +333,7 @@ export function Dashboard() {
 
   // 3. Effect for completion checks to trigger state transitions
   useEffect(() => {
-    if (!powerOn || operasiMode !== 'AUTO') return;
+    if (!powerOn || operasiMode !== 'AUTO' || autoProcessStep === 'paused') return;
 
     if (autoProcessStep === 'weighing-all') {
       const isWeighingComplete =
@@ -331,25 +342,28 @@ export function Dashboard() {
         semenWeight >= targetWeights.semen;
 
       if (isWeighingComplete) {
+        // Clamp values to target to avoid overshoot in UI
+        setAggregateWeight(targetWeights.aggregate);
+        setAirWeight(targetWeights.air);
+        setSemenWeight(targetWeights.semen);
         setAutoProcessStep('weighing-complete');
       }
     }
 
-    if (autoProcessStep.startsWith('discharging-')) {
+    if (autoProcessStep === 'discharging-all') {
       const isDischargeComplete =
         aggregateWeight <= 0.1 &&
         airWeight <= 0.1 &&
         semenWeight <= 0.1;
       
-      if (isDischargeComplete) {
-        console.log('Auto batch completed!');
+      if (isDischargeComplete && countdown === 0) {
         setAggregateWeight(0);
         setAirWeight(0);
         setSemenWeight(0);
         setAutoProcessStep('complete');
       }
     }
-  }, [aggregateWeight, airWeight, semenWeight, targetWeights, autoProcessStep, powerOn, operasiMode]);
+  }, [aggregateWeight, airWeight, semenWeight, countdown, targetWeights, autoProcessStep, powerOn, operasiMode]);
 
 
   return (
@@ -380,6 +394,8 @@ export function Dashboard() {
         <div className="col-span-3">
           <StatusPanel 
             log={activityLog}
+            countdown={countdown}
+            mixingTime={MIXING_DURATION_SECONDS}
           />
         </div>
       </div>

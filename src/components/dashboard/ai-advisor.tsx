@@ -5,12 +5,15 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
-interface ActivityPanelProps {
+interface StatusPanelProps {
   log: { message: string; id: number; color: string; timestamp: string }[];
+  countdown: number | null;
+  mixingTime: number;
 }
 
-export function StatusPanel({ log }: ActivityPanelProps) {
+export function StatusPanel({ log, countdown, mixingTime }: StatusPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const circumference = 2 * Math.PI * 42;
 
   // Auto-scroll to the bottom when new logs are added
   useEffect(() => {
@@ -21,12 +24,44 @@ export function StatusPanel({ log }: ActivityPanelProps) {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader>
+      <CardHeader className="items-center p-4">
+        {countdown !== null && (
+            <div className="mb-4">
+                <div className="relative h-28 w-28">
+                    <svg className="h-full w-full" viewBox="0 0 100 100">
+                        {/* Background circle */}
+                        <circle
+                            className="stroke-current text-primary/20"
+                            strokeWidth="8"
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="transparent"
+                        ></circle>
+                        {/* Progress circle */}
+                        <circle
+                            className="stroke-current text-primary transition-all duration-1000 ease-linear"
+                            strokeWidth="8"
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="transparent"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={circumference * (1 - (countdown / mixingTime))}
+                            transform="rotate(-90 50 50)"
+                        ></circle>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-4xl font-bold text-primary font-mono">{countdown}</span>
+                    </div>
+                </div>
+            </div>
+        )}
         <CardTitle className="text-center text-primary uppercase text-sm tracking-wider">
           Aktifitas Berjalan
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col overflow-hidden p-4">
+      <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
         <div ref={scrollRef} className="flex-grow space-y-1.5 overflow-y-auto pr-2">
           {log.length === 0 ? (
              <div className="flex items-center justify-center h-full">
