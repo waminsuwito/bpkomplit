@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { JobMixForm, type JobMixValues, type JobMixFormula } from '@/components/admin/job-mix-form';
 import { JobMixList } from '@/components/admin/job-mix-list';
 import { Separator } from '@/components/ui/separator';
+import { MixingProcessForm, type MixingProcessConfig } from '@/components/admin/mixing-process-form';
 
 const initialFormulas: JobMixFormula[] = [
   { id: '1', mutuBeton: 'K225', pasir: 765, batu: 1029, air: 215, semen: 371 },
@@ -17,6 +18,14 @@ export default function AdminPage() {
   const [formulas, setFormulas] = useState<JobMixFormula[]>(initialFormulas);
   const [formulaToEdit, setFormulaToEdit] = useState<JobMixFormula | null>(null);
 
+  const [mixingProcess, setMixingProcess] = useState<MixingProcessConfig>({
+    steps: [
+      { id: 'aggregates', name: 'Pasir & Batu', delay: 7 },
+      { id: 'water', name: 'Air', delay: 3 },
+      { id: 'semen', name: 'Semen & Mixing', delay: 60 },
+    ],
+  });
+
   const handleSaveFormula = (data: JobMixValues) => {
     if (formulaToEdit) {
       // Update existing formula
@@ -27,6 +36,10 @@ export default function AdminPage() {
       setFormulas([...formulas, newFormula]);
     }
     setFormulaToEdit(null); // Reset edit state
+  };
+
+  const handleSaveMixingProcess = (newProcess: MixingProcessConfig) => {
+    setMixingProcess(newProcess);
   };
 
   const handleEdit = (id: string) => {
@@ -62,6 +75,21 @@ export default function AdminPage() {
                 onCancel={handleCancelEdit}
               />
             </CardContent>
+          </Card>
+
+          <Separator />
+
+          <Card>
+              <CardHeader>
+                  <CardTitle>Mixing Proses</CardTitle>
+                  <CardDescription>Atur urutan dan jeda waktu untuk proses mixing otomatis.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <MixingProcessForm 
+                      process={mixingProcess}
+                      onSave={handleSaveMixingProcess}
+                  />
+              </CardContent>
           </Card>
 
           <Separator />
