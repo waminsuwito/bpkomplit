@@ -69,7 +69,7 @@ export function Dashboard() {
 
   const [formulas] = useState<JobMixFormula[]>(initialFormulas);
   const [targetWeights, setTargetWeights] = useState({ pasir: 0, batu: 0, air: 0, semen: 0 });
-  const [actualIndividualWeights, setActualIndividualWeights] = useState({ pasir: 0, batu: 0 });
+  const [actualMaterialWeights, setActualMaterialWeights] = useState({ pasir: 0, batu: 0, semen: 0, air: 0 });
 
   const [jobInfo, setJobInfo] = useState({
     selectedFormulaId: formulas[0]?.id || '',
@@ -142,7 +142,7 @@ export function Dashboard() {
     setAggregateWeight(0);
     setAirWeight(0);
     setSemenWeight(0);
-    setActualIndividualWeights({ pasir: 0, batu: 0 });
+    setActualMaterialWeights({ pasir: 0, batu: 0, semen: 0, air: 0 });
     setWeighingPhases({ aggregate: 'idle', air: 'idle', semen: 'idle' });
     setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
     setTimerMode('idle');
@@ -367,7 +367,7 @@ export function Dashboard() {
     airWeight,
     semenWeight,
     joggingValues,
-    actualIndividualWeights,
+    actualMaterialWeights,
   });
 
   useEffect(() => {
@@ -379,7 +379,7 @@ export function Dashboard() {
       airWeight,
       semenWeight,
       joggingValues,
-      actualIndividualWeights,
+      actualMaterialWeights,
     };
   });
 
@@ -509,10 +509,10 @@ export function Dashboard() {
                 air: autoProcessStateRef.current.targetWeights.air,
               },
               actualWeights: {
-                pasir: autoProcessStateRef.current.actualIndividualWeights.pasir,
-                batu: autoProcessStateRef.current.actualIndividualWeights.batu,
-                semen: autoProcessStateRef.current.semenWeight,
-                air: autoProcessStateRef.current.airWeight,
+                pasir: autoProcessStateRef.current.actualMaterialWeights.pasir,
+                batu: autoProcessStateRef.current.actualMaterialWeights.batu,
+                semen: autoProcessStateRef.current.actualMaterialWeights.semen,
+                air: autoProcessStateRef.current.actualMaterialWeights.air,
               },
               timestamp: new Date(),
           });
@@ -629,18 +629,23 @@ export function Dashboard() {
       
       // --- Step Transition Logic ---
       if (autoProcessStep === 'weighing-pasir' && nextPhases.aggregate === 'done') {
-          setActualIndividualWeights({ pasir: aggregateWeight, batu: 0 });
+          setActualMaterialWeights(prev => ({ ...prev, pasir: aggregateWeight }));
           setWeighingPhases(prev => ({ ...prev, aggregate: 'fast' })); // Reset for batu
           setAutoProcessStep('weighing-batu');
           return;
       }
       if (autoProcessStep === 'weighing-batu' && nextPhases.aggregate === 'done') {
-          setActualIndividualWeights(prev => ({ ...prev, batu: aggregateWeight - prev.pasir }));
+          setActualMaterialWeights(prev => ({ ...prev, batu: aggregateWeight - prev.pasir }));
           setWeighingPhases(prev => ({ ...prev, aggregate: 'idle', air: 'fast', semen: 'fast' }));
           setAutoProcessStep('weighing-all');
           return;
       }
       if (autoProcessStep === 'weighing-all' && nextPhases.air === 'done' && nextPhases.semen === 'done') {
+          setActualMaterialWeights(prev => ({
+            ...prev,
+            semen: semenWeight,
+            air: airWeight,
+          }));
           setAutoProcessStep('weighing-complete');
           return;
       }
