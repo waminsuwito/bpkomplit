@@ -9,7 +9,7 @@ export default function MixingProcessPage() {
     steps: [
       { id: 'aggregates', name: 'Pasir & Batu', startDelay: 0, actionDelay: 7 },
       { id: 'water', name: 'Air', startDelay: 0, actionDelay: 3 },
-      { id: 'semen', name: 'Semen & Mixing', startDelay: 0, actionDelay: 60 },
+      { id: 'semen', name: 'Semen', startDelay: 0, actionDelay: 60 },
     ],
   });
 
