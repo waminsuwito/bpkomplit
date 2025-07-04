@@ -16,7 +16,6 @@ const CONVEYOR_DISCHARGE_RATE = 300; // kg/s
 const UPDATE_INTERVAL = 100; // ms
 
 // New constants for sophisticated weighing
-const FAST_FILL_TARGET_PERCENT = 0.8; // 80%
 const WEIGHING_PAUSE_S = 2; // seconds
 const JOG_UPDATE_INTERVAL_MS = 400; // ms for on/off cycle during jogging
 const AGGREGATE_TOLERANCE_KG = 10;
@@ -61,6 +60,12 @@ export function Dashboard() {
       };
     }
     return { aggregate: 0, air: 0, semen: 0 };
+  });
+
+  const [joggingValues, setJoggingValues] = useState({
+    aggregate: 200,
+    air: 15,
+    semen: 20,
   });
 
   const [activeControls, setActiveControls] = useState<ManualControlsState>({
@@ -146,6 +151,14 @@ export function Dashboard() {
     if (!powerOn || operasiMode !== 'MANUAL') return;
     setActiveControls(prev => ({ ...prev, selectedSilo: silo }));
   }, [powerOn, operasiMode]);
+
+  const handleJoggingChange = (material: 'aggregate' | 'air' | 'semen', value: number) => {
+    if (!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')) return;
+    setJoggingValues(prev => ({
+        ...prev,
+        [material]: value >= 0 ? value : 0
+    }));
+  };
   
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
     if (!powerOn || operasiMode !== 'AUTO') return;
@@ -291,6 +304,7 @@ export function Dashboard() {
     aggregateWeight,
     airWeight,
     semenWeight,
+    joggingValues,
   });
 
   useEffect(() => {
@@ -301,6 +315,7 @@ export function Dashboard() {
       aggregateWeight,
       airWeight,
       semenWeight,
+      joggingValues,
     };
   });
 
@@ -366,7 +381,8 @@ export function Dashboard() {
         targetWeights,
         aggregateWeight,
         airWeight,
-        semenWeight
+        semenWeight,
+        joggingValues
       } = autoProcessStateRef.current;
 
       if (!powerOn || operasiMode !== 'AUTO' || ['idle', 'paused', 'complete'].includes(autoProcessStep)) {
@@ -388,7 +404,9 @@ export function Dashboard() {
           tolerance: number
       ) => {
           const phase = nextPhases[material];
-          if (phase === 'fast' && weight >= target * FAST_FILL_TARGET_PERCENT) {
+          const joggingStartWeight = target - joggingValues[material];
+
+          if (phase === 'fast' && weight >= joggingStartWeight) {
               nextPhases[material] = 'paused';
               pauseStartTimeRef.current[material] = now;
               phaseChanged = true;
@@ -463,6 +481,9 @@ export function Dashboard() {
             targetAggregate={targetWeights.aggregate}
             targetAir={targetWeights.air}
             targetSemen={targetWeights.semen}
+            joggingValues={joggingValues}
+            onJoggingChange={handleJoggingChange}
+            disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
           />
         </div>
 
