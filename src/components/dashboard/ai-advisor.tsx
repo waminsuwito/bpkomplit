@@ -1,103 +1,134 @@
-import type {Config} from 'tailwindcss';
+'use client';
 
-export default {
-  darkMode: ['class'],
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  theme: {
-    extend: {
-      fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
-        code: ['monospace'],
-      },
-      colors: {
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))',
-        },
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
-        },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
-        },
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-      keyframes: {
-        'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-        },
-        'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
-        },
-      },
-      animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
-      },
-    },
-  },
-  plugins: [require('tailwindcss-animate')],
-} satisfies Config;
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { getAiSuggestions } from '@/lib/actions';
+import type { SuggestMixAdjustmentsInput, SuggestMixAdjustmentsOutput } from '@/ai/flows/suggest-mix-adjustments';
+import { Loader2, Wand2 } from 'lucide-react';
+import { Separator } from '../ui/separator';
+
+export function AiAdvisor() {
+  const [input, setInput] = useState<SuggestMixAdjustmentsInput>({
+    historicalBatchData: 'Batch K225, 20/07/2024: kekuatan 230 kg/cm2. Pasir lebih basah dari biasanya.',
+    currentMaterialQuality: 'Pasir: kadar air 5%. Batu: bersih, ukuran seragam. Semen: baru, kantong tidak rusak.',
+    environmentalFactors: 'Suhu: 32°C, Kelembaban: 85%, cerah.',
+    targetMixProperties: 'K225, slump 12±2 cm, workability baik untuk pemompaan.',
+  });
+  const [suggestion, setSuggestion] = useState<SuggestMixAdjustmentsOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleInputChange = (field: keyof SuggestMixAdjustmentsInput, value: string) => {
+    setInput(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    setSuggestion(null);
+    try {
+      const result = await getAiSuggestions(input);
+      setSuggestion(result);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to get AI suggestions. Please try again.',
+      });
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Wand2 className="text-primary" />
+          <span>AI Mix Advisor</span>
+        </CardTitle>
+        <CardDescription>
+          Get AI-powered suggestions to optimize your concrete mix based on current conditions.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="historical-data">Historical Batch Data</Label>
+              <Textarea
+                id="historical-data"
+                placeholder="e.g., Previous batch results, material performance..."
+                value={input.historicalBatchData}
+                onChange={(e) => handleInputChange('historicalBatchData', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="material-quality">Current Material Quality</Label>
+              <Textarea
+                id="material-quality"
+                placeholder="e.g., Moisture content, purity, particle size..."
+                value={input.currentMaterialQuality}
+                onChange={(e) => handleInputChange('currentMaterialQuality', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="env-factors">Environmental Factors</Label>
+              <Textarea
+                id="env-factors"
+                placeholder="e.g., Temperature, humidity, weather..."
+                value={input.environmentalFactors}
+                onChange={(e) => handleInputChange('environmentalFactors', e.target.value)}
+                rows={3}
+              />
+            </div>
+             <div>
+              <Label htmlFor="target-props">Target Mix Properties</Label>
+              <Textarea
+                id="target-props"
+                placeholder="e.g., Strength, slump, workability..."
+                value={input.targetMixProperties}
+                onChange={(e) => handleInputChange('targetMixProperties', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <Button onClick={handleSubmit} disabled={isLoading} className="w-full">
+              {isLoading ? <Loader2 className="animate-spin" /> : 'Get Suggestions'}
+            </Button>
+          </div>
+          <div className="rounded-lg bg-muted/50 p-4 space-y-4">
+            <h3 className="font-semibold text-center">Saran Penyesuaian</h3>
+            {isLoading && (
+              <div className="flex justify-center items-center h-full">
+                <Loader2 className="animate-spin text-primary h-8 w-8" />
+              </div>
+            )}
+            {suggestion && !isLoading && (
+              <div className="space-y-4 text-sm">
+                <div>
+                  <h4 className="font-semibold text-primary">Penyesuaian yang Disarankan:</h4>
+                  <p className="whitespace-pre-wrap">{suggestion.suggestedAdjustments}</p>
+                </div>
+                <Separator />
+                <div>
+                  <h4 className="font-semibold text-primary">Alasan:</h4>
+                  <p className="whitespace-pre-wrap">{suggestion.rationale}</p>
+                </div>
+              </div>
+            )}
+             {!suggestion && !isLoading && (
+              <div className="flex justify-center items-center h-full">
+                <p className="text-muted-foreground text-center">Your AI suggestions will appear here.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -7,6 +7,9 @@ import { StatusPanel, type TimerDisplayState } from './status-panel';
 import { ManualControlPanel, type ManualControlsState } from './batch-history';
 import type { JobMixFormula } from '@/components/admin/job-mix-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AiAdvisor } from './ai-advisor';
+import { PrintPreview } from './print-preview';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 // Define rates for weight change, units per second
 const AGGREGATE_RATE = 250; // kg/s
@@ -64,17 +67,29 @@ export function Dashboard() {
   });
 
   const [formulas] = useState<JobMixFormula[]>(initialFormulas);
-  const [targetWeights, setTargetWeights] = useState(() => {
-    const firstFormula = formulas[0];
-    if (firstFormula) {
-      return {
-        aggregate: firstFormula.pasir + firstFormula.batu,
-        air: firstFormula.air,
-        semen: firstFormula.semen,
-      };
-    }
-    return { aggregate: 0, air: 0, semen: 0 };
+  const [targetWeights, setTargetWeights] = useState({ aggregate: 0, air: 0, semen: 0 });
+  const [jobInfo, setJobInfo] = useState({
+    selectedFormulaId: formulas[0]?.id || '',
+    namaPelanggan: 'PT. JAYA KONSTRUKSI',
+    lokasiProyek: 'Jalan Sudirman, Pekanbaru',
+    targetVolume: 1.0,
+    jumlahMixing: 1,
+    slump: 12,
   });
+  
+  // Effect to update target weights when formula or volume changes
+  useEffect(() => {
+    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+    if (selectedFormula) {
+      const scaleFactor = jobInfo.targetVolume > 0 ? jobInfo.targetVolume : 0;
+      setTargetWeights({
+        aggregate: (selectedFormula.pasir + selectedFormula.batu) * scaleFactor,
+        air: selectedFormula.air * scaleFactor,
+        semen: selectedFormula.semen * scaleFactor,
+      });
+    }
+  }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, formulas]);
+
 
   const [joggingValues, setJoggingValues] = useState({
     aggregate: 200,
@@ -101,6 +116,10 @@ export function Dashboard() {
   
   const [activityLog, setActivityLog] = useState<{ message: string; id: number; color: string; timestamp: string }[]>([]);
   
+  // Print Preview State
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [completedBatchData, setCompletedBatchData] = useState<any>(null);
+
   // Refs for auto mode logic
   const [weighingPhases, setWeighingPhases] = useState<{
     aggregate: WeighingPhase;
@@ -189,6 +208,7 @@ export function Dashboard() {
       if (autoProcessStep === 'idle' || autoProcessStep === 'complete') {
         setActivityLog([]);
         resetAutoProcess();
+        setShowPrintPreview(false); // Hide previous print preview
         setWeighingPhases({ aggregate: 'fast', air: 'idle', semen: 'idle' });
         setAutoProcessStep('weighing-aggregates');
       } else if (autoProcessStep === 'paused') {
@@ -239,7 +259,7 @@ export function Dashboard() {
         unloading_to_closing_transition: 'Menyiapkan penutupan pintu...',
         unloading_door_close: 'Menutup pintu mixer...',
         unloading_klakson: 'Memberi sinyal proses selesai...',
-        complete: 'Proses Batching Selesai.',
+        complete: 'Proses Batching Selesai. Menampilkan pratinjau cetak...',
     };
     
     const logActivity = (message: string | null) => {
@@ -463,12 +483,32 @@ export function Dashboard() {
         timer = setTimeout(() => setAutoProcessStep('unloading_klakson'), 5000);
         break;
       case 'unloading_klakson':
-        timer = setTimeout(() => setAutoProcessStep('complete'), 2000);
+        timer = setTimeout(() => {
+          setAutoProcessStep('complete');
+          // Prepare and show print preview
+          const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+          setCompletedBatchData({
+              jobId: `JO-${Date.now()}`,
+              namaPelanggan: jobInfo.namaPelanggan,
+              lokasiProyek: jobInfo.lokasiProyek,
+              mutuBeton: selectedFormula?.mutuBeton || 'N/A',
+              targetVolume: jobInfo.targetVolume,
+              slump: jobInfo.slump,
+              targetWeights: autoProcessStateRef.current.targetWeights,
+              actualWeights: {
+                  aggregate: aggregateWeight,
+                  air: airWeight,
+                  semen: semenWeight,
+              },
+              timestamp: new Date(),
+          });
+          setShowPrintPreview(true);
+        }, 2000);
         break;
     }
 
     return () => clearTimeout(timer);
-  }, [autoProcessStep, powerOn, operasiMode]);
+  }, [autoProcessStep, powerOn, operasiMode, formulas, jobInfo, aggregateWeight, airWeight, semenWeight]);
 
   // Effect to manage actuators during auto mode post-mixing sequence
   useEffect(() => {
@@ -625,10 +665,11 @@ export function Dashboard() {
             powerOn={powerOn}
             setPowerOn={handleSetPowerOn}
             formulas={formulas}
-            setTargetWeights={setTargetWeights}
             operasiMode={operasiMode}
             setOperasiMode={setOperasiMode}
             handleProcessControl={handleProcessControl}
+            jobInfo={jobInfo}
+            setJobInfo={setJobInfo}
           />
         </div>
         <div className="col-span-3">
@@ -642,22 +683,34 @@ export function Dashboard() {
         </div>
       </div>
 
-      {operasiMode === 'MANUAL' && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Manual Controls</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ManualControlPanel
-              activeControls={activeControls}
-              handleToggle={handleToggle}
-              handlePress={handlePress}
-              handleSiloChange={handleSiloChange}
-              disabled={!powerOn || operasiMode === 'AUTO'}
+      <div className="space-y-4">
+        {operasiMode === 'MANUAL' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Manual Controls</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ManualControlPanel
+                activeControls={activeControls}
+                handleToggle={handleToggle}
+                handlePress={handlePress}
+                handleSiloChange={handleSiloChange}
+                disabled={!powerOn || operasiMode === 'AUTO'}
+              />
+            </CardContent>
+          </Card>
+        )}
+        <AiAdvisor />
+      </div>
+
+      <Sheet open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <SheetContent className="w-full sm:max-w-4xl p-0">
+            <PrintPreview 
+                data={completedBatchData}
+                onClose={() => setShowPrintPreview(false)} 
             />
-          </CardContent>
-        </Card>
-      )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

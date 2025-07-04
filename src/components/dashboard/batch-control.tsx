@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,49 +14,47 @@ interface ControlPanelProps {
   powerOn: boolean;
   setPowerOn: (on: boolean) => void;
   formulas: JobMixFormula[];
-  setTargetWeights: (weights: { aggregate: number; air: number; semen: number }) => void;
   operasiMode: 'MANUAL' | 'AUTO';
   setOperasiMode: (mode: 'MANUAL' | 'AUTO') => void;
   handleProcessControl: (action: 'START' | 'PAUSE' | 'STOP') => void;
+  
+  // Lifted state
+  jobInfo: {
+    selectedFormulaId: string;
+    namaPelanggan: string;
+    lokasiProyek: string;
+    targetVolume: number;
+    jumlahMixing: number;
+    slump: number;
+  };
+  setJobInfo: (info: React.SetStateAction<ControlPanelProps['jobInfo']>) => void;
 }
 
 export function ControlPanel({
   powerOn,
   setPowerOn,
   formulas,
-  setTargetWeights,
   operasiMode,
   setOperasiMode,
-  handleProcessControl
+  handleProcessControl,
+  jobInfo,
+  setJobInfo,
 }: ControlPanelProps) {
-  const [selectedFormulaId, setSelectedFormulaId] = useState(formulas[0]?.id || '');
-  const [namaPelanggan, setNamaPelanggan] = useState('');
-  const [lokasiProyek, setLokasiProyek] = useState('');
-  const [targetVolume, setTargetVolume] = useState(1.0);
-  const [jumlahMixing, setJumlahMixing] = useState(1);
-  const [slump, setSlump] = useState(12);
+
   const [mixWarning, setMixWarning] = useState('');
 
+  const handleJobInfoChange = <K extends keyof ControlPanelProps['jobInfo']>(key: K, value: ControlPanelProps['jobInfo'][K]) => {
+    setJobInfo(prev => ({ ...prev, [key]: value }));
+  };
+
   useEffect(() => {
-      const volumePerMix = jumlahMixing > 0 ? targetVolume / jumlahMixing : 0;
+      const volumePerMix = jobInfo.jumlahMixing > 0 ? jobInfo.targetVolume / jobInfo.jumlahMixing : 0;
       if (volumePerMix > 3.5) {
           setMixWarning(`Volume per mix (${volumePerMix.toFixed(2)} M³) melebihi kapasitas mixer (3.5 M³).`);
       } else {
           setMixWarning('');
       }
-  }, [targetVolume, jumlahMixing]);
-
-  useEffect(() => {
-    const selectedFormula = formulas.find(f => f.id === selectedFormulaId);
-    if (selectedFormula) {
-      const scaleFactor = targetVolume > 0 ? targetVolume : 0;
-      setTargetWeights({
-        aggregate: (selectedFormula.pasir + selectedFormula.batu) * scaleFactor,
-        air: selectedFormula.air * scaleFactor,
-        semen: selectedFormula.semen * scaleFactor,
-      });
-    }
-  }, [selectedFormulaId, targetVolume, formulas, setTargetWeights]);
+  }, [jobInfo.targetVolume, jobInfo.jumlahMixing]);
 
   const handleKlaksonPress = (isPressed: boolean) => {
     if (isPressed) {
@@ -71,7 +69,11 @@ export function ControlPanel({
         <CardContent className="pt-6 space-y-4">
           <div>
             <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
-            <Select value={selectedFormulaId} onValueChange={setSelectedFormulaId} disabled={!powerOn}>
+            <Select 
+              value={jobInfo.selectedFormulaId} 
+              onValueChange={(value) => handleJobInfoChange('selectedFormulaId', value)} 
+              disabled={!powerOn}
+            >
               <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
               <SelectContent>
                 {formulas.map((formula) => (
@@ -84,11 +86,23 @@ export function ControlPanel({
           </div>
           <div>
             <Label htmlFor="nama-pelanggan" className="text-xs text-muted-foreground">NAMA PELANGGAN</Label>
-             <Input id="nama-pelanggan" placeholder="Masukkan nama pelanggan" value={namaPelanggan} onChange={e => setNamaPelanggan(e.target.value)} disabled={!powerOn} />
+             <Input 
+                id="nama-pelanggan" 
+                placeholder="Masukkan nama pelanggan" 
+                value={jobInfo.namaPelanggan} 
+                onChange={e => handleJobInfoChange('namaPelanggan', e.target.value)} 
+                disabled={!powerOn} 
+            />
           </div>
           <div>
             <Label htmlFor="lokasi-proyek" className="text-xs text-muted-foreground">LOKASI PROYEK</Label>
-             <Input id="lokasi-proyek" placeholder="Masukkan lokasi proyek" value={lokasiProyek} onChange={e => setLokasiProyek(e.target.value)} disabled={!powerOn} />
+             <Input 
+                id="lokasi-proyek" 
+                placeholder="Masukkan lokasi proyek" 
+                value={jobInfo.lokasiProyek} 
+                onChange={e => handleJobInfoChange('lokasiProyek', e.target.value)} 
+                disabled={!powerOn}
+            />
           </div>
         </CardContent>
       </Card>
@@ -100,8 +114,8 @@ export function ControlPanel({
             <Input 
                 id="target-volume" 
                 type="number" 
-                value={targetVolume} 
-                onChange={(e) => setTargetVolume(Number(e.target.value))} 
+                value={jobInfo.targetVolume} 
+                onChange={(e) => handleJobInfoChange('targetVolume', Number(e.target.value))}
                 min="0.5"
                 step="0.1"
                 disabled={!powerOn} 
@@ -112,8 +126,8 @@ export function ControlPanel({
             <Input 
                 id="jumlah-mixing" 
                 type="number" 
-                value={jumlahMixing} 
-                onChange={(e) => setJumlahMixing(Number(e.target.value) > 0 ? Number(e.target.value) : 1)}
+                value={jobInfo.jumlahMixing} 
+                onChange={(e) => handleJobInfoChange('jumlahMixing', Number(e.target.value) > 0 ? Number(e.target.value) : 1)}
                 min="1"
                 disabled={!powerOn} 
             />
@@ -127,7 +141,13 @@ export function ControlPanel({
           </div>
           <div>
             <Label htmlFor="slump" className="text-xs text-muted-foreground">SLUMP (CM)</Label>
-            <Input id="slump" type="number" value={slump} onChange={(e) => setSlump(Number(e.target.value))} disabled={!powerOn}/>
+            <Input 
+                id="slump" 
+                type="number" 
+                value={jobInfo.slump} 
+                onChange={(e) => handleJobInfoChange('slump', Number(e.target.value))} 
+                disabled={!powerOn}
+            />
           </div>
         </CardContent>
       </Card>
