@@ -39,7 +39,7 @@ export function StatusPanel({ log, countdown, mixingTime, setMixingTime, disable
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 rounded-full"
-                        onClick={() => setMixingTime((t: number) => Math.max(5, t - 5))}
+                        onClick={() => setMixingTime((t: number) => Math.max(1, t - 1))}
                         disabled={disabled}
                     >
                         <ChevronDown className="h-4 w-4" />
@@ -50,7 +50,7 @@ export function StatusPanel({ log, countdown, mixingTime, setMixingTime, disable
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 rounded-full"
-                        onClick={() => setMixingTime((t: number) => t + 5)}
+                        onClick={() => setMixingTime((t: number) => t + 1)}
                         disabled={disabled}
                     >
                         <ChevronUp className="h-4 w-4" />
