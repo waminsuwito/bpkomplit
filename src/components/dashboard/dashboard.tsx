@@ -47,7 +47,7 @@ export function Dashboard() {
   const [semenWeight, setSemenWeight] = useState(0);
   const [powerOn, setPowerOn] = useState(true);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [mixingTime, setMixingTime] = useState(60);
+  const [mixingTime, setMixingTime] = useState(15);
 
   const [formulas] = useState<JobMixFormula[]>(initialFormulas);
   const [targetWeights, setTargetWeights] = useState(() => {
