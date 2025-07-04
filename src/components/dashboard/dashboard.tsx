@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiAdvisor } from './ai-advisor';
 import { PrintPreview } from './print-preview';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess } from '@/lib/config';
+import type { MixingProcessConfig, MixingProcessStep } from '@/components/admin/mixing-process-form';
 
 // Define rates for weight change, units per second
 const AGGREGATE_RATE = 250; // kg/s
@@ -38,9 +40,7 @@ type AutoProcessStep =
   | 'weighing-batu'
   | 'weighing-complete'
   | 'wait_for_weighing'
-  | 'discharging-aggregates'
-  | 'discharging-water'
-  | 'discharging-semen'
+  | 'discharging'
   | 'mixing'
   | 'unloading_door_open_1'
   | 'unloading_pause_1'
@@ -54,6 +54,7 @@ type AutoProcessStep =
 
 type WeighingPhase = 'idle' | 'fast' | 'paused' | 'jogging' | 'done';
 type TimerMode = 'idle' | 'mixing' | 'unloading' | 'closing';
+type MaterialDischargeStatus = 'pending' | 'active' | 'done';
 
 export function Dashboard() {
   const [aggregateWeight, setAggregateWeight] = useState(0);
@@ -86,6 +87,8 @@ export function Dashboard() {
     jumlahMixing: 1,
     slump: 12,
   });
+
+  const [mixingProcessConfig, setMixingProcessConfig] = useState<MixingProcessConfig>(defaultMixingProcess);
   
   // Effect to update target weights when formula or volume changes
   useEffect(() => {
@@ -146,11 +149,32 @@ export function Dashboard() {
     semen: WeighingPhase;
   }>({ aggregate: 'idle', air: 'idle', semen: 'idle' });
 
+  const [dischargeStatus, setDischargeStatus] = useState<Record<MixingProcessStep['id'], MaterialDischargeStatus>>({
+    aggregates: 'pending',
+    water: 'pending',
+    semen: 'pending',
+  });
+  
   const pauseStartTimeRef = useRef({ aggregate: 0, air: 0, semen: 0 });
   const jogTickRef = useRef(0);
+  const dischargeClockRef = useRef(0);
+  const dischargeGroupStartTimeRef = useRef(0);
+  const currentDischargeGroupRef = useRef(1);
   
   const prevControlsRef = useRef<ManualControlsState>();
   const prevAutoStepRef = useRef<AutoProcessStep>();
+
+  // Load config from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedProcess = window.localStorage.getItem(MIXING_PROCESS_STORAGE_KEY);
+      if (savedProcess) {
+        setMixingProcessConfig(JSON.parse(savedProcess));
+      }
+    } catch (error) {
+      console.error("Failed to load mixing process config from localStorage", error);
+    }
+  }, []);
   
   const resetAutoProcess = useCallback(() => {
     setAutoProcessStep('idle');
@@ -164,6 +188,10 @@ export function Dashboard() {
     setCurrentMixNumber(1);
     setTotalActualWeights({ pasir: 0, batu: 0, semen: 0, air: 0 });
     setBatchStartTime(null);
+    setDischargeStatus({ aggregates: 'pending', water: 'pending', semen: 'pending' });
+    dischargeClockRef.current = 0;
+    dischargeGroupStartTimeRef.current = 0;
+    currentDischargeGroupRef.current = 1;
     setActiveControls(prev => ({
         ...prev,
         pintuBuka: false,
@@ -273,9 +301,7 @@ export function Dashboard() {
         'weighing-batu': (n, t) => `Menimbang Batu (Mix ${n}/${t})...`,
         'weighing-complete': (n, t) => `Penimbangan Selesai (Mix ${n}/${t}). Menunggu...`,
         wait_for_weighing: (n, t) => `Menunggu penimbangan untuk Mix ${n}/${t} selesai...`,
-        'discharging-aggregates': (n, t) => `Menuang Agregat (Mix ${n}/${t})...`,
-        'discharging-water': (n, t) => `Menuang Air (Mix ${n}/${t})...`,
-        'discharging-semen': (n, t) => `Menuang Semen (Mix ${n}/${t})...`,
+        discharging: (n, t) => `Menuang Material ke Mixer (Mix ${n}/${t})...`,
         mixing: (n, t) => `Proses mixing berjalan (Mix ${n}/${t})...`,
         unloading_door_open_1: (n, t) => `Membuka pintu mixer (Mix ${n}/${t}, tahap 1)...`,
         unloading_pause_1: 'Jeda pengosongan...',
@@ -399,6 +425,7 @@ export function Dashboard() {
     currentMixNumber,
     jobInfo,
     batchStartTime,
+    dischargeStatus,
   });
 
   useEffect(() => {
@@ -414,6 +441,7 @@ export function Dashboard() {
       currentMixNumber,
       jobInfo,
       batchStartTime,
+      dischargeStatus,
     };
   });
 
@@ -502,13 +530,7 @@ export function Dashboard() {
 
     switch (autoProcessStep) {
         case 'weighing-complete':
-            schedule(() => setAutoProcessStep('discharging-aggregates'), 3000);
-            break;
-        case 'discharging-aggregates':
-            schedule(() => setAutoProcessStep('discharging-water'), 7000);
-            break;
-        case 'discharging-water':
-            schedule(() => setAutoProcessStep('discharging-semen'), 10000);
+            schedule(() => setAutoProcessStep('discharging'), 1000); // Wait 1s before starting discharge
             break;
         case 'unloading_door_open_1':
             schedule(() => setAutoProcessStep('unloading_pause_1'), 2000);
@@ -536,7 +558,8 @@ export function Dashboard() {
                 const { weighingPhases } = autoProcessStateRef.current;
                 if (weighingPhases.aggregate === 'done' && weighingPhases.air === 'done' && weighingPhases.semen === 'done') {
                     setCurrentMixNumber(n => n + 1);
-                    setAutoProcessStep('discharging-aggregates');
+                    setDischargeStatus({ aggregates: 'pending', water: 'pending', semen: 'pending' });
+                    setAutoProcessStep('discharging');
                 } else {
                     setAutoProcessStep('wait_for_weighing');
                 }
@@ -706,7 +729,8 @@ export function Dashboard() {
               setActualMaterialWeights(finalMixWeights);
               setTotalActualWeights(prev => ({ pasir: prev.pasir + finalMixWeights.pasir, batu: prev.batu + finalMixWeights.batu, semen: prev.semen + finalMixWeights.semen, air: prev.air + finalMixWeights.air }));
               setCurrentMixNumber(n => n + 1);
-              setAutoProcessStep('discharging-aggregates');
+              setDischargeStatus({ aggregates: 'pending', water: 'pending', semen: 'pending' });
+              setAutoProcessStep('discharging');
               return;
           }
 
@@ -725,36 +749,77 @@ export function Dashboard() {
       }
 
       // --- Discharging Logic ---
-      if (autoProcessStep.startsWith('discharging-')) {
-          setAggregateWeight(prev => Math.max(0, prev - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
-          if (autoProcessStep === 'discharging-water' || autoProcessStep === 'discharging-semen') {
-            setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
-          }
-          if (autoProcessStep === 'discharging-semen') {
-            setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
-          }
+      if (autoProcessStep === 'discharging') {
+        dischargeClockRef.current += UPDATE_INTERVAL;
 
-          const isDischargeFinished = autoProcessStateRef.current.aggregateWeight <= 0.1 && autoProcessStateRef.current.airWeight <= 0.1 && autoProcessStateRef.current.semenWeight <= 0.1;
-          
-          if (autoProcessStep === 'discharging-semen' && isDischargeFinished) {
-            setTimerMode('mixing'); 
-            setAutoProcessStep('mixing');
-            
-            if (currentMixNumber < jobInfo.jumlahMixing) {
-                // Start weighing the next one in parallel
-                setWeighingPhases({ aggregate: 'fast', air: 'fast', semen: 'fast' });
-                setAggregateWeight(0);
-                setAirWeight(0);
-                setSemenWeight(0);
-                setActualMaterialWeights({ pasir: 0, batu: 0, semen: 0, air: 0 });
+        const currentGroupNumber = currentDischargeGroupRef.current;
+        const groupSteps = mixingProcessConfig.steps.filter(s => s.order === currentGroupNumber);
+        const nextGroupSteps = mixingProcessConfig.steps.filter(s => s.order === currentGroupNumber + 1);
+
+        const newDischargeStatus = { ...autoProcessStateRef.current.dischargeStatus };
+        let statusChanged = false;
+
+        // Check which materials should start discharging in the current group
+        groupSteps.forEach(step => {
+            if (newDischargeStatus[step.id] === 'pending' && dischargeClockRef.current >= dischargeGroupStartTimeRef.current + (step.delay * 1000)) {
+                newDischargeStatus[step.id] = 'active';
+                statusChanged = true;
             }
-            return;
-          }
+        });
+
+        if (statusChanged) {
+            setDischargeStatus(newDischargeStatus);
+        }
+
+        // Reduce weight for active materials
+        if (newDischargeStatus.aggregates === 'active') {
+            setAggregateWeight(prev => Math.max(0, prev - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+        if (newDischargeStatus.water === 'active') {
+            setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+        if (newDischargeStatus.semen === 'active') {
+            setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
+        }
+        
+        // Mark as done when weight is near zero
+        if (newDischargeStatus.aggregates === 'active' && autoProcessStateRef.current.aggregateWeight <= 0.1) newDischargeStatus.aggregates = 'done';
+        if (newDischargeStatus.water === 'active' && autoProcessStateRef.current.airWeight <= 0.1) newDischargeStatus.water = 'done';
+        if (newDischargeStatus.semen === 'active' && autoProcessStateRef.current.semenWeight <= 0.1) newDischargeStatus.semen = 'done';
+        
+        // Check if current group is finished
+        const isGroupFinished = groupSteps.every(s => newDischargeStatus[s.id] === 'done');
+        
+        if (isGroupFinished) {
+            if (nextGroupSteps.length > 0) {
+                // Move to next group
+                currentDischargeGroupRef.current += 1;
+                dischargeGroupStartTimeRef.current = dischargeClockRef.current;
+            } else {
+                // All groups are done, proceed to mixing
+                setTimerMode('mixing'); 
+                setAutoProcessStep('mixing');
+                
+                if (currentMixNumber < jobInfo.jumlahMixing) {
+                    // Start weighing the next mix in parallel
+                    setWeighingPhases({ aggregate: 'fast', air: 'fast', semen: 'fast' });
+                    setAggregateWeight(0);
+                    setAirWeight(0);
+                    setSemenWeight(0);
+                    setActualMaterialWeights({ pasir: 0, batu: 0, semen: 0, air: 0 });
+                }
+                // Reset discharge state for the next run
+                dischargeClockRef.current = 0;
+                dischargeGroupStartTimeRef.current = 0;
+                currentDischargeGroupRef.current = 1;
+                return;
+            }
+        }
       }
     }, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [powerOn, operasiMode, autoProcessStep]);
+  }, [powerOn, operasiMode, autoProcessStep, mixingProcessConfig]);
 
 
   return (
