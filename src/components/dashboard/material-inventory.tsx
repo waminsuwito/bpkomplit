@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
 interface WeightDisplayProps {
   title: string;
@@ -8,8 +9,9 @@ interface WeightDisplayProps {
 }
 
 function WeightDisplay({ title, value, unit, target }: WeightDisplayProps) {
-  const percentage = target > 0 ? ((value / target) * 100).toFixed(1) : "0.0";
+  const percentage = target > 0 ? (value / target) * 100 : 0;
   const formattedValue = value.toFixed(1);
+  const formattedPercentage = percentage.toFixed(1);
 
   return (
     <Card>
@@ -21,9 +23,12 @@ function WeightDisplay({ title, value, unit, target }: WeightDisplayProps) {
           <div className="digital-display-value">{formattedValue}</div>
           <div className="digital-display-unit">{unit}</div>
         </div>
-        <div className="flex justify-between text-xs text-muted-foreground mt-2 px-1">
-          <span>Target: {target.toFixed(1)} {unit}</span>
-          <span>Complete: {percentage}%</span>
+        <div className="mt-3 space-y-1">
+          <Progress value={percentage} className="h-3" />
+          <div className="flex justify-between text-xs text-muted-foreground px-1">
+            <span>Target: {target.toFixed(1)} {unit}</span>
+            <span>Complete: {formattedPercentage}%</span>
+          </div>
         </div>
       </CardContent>
     </Card>
