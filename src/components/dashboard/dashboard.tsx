@@ -153,23 +153,18 @@ export function Dashboard() {
     };
     const activityColors = ['text-green-400', 'text-cyan-400', 'text-yellow-400', 'text-orange-400', 'text-pink-400', 'text-violet-400'];
     
-    const newMessages: { message: string; id: number; color: string; timestamp: string }[] = [];
-
-    const addMessage = (message: string) => {
-        const color = activityColors[(activityLog.length + newMessages.length) % activityColors.length];
-        newMessages.push({
-            message,
-            id: Date.now() + Math.random(),
-            color: color,
-            timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-        });
-    };
+    const messagesToLog: { message: string; id: number; color: string; timestamp: string }[] = [];
 
     const prevControls = prevControlsRef.current;
     if (operasiMode === 'MANUAL' && prevControls && powerOn) {
         (Object.keys(controlLabels) as Array<keyof typeof controlLabels>).forEach(key => {
             if (activeControls[key] !== prevControls[key]) {
-                addMessage(activeControls[key] ? controlLabels[key].on : controlLabels[key].off);
+                messagesToLog.push({
+                    message: activeControls[key] ? controlLabels[key].on : controlLabels[key].off,
+                    id: Date.now() + Math.random(),
+                    color: '', // Will be set in the updater function
+                    timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                });
             }
         });
     }
@@ -177,16 +172,28 @@ export function Dashboard() {
     const prevAutoStep = prevAutoStepRef.current;
     if (operasiMode === 'AUTO' && prevAutoStep !== autoProcessStep && powerOn) {
         const message = autoStepMessages[autoProcessStep];
-        if (message) addMessage(message);
+        if (message) {
+             messagesToLog.push({
+                message,
+                id: Date.now() + Math.random(),
+                color: '', // Will be set in the updater function
+                timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            });
+        }
     }
     
-    if (newMessages.length > 0) {
-        setActivityLog(prev => [...prev, ...newMessages].slice(-3));
+    if (messagesToLog.length > 0) {
+        setActivityLog(prevLog => {
+            const newLogWithColors = messagesToLog.map((msg, index) => ({
+                ...msg,
+                color: activityColors[(prevLog.length + index) % activityColors.length]
+            }));
+            return [...prevLog, ...newLogWithColors].slice(-3);
+        });
     }
 
     prevControlsRef.current = activeControls;
     prevAutoStepRef.current = autoProcessStep;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeControls, autoProcessStep, operasiMode, powerOn]);
 
   // Effect to clear log on power off or mode change
@@ -203,7 +210,6 @@ export function Dashboard() {
             timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         }]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [powerOn, operasiMode]);
 
 
