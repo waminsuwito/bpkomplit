@@ -14,6 +14,8 @@ interface StatusPanelProps {
 export function StatusPanel({ log, countdown, mixingTime }: StatusPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const circumference = 2 * Math.PI * 42;
+  const currentCountdown = countdown ?? 0;
+  const progress = mixingTime > 0 ? (currentCountdown / mixingTime) : 0;
 
   // Auto-scroll to the bottom when new logs are added
   useEffect(() => {
@@ -25,39 +27,41 @@ export function StatusPanel({ log, countdown, mixingTime }: StatusPanelProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="items-center p-4">
-        {countdown !== null && (
-            <div className="mb-4">
-                <div className="relative h-28 w-28">
-                    <svg className="h-full w-full" viewBox="0 0 100 100">
-                        {/* Background circle */}
-                        <circle
-                            className="stroke-current text-primary/20"
-                            strokeWidth="8"
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="transparent"
-                        ></circle>
-                        {/* Progress circle */}
-                        <circle
-                            className="stroke-current text-primary transition-all duration-1000 ease-linear"
-                            strokeWidth="8"
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="transparent"
-                            strokeDasharray={circumference}
-                            strokeDashoffset={circumference * (1 - (countdown / mixingTime))}
-                            transform="rotate(-90 50 50)"
-                        ></circle>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-4xl font-bold text-primary font-mono">{countdown}</span>
-                    </div>
+        <div className="text-center mb-4">
+            <p className="text-sm text-muted-foreground uppercase tracking-wider">Waktu Mixing</p>
+            <div className="relative h-28 w-28 mt-2">
+                <svg className="h-full w-full" viewBox="0 0 100 100">
+                    {/* Background circle */}
+                    <circle
+                        className="stroke-current text-primary/20"
+                        strokeWidth="8"
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="transparent"
+                    ></circle>
+                    {/* Progress circle */}
+                    <circle
+                        className="stroke-current text-primary transition-all duration-1000 ease-linear"
+                        strokeWidth="8"
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="transparent"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * (1 - progress)}
+                        transform="rotate(-90 50 50)"
+                    ></circle>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-4xl font-bold text-primary font-mono">{currentCountdown}</span>
                 </div>
             </div>
-        )}
-        <CardTitle className="text-center text-primary uppercase text-sm tracking-wider">
+        </div>
+        
+        <Separator className="w-full bg-primary/20 my-2" />
+        
+        <CardTitle className="text-center text-primary uppercase text-sm tracking-wider pt-2">
           Aktifitas Berjalan
         </CardTitle>
       </CardHeader>
