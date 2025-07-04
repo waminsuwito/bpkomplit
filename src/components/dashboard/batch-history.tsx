@@ -28,7 +28,8 @@ export type ManualControlsState = {
   semen: boolean;
   pintuBuka: boolean;
   pintuTutup: boolean;
-  konveyor: boolean;
+  konveyorBawah: boolean;
+  konveyorAtas: boolean;
   klakson: boolean;
 }
 
@@ -162,7 +163,8 @@ export function ManualControlPanel({ activeControls, handleToggle, handlePress, 
                 </div>
             </ControlGroup>
             <ControlGroup title="Konveyor" className="row-span-1">
-                 <ToggleButton controlKey="konveyor" handleToggle={handleToggle} isActive={activeControls.konveyor} className={cn("font-bold text-xs", activeControls.konveyor && "bg-accent hover:bg-accent/90 text-accent-foreground")} disabled={disabled}>KONVEYOR</ToggleButton>
+                 <ToggleButton controlKey="konveyorBawah" handleToggle={handleToggle} isActive={activeControls.konveyorBawah} className={cn("font-bold text-xs", activeControls.konveyorBawah && "bg-accent hover:bg-accent/90 text-accent-foreground")} disabled={disabled}>KONVEYOR BAWAH</ToggleButton>
+                 <ToggleButton controlKey="konveyorAtas" handleToggle={handleToggle} isActive={activeControls.konveyorAtas} className={cn("font-bold text-xs", activeControls.konveyorAtas && "bg-accent hover:bg-accent/90 text-accent-foreground")} disabled={disabled}>KONVEYOR ATAS</ToggleButton>
             </ControlGroup>
              <ControlGroup title="System" className="row-span-1">
                  <MomentaryButton controlKey="klakson" handlePress={handlePress} isActive={activeControls.klakson} className={cn("font-bold text-xs", activeControls.klakson ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/90 text-accent-foreground")} disabled={disabled}>KLAKSON</MomentaryButton>

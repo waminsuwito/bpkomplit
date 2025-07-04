@@ -57,7 +57,10 @@ export function Dashboard() {
     selectedSilo: 'silo1',
     semenTimbang: false,
     semen: false,
-    pintuBuka: false, pintuTutup: false, konveyor: false, klakson: false
+    pintuBuka: false, pintuTutup: false, 
+    konveyorBawah: false, 
+    konveyorAtas: false, 
+    klakson: false
   });
 
   const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('MANUAL');
@@ -128,7 +131,8 @@ export function Dashboard() {
         semen: { on: 'Membuang Semen ON', off: 'Pembuangan Semen Selesai' },
         pintuBuka: { on: 'Membuka Pintu Mixer', off: 'Pintu Mixer Normal' },
         pintuTutup: { on: 'Menutup Pintu Mixer', off: 'Pintu Mixer Normal' },
-        konveyor: { on: 'Konveyor ON', off: 'Konveyor OFF' },
+        konveyorBawah: { on: 'Konveyor Bawah ON', off: 'Konveyor Bawah OFF' },
+        konveyorAtas: { on: 'Konveyor Atas ON', off: 'Konveyor Atas OFF' },
         klakson: { on: 'Klakson ON', off: 'Klakson OFF' },
     };
     const autoStepMessages: { [key in AutoProcessStep]: string | null } = {
@@ -204,7 +208,7 @@ export function Dashboard() {
         pasir1: false, pasir2: false, batu1: false, batu2: false,
         airTimbang: false, airBuang: false,
         semenTimbang: false, semen: false,
-        konveyor: false, klakson: false,
+        konveyorBawah: false, konveyorAtas: false, klakson: false,
         pintuBuka: false, pintuTutup: false
       }));
       setAggregateWeight(0);
@@ -221,7 +225,7 @@ export function Dashboard() {
         if (prev.pasir1 || prev.pasir2 || prev.batu1 || prev.batu2) {
           setAggregateWeight(w => w + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000)));
         }
-        if (prev.konveyor) {
+        if (prev.konveyorBawah || prev.konveyorAtas) {
           setAggregateWeight(w => Math.max(0, w - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
         }
         if (prev.airTimbang) {
