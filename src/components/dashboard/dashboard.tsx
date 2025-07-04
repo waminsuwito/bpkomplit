@@ -36,7 +36,6 @@ type AutoProcessStep =
   | 'paused'
   | 'weighing-pasir'
   | 'weighing-batu'
-  | 'weighing-all'
   | 'weighing-complete'
   | 'discharging-aggregates'
   | 'discharging-water'
@@ -48,6 +47,7 @@ type AutoProcessStep =
   | 'unloading_pause_2'
   | 'unloading_to_closing_transition'
   | 'unloading_door_close'
+  | 'unloading_door_close_final'
   | 'advance_to_next_mix'
   | 'unloading_klakson'
   | 'complete';
@@ -268,7 +268,6 @@ export function Dashboard() {
         paused: 'Proses dijeda oleh operator.',
         'weighing-pasir': (n, t) => `Menimbang Material (Mix ${n}/${t})...`,
         'weighing-batu': (n, t) => `Melanjutkan Penimbangan Agregat (Mix ${n}/${t})...`,
-        'weighing-all': null, // State is not used
         'weighing-complete': (n, t) => `Penimbangan Selesai (Mix ${n}/${t}). Menunggu...`,
         'discharging-aggregates': (n, t) => `Menuang Agregat (Mix ${n}/${t})...`,
         'discharging-water': (n, t) => `Menuang Air (Mix ${n}/${t})...`,
@@ -279,8 +278,9 @@ export function Dashboard() {
         unloading_door_open_2: (n, t) => `Membuka pintu mixer (Mix ${n}/${t}, tahap 2)...`,
         unloading_pause_2: 'Jeda pengosongan akhir...',
         unloading_to_closing_transition: 'Menyiapkan penutupan pintu...',
-        unloading_door_close: 'Menutup pintu mixer...',
-        advance_to_next_mix: (n, t) => `Mempersiapkan Mix ${n}/${t}...`,
+        unloading_door_close: 'Menutup pintu mixer (batch sebelumnya)...',
+        unloading_door_close_final: 'Menutup pintu mixer (Final)...',
+        advance_to_next_mix: (n, t) => `Mempersiapkan Mix ${n+1}/${t}...`,
         unloading_klakson: 'Memberi sinyal proses selesai...',
         complete: 'Proses Batching Selesai. Menampilkan pratinjau cetak...',
     };
@@ -435,6 +435,7 @@ export function Dashboard() {
         }));
         break;
       case 'unloading_door_close':
+      case 'unloading_door_close_final':
         if (timerMode !== 'closing') {
           setTimerMode('closing');
           const totalCloseTime = 5;
@@ -486,7 +487,13 @@ export function Dashboard() {
 
     switch (autoProcessStep) {
         case 'weighing-complete':
-            schedule(() => setAutoProcessStep('discharging-aggregates'), 3000);
+            schedule(() => {
+                if (currentMixNumber > 1) {
+                    setAutoProcessStep('unloading_door_close');
+                } else {
+                    setAutoProcessStep('discharging-aggregates');
+                }
+            }, 3000);
             break;
         case 'discharging-aggregates':
             schedule(() => setAutoProcessStep('discharging-water'), 7000);
@@ -504,27 +511,31 @@ export function Dashboard() {
             schedule(() => setAutoProcessStep('unloading_pause_2'), 2000);
             break;
         case 'unloading_pause_2':
-            schedule(() => setAutoProcessStep('unloading_to_closing_transition'), 10000);
+            schedule(() => {
+                if (currentMixNumber < jobInfo.jumlahMixing) {
+                    setAutoProcessStep('advance_to_next_mix');
+                } else {
+                    setAutoProcessStep('unloading_to_closing_transition');
+                }
+            }, 10000);
             break;
         case 'unloading_to_closing_transition':
-            schedule(() => setAutoProcessStep('unloading_door_close'), 1000);
+            schedule(() => setAutoProcessStep('unloading_door_close_final'), 1000);
             break;
         case 'unloading_door_close':
-            schedule(() => setAutoProcessStep('advance_to_next_mix'), 5000);
+            schedule(() => setAutoProcessStep('discharging-aggregates'), 5000);
+            break;
+        case 'unloading_door_close_final':
+            schedule(() => setAutoProcessStep('unloading_klakson'), 5000);
             break;
         case 'advance_to_next_mix':
-            if (currentMixNumber < jobInfo.jumlahMixing) {
-                setCurrentMixNumber(prev => prev + 1);
-                // Reset scales and weighing state for the next mix
-                setAggregateWeight(0);
-                setAirWeight(0);
-                setSemenWeight(0);
-                setActualMaterialWeights({ pasir: 0, batu: 0, semen: 0, air: 0 });
-                setWeighingPhases({ aggregate: 'fast', air: 'fast', semen: 'fast' });
-                setAutoProcessStep('weighing-pasir');
-            } else {
-                setAutoProcessStep('unloading_klakson');
-            }
+            setCurrentMixNumber(prev => prev + 1);
+            setAggregateWeight(0);
+            setAirWeight(0);
+            setSemenWeight(0);
+            setActualMaterialWeights({ pasir: 0, batu: 0, semen: 0, air: 0 });
+            setWeighingPhases({ aggregate: 'fast', air: 'fast', semen: 'fast' });
+            setAutoProcessStep('weighing-pasir');
             break;
         case 'unloading_klakson':
             schedule(() => {
@@ -565,7 +576,7 @@ export function Dashboard() {
           setActiveControls(prev => ({
               ...prev,
               pintuBuka: autoProcessStep === 'unloading_door_open_1' || autoProcessStep === 'unloading_door_open_2',
-              pintuTutup: autoProcessStep === 'unloading_door_close',
+              pintuTutup: autoProcessStep === 'unloading_door_close' || autoProcessStep === 'unloading_door_close_final',
               klakson: autoProcessStep === 'unloading_klakson' && isFinalMix,
           }));
       } else if (prevStep && (prevStep.startsWith('unloading') || prevStep === 'advance_to_next_mix')) {
