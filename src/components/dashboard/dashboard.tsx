@@ -186,7 +186,8 @@ export function Dashboard() {
 
     prevControlsRef.current = activeControls;
     prevAutoStepRef.current = autoProcessStep;
-  }, [activeControls, autoProcessStep, operasiMode, powerOn, activityLog.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeControls, autoProcessStep, operasiMode, powerOn]);
 
   // Effect to clear log on power off or mode change
   useEffect(() => {
