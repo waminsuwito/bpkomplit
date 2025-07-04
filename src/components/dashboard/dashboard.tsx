@@ -36,7 +36,8 @@ type AutoProcessStep =
   | 'weighing-complete'
   | 'discharging-aggregates'
   | 'discharging-water'
-  | 'discharging-all'
+  | 'discharging-semen'
+  | 'mixing'
   | 'complete';
   
 type WeighingPhase = 'idle' | 'fast' | 'paused' | 'jogging' | 'done';
@@ -208,7 +209,8 @@ export function Dashboard() {
         'weighing-complete': 'Penimbangan Selesai. Menunggu...',
         'discharging-aggregates': 'Menuang Pasir & Batu...',
         'discharging-water': 'Menuang Air...',
-        'discharging-all': 'Menuang Semen & Mixing...',
+        'discharging-semen': 'Menuang Semen...',
+        mixing: 'Proses mixing berjalan...',
         complete: 'Proses Batching Selesai.',
     };
     
@@ -321,7 +323,7 @@ export function Dashboard() {
 
   // Effect for Countdown timer
   useEffect(() => {
-    if (autoProcessStep === 'discharging-all' && powerOn && operasiMode === 'AUTO') {
+    if (autoProcessStep === 'mixing' && powerOn && operasiMode === 'AUTO') {
       if (countdown === null) {
         setCountdown(mixingTime);
       }
@@ -332,18 +334,14 @@ export function Dashboard() {
         }, 1000);
         return () => clearTimeout(timer);
       } else if (countdown === 0) {
-        // Final completion check
-        const isDischargeComplete = aggregateWeight <= 0.1 && airWeight <= 0.1 && semenWeight <= 0.1;
-        if(isDischargeComplete) {
-            setAutoProcessStep('complete');
-        }
+        setAutoProcessStep('complete');
       }
     } else {
       if (countdown !== null) {
         setCountdown(null);
       }
     }
-  }, [countdown, autoProcessStep, powerOn, operasiMode, mixingTime, aggregateWeight, airWeight, semenWeight]);
+  }, [countdown, autoProcessStep, powerOn, operasiMode, mixingTime]);
 
   // Effect for timed state transitions (mostly for discharge sequence)
   useEffect(() => {
@@ -365,7 +363,7 @@ export function Dashboard() {
         timer = setTimeout(() => setAutoProcessStep('discharging-water'), 7000);
         break;
       case 'discharging-water':
-        timer = setTimeout(() => setAutoProcessStep('discharging-all'), 10000);
+        timer = setTimeout(() => setAutoProcessStep('discharging-semen'), 10000);
         break;
     }
 
@@ -443,6 +441,12 @@ export function Dashboard() {
           setAutoProcessStep('weighing-complete');
           return;
       }
+      
+      const isDischargeFinished = aggregateWeight <= 0.1 && airWeight <= 0.1 && semenWeight <= 0.1;
+      if (autoProcessStep.startsWith('discharging-') && isDischargeFinished) {
+        setAutoProcessStep('mixing');
+        return; 
+      }
 
       // --- Weight Simulation Logic (uses nextPhases to react immediately) ---
       if (nextPhases.aggregate === 'fast') setAggregateWeight(w => w + AGGREGATE_RATE * (UPDATE_INTERVAL / 1000));
@@ -457,10 +461,10 @@ export function Dashboard() {
       // Discharging simulation
       if (autoProcessStep.startsWith('discharging-')) {
           setAggregateWeight(prev => Math.max(0, prev - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
-          if (autoProcessStep === 'discharging-water' || autoProcessStep === 'discharging-all') {
+          if (autoProcessStep === 'discharging-water' || autoProcessStep === 'discharging-semen') {
             setAirWeight(prev => Math.max(0, prev - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
           }
-          if (autoProcessStep === 'discharging-all') {
+          if (autoProcessStep === 'discharging-semen') {
             setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
           }
       }
