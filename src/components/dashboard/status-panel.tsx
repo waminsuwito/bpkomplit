@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
@@ -20,9 +20,10 @@ interface StatusPanelProps {
   mixingTime: number;
   setMixingTime: (time: number | ((prevTime: number) => number)) => void;
   disabled: boolean;
+  currentMixInfo?: { current: number; total: number };
 }
 
-export function StatusPanel({ log, timerDisplay, mixingTime, setMixingTime, disabled }: StatusPanelProps) {
+export function StatusPanel({ log, timerDisplay, mixingTime, setMixingTime, disabled, currentMixInfo }: StatusPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const circumference = 2 * Math.PI * 42;
   
@@ -101,6 +102,11 @@ export function StatusPanel({ log, timerDisplay, mixingTime, setMixingTime, disa
         <CardTitle className="text-center text-primary uppercase text-sm tracking-wider pt-2">
           Aktifitas Berjalan
         </CardTitle>
+        {currentMixInfo && currentMixInfo.total > 1 && (
+            <CardDescription className="text-center text-base font-semibold text-accent">
+                {`Mix ${currentMixInfo.current} dari ${currentMixInfo.total}`}
+            </CardDescription>
+        )}
       </CardHeader>
       <CardContent className="flex-grow flex flex-col overflow-hidden p-4 pt-0">
         <div ref={scrollRef} className="flex-grow space-y-1.5 overflow-y-auto pr-2">
