@@ -373,7 +373,13 @@ export function Dashboard() {
         break;
       case 'unloading_to_closing_transition':
         setTimerMode('idle'); // This will stop the timer interval
-        setTimerDisplay({ value: 0, total: 1, label: 'Menyiapkan...', colorClass: 'text-muted-foreground' }); // Show a neutral state
+        // Keep the circle full but change the color to green to signal the next phase
+        setTimerDisplay(prev => ({
+          value: prev.total, // Keep it full
+          total: prev.total,
+          label: 'Menyiapkan...',
+          colorClass: 'text-success', // Pre-emptively change to green
+        }));
         break;
       case 'unloading_door_close':
         if (timerMode !== 'closing') {
