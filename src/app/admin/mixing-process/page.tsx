@@ -7,9 +7,9 @@ import { MixingProcessForm, type MixingProcessConfig } from '@/components/admin/
 export default function MixingProcessPage() {
   const [mixingProcess, setMixingProcess] = useState<MixingProcessConfig>({
     steps: [
-      { id: 'aggregates', name: 'Pasir & Batu', startDelay: 0, actionDelay: 7 },
-      { id: 'water', name: 'Air', startDelay: 0, actionDelay: 3 },
-      { id: 'semen', name: 'Semen', startDelay: 0, actionDelay: 60 },
+      { id: 'aggregates', name: 'Pasir & Batu', order: 1, delay: 0 },
+      { id: 'water', name: 'Air', order: 1, delay: 7 },
+      { id: 'semen', name: 'Semen', order: 2, delay: 0 },
     ],
   });
 
@@ -23,7 +23,7 @@ export default function MixingProcessPage() {
           <CardHeader>
               <CardTitle>Mixing Proses</CardTitle>
               <CardDescription>
-                Atur waktu tunda untuk memulai penimbangan dan jeda antar proses penuangan material untuk fleksibilitas yang lebih tinggi.
+                Atur urutan dan jeda waktu penuangan material. Material dengan 'Urutan Mixing' yang sama akan diproses dalam satu grup. 'Jeda Tuang' adalah waktu tunda dalam detik setelah sebuah grup dimulai.
               </CardDescription>
           </CardHeader>
           <CardContent>
