@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { JobMixFormula } from '@/components/admin/job-mix-form';
+import { AlertTriangle } from 'lucide-react';
 
 interface ControlPanelProps {
   powerOn: boolean;
@@ -31,18 +32,19 @@ export function ControlPanel({
   const [selectedFormulaId, setSelectedFormulaId] = useState(formulas[0]?.id || '');
   const [namaPelanggan, setNamaPelanggan] = useState('');
   const [lokasiProyek, setLokasiProyek] = useState('');
-  const [targetVolume, setTargetVolume] = useState(1);
+  const [targetVolume, setTargetVolume] = useState(1.0);
   const [jumlahMixing, setJumlahMixing] = useState(1);
   const [slump, setSlump] = useState(12);
+  const [mixWarning, setMixWarning] = useState('');
 
   useEffect(() => {
-    const volumePerMix = 3.5;
-    if (targetVolume > 0) {
-      setJumlahMixing(Math.ceil(targetVolume / volumePerMix));
-    } else {
-      setJumlahMixing(0);
-    }
-  }, [targetVolume]);
+      const volumePerMix = jumlahMixing > 0 ? targetVolume / jumlahMixing : 0;
+      if (volumePerMix > 3.5) {
+          setMixWarning(`Volume per mix (${volumePerMix.toFixed(2)} M³) melebihi kapasitas mixer (3.5 M³).`);
+      } else {
+          setMixWarning('');
+      }
+  }, [targetVolume, jumlahMixing]);
 
   useEffect(() => {
     const selectedFormula = formulas.find(f => f.id === selectedFormulaId);
@@ -95,12 +97,33 @@ export function ControlPanel({
         <CardContent className="pt-6 space-y-4">
            <div>
             <Label htmlFor="target-volume" className="text-xs text-muted-foreground">TARGET VOLUME (M³)</Label>
-            <Input id="target-volume" type="number" value={targetVolume} onChange={(e) => setTargetVolume(Number(e.target.value) > 0 ? Number(e.target.value) : 1)} min="1" disabled={!powerOn} />
+            <Input 
+                id="target-volume" 
+                type="number" 
+                value={targetVolume} 
+                onChange={(e) => setTargetVolume(Number(e.target.value))} 
+                min="0.5"
+                step="0.1"
+                disabled={!powerOn} 
+            />
           </div>
            <div>
             <Label htmlFor="jumlah-mixing" className="text-xs text-muted-foreground">JUMLAH MIXING</Label>
-            <Input id="jumlah-mixing" type="number" value={jumlahMixing} readOnly className="bg-muted/50" />
-             <p className="text-xs text-muted-foreground mt-1">Kapasitas mixer: 3.5 M³</p>
+            <Input 
+                id="jumlah-mixing" 
+                type="number" 
+                value={jumlahMixing} 
+                onChange={(e) => setJumlahMixing(Number(e.target.value) > 0 ? Number(e.target.value) : 1)}
+                min="1"
+                disabled={!powerOn} 
+            />
+             <p className="text-xs text-muted-foreground mt-1">Kapasitas mixer: 3.5 M³ per mix</p>
+             {mixWarning && (
+                <div className="text-xs text-destructive mt-1 flex items-center gap-1 p-2 bg-destructive/10 rounded-md">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>{mixWarning}</span>
+                </div>
+             )}
           </div>
           <div>
             <Label htmlFor="slump" className="text-xs text-muted-foreground">SLUMP (CM)</Label>
@@ -119,7 +142,7 @@ export function ControlPanel({
            </div>
            <div className="text-center text-primary uppercase text-sm tracking-wider font-semibold pt-4 mb-2">Kontrol Proses</div>
            <div className="grid grid-cols-3 gap-2">
-             <Button onClick={() => handleProcessControl('START')} className="font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>START</Button>
+             <Button onClick={() => handleProcessControl('START')} className="font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL' || !!mixWarning}>START</Button>
              <Button onClick={() => handleProcessControl('PAUSE')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>PAUSE</Button>
              <Button onClick={() => handleProcessControl('STOP')} variant="destructive" className="font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>STOP</Button>
            </div>
