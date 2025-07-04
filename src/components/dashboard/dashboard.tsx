@@ -42,6 +42,7 @@ type AutoProcessStep =
   | 'unloading_pause_1'
   | 'unloading_door_open_2'
   | 'unloading_pause_2'
+  | 'unloading_to_closing_transition'
   | 'unloading_door_close'
   | 'unloading_klakson'
   | 'complete';
@@ -120,12 +121,20 @@ export function Dashboard() {
     setSemenWeight(0);
     setWeighingPhases({ aggregate: 'idle', air: 'idle', semen: 'idle' });
     setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
+    setTimerMode('idle');
+    setActiveControls(prev => ({
+        ...prev,
+        pintuBuka: false,
+        pintuTutup: false,
+        klakson: false,
+    }));
   }, [mixingTime]);
 
   const handleSetPowerOn = (isOn: boolean) => {
     setPowerOn(isOn);
     if (!isOn) {
       resetAutoProcess();
+      setActivityLog([]);
       setActiveControls({
         pasir1: false, pasir2: false, batu1: false, batu2: false,
         airTimbang: false, airBuang: false,
@@ -137,7 +146,6 @@ export function Dashboard() {
         konveyorAtas: false, 
         klakson: false
       });
-      setActivityLog([]);
     }
   };
 
@@ -228,6 +236,7 @@ export function Dashboard() {
         unloading_pause_1: 'Jeda pengosongan...',
         unloading_door_open_2: 'Membuka pintu mixer (tahap 2)...',
         unloading_pause_2: 'Jeda pengosongan akhir...',
+        unloading_to_closing_transition: 'Menyiapkan penutupan pintu...',
         unloading_door_close: 'Menutup pintu mixer...',
         unloading_klakson: 'Memberi sinyal proses selesai...',
         complete: 'Proses Batching Selesai.',
@@ -362,6 +371,10 @@ export function Dashboard() {
           setTimerDisplay({ value: 0, total: totalUnloadTime, label: 'Pintu Mixer Buka', colorClass: 'text-destructive' });
         }
         break;
+      case 'unloading_to_closing_transition':
+        setTimerMode('idle'); // This will stop the timer interval
+        setTimerDisplay({ value: 0, total: 1, label: 'Menyiapkan...', colorClass: 'text-muted-foreground' }); // Show a neutral state
+        break;
       case 'unloading_door_close':
         if (timerMode !== 'closing') {
           setTimerMode('closing');
@@ -435,7 +448,10 @@ export function Dashboard() {
         timer = setTimeout(() => setAutoProcessStep('unloading_pause_2'), 2000);
         break;
       case 'unloading_pause_2':
-        timer = setTimeout(() => setAutoProcessStep('unloading_door_close'), 10000);
+        timer = setTimeout(() => setAutoProcessStep('unloading_to_closing_transition'), 10000);
+        break;
+      case 'unloading_to_closing_transition':
+        timer = setTimeout(() => setAutoProcessStep('unloading_door_close'), 1000);
         break;
       case 'unloading_door_close':
         timer = setTimeout(() => setAutoProcessStep('unloading_klakson'), 5000);
