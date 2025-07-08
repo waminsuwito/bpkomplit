@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import {
   Card,
   CardContent,
@@ -19,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CalendarCheck, PlusCircle, Trash2 } from 'lucide-react';
+import { CalendarCheck, PlusCircle, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -27,16 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import type { Schedule } from '@/lib/types';
+import { getSchedules, saveSchedules } from '@/lib/schedule';
+import { cn } from '@/lib/utils';
 
-interface Schedule {
-  id: string;
-  customerName: string;
-  projectLocation: string;
-  concreteQuality: string;
-  slump: string;
-  volume: string;
-  mediaCor: 'CP' | 'Manual';
-}
 
 const initialFormState = {
   customerName: '',
@@ -48,8 +45,17 @@ const initialFormState = {
 };
 
 export default function ScheduleCorPage() {
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [formState, setFormState] = useState<Omit<Schedule, 'id'>>(initialFormState);
+  const [allSchedules, setAllSchedules] = useState<Schedule[]>([]);
+  const [date, setDate] = useState<Date>(new Date());
+  const [formState, setFormState] = useState<Omit<Schedule, 'id' | 'date'>>(initialFormState);
+
+  useEffect(() => {
+    setAllSchedules(getSchedules());
+  }, []);
+
+  const todaysSchedules = allSchedules.filter(
+    (s) => s.date === format(date, 'yyyy-MM-dd')
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -75,13 +81,18 @@ export default function ScheduleCorPage() {
     const newSchedule: Schedule = {
       id: new Date().toISOString(),
       ...formState,
+      date: format(date, 'yyyy-MM-dd'),
     };
-    setSchedules(prev => [...prev, newSchedule]);
+    const updatedSchedules = [...allSchedules, newSchedule];
+    setAllSchedules(updatedSchedules);
+    saveSchedules(updatedSchedules);
     setFormState(initialFormState); // Reset form
   };
 
   const handleDeleteSchedule = (id: string) => {
-    setSchedules(prev => prev.filter(schedule => schedule.id !== id));
+    const updatedSchedules = allSchedules.filter(schedule => schedule.id !== id);
+    setAllSchedules(updatedSchedules);
+    saveSchedules(updatedSchedules);
   };
 
   return (
@@ -93,11 +104,36 @@ export default function ScheduleCorPage() {
             Tambah Jadwal Pengecoran Baru
           </CardTitle>
           <CardDescription>
-            Masukkan detail jadwal pengecoran untuk hari ini.
+            Pilih tanggal lalu masukkan detail jadwal pengecoran.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAddSchedule} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleAddSchedule} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+             <div className="space-y-2 lg:col-span-4">
+              <Label htmlFor="schedule-date">Tanggal Jadwal</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={'outline'}
+                    className={cn(
+                      'w-[280px] justify-start text-left font-normal',
+                      !date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'PPP') : <span>Pilih tanggal</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(d) => setDate(d || new Date())}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="customerName">Nama Pelanggan</Label>
               <Input
@@ -167,7 +203,7 @@ export default function ScheduleCorPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-3 flex justify-end items-end">
+            <div className="lg:col-span-4 flex justify-end items-end">
               <Button type="submit">Tambah Jadwal</Button>
             </div>
           </form>
@@ -178,14 +214,14 @@ export default function ScheduleCorPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarCheck className="h-6 w-6 text-primary" />
-            Daftar Schedule Cor Hari Ini
+            Daftar Schedule Cor untuk {date ? format(date, 'd MMMM yyyy') : '...' }
           </CardTitle>
           <CardDescription>
-            Lihat dan kelola semua jadwal pengecoran untuk hari ini.
+            Lihat dan kelola semua jadwal pengecoran untuk tanggal yang dipilih.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {schedules.length > 0 ? (
+          {todaysSchedules.length > 0 ? (
             <div className="border rounded-lg">
                 <Table>
                     <TableHeader>
@@ -200,7 +236,7 @@ export default function ScheduleCorPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {schedules.map((schedule) => (
+                        {todaysSchedules.map((schedule) => (
                             <TableRow key={schedule.id}>
                                 <TableCell>{schedule.customerName}</TableCell>
                                 <TableCell>{schedule.projectLocation}</TableCell>
@@ -221,7 +257,7 @@ export default function ScheduleCorPage() {
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-12">
-              <p>Belum ada jadwal yang ditambahkan untuk hari ini.</p>
+              <p>Belum ada jadwal yang ditambahkan untuk tanggal ini.</p>
               <p>Gunakan formulir di atas untuk menambahkan jadwal baru.</p>
             </div>
           )}

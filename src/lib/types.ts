@@ -67,3 +67,14 @@ export interface JobMixFormula {
   air: number;
   semen: number;
 }
+
+export interface Schedule {
+  id: string;
+  customerName: string;
+  projectLocation: string;
+  concreteQuality: string;
+  slump: string;
+  volume: string;
+  mediaCor: 'CP' | 'Manual';
+  date: string; // YYYY-MM-DD format
+}

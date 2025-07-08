@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Printer } from 'lucide-react';
 
@@ -28,6 +28,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { getSchedules } from '@/lib/schedule';
 
 const initialRowData = {
   lokasi: '',
@@ -50,6 +51,31 @@ export default function LaporanHarianPage() {
   const [tableData, setTableData] = useState(
     Array.from({ length: 10 }, () => ({ ...initialRowData }))
   );
+
+  useEffect(() => {
+    if (!date) return;
+
+    const allSchedules = getSchedules();
+    const selectedDateStr = format(date, 'yyyy-MM-dd');
+    const todaysSchedules = allSchedules.filter(s => s.date === selectedDateStr);
+
+    const newTableData = todaysSchedules.map(schedule => ({
+      ...initialRowData,
+      lokasi: schedule.customerName,
+      mutu: schedule.concreteQuality,
+      slump: schedule.slump,
+      volume: schedule.volume,
+    }));
+
+    const emptyRowCount = 10 - newTableData.length;
+    if (emptyRowCount > 0) {
+      for (let i = 0; i < emptyRowCount; i++) {
+        newTableData.push({ ...initialRowData });
+      }
+    }
+
+    setTableData(newTableData.slice(0, 10));
+  }, [date]);
 
   const handleInputChange = (
     rowIndex: number,
@@ -167,6 +193,7 @@ export default function LaporanHarianPage() {
                               handleInputChange(rowIndex, key, e.target.value)
                             }
                             className="w-full h-full border-none rounded-none text-center"
+                            readOnly={['lokasi', 'mutu', 'slump', 'volume'].includes(key) && !!row[key]}
                           />
                         </TableCell>
                       )
