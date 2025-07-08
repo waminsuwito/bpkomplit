@@ -32,14 +32,29 @@ export function printElement(elementId: string) {
       @media print {
         body { 
           margin: 1.5rem;
-          -webkit-print-color-adjust: exact;
-          color-adjust: exact;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
         }
         .no-print, .no-print * { 
           display: none !important; 
         }
         .print-only {
           display: block !important;
+        }
+        body::after {
+          content: "PT FARIKA RIAU PERKASA";
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(-45deg);
+          font-size: 5rem;
+          font-weight: bold;
+          color: rgba(0, 0, 0, 0.08) !important;
+          z-index: -1000;
+          pointer-events: none;
+          white-space: nowrap;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
         }
       }
     </style>
