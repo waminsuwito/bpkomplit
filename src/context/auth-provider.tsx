@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
-import { getUsers, verifyLogin } from '@/lib/auth';
+import { verifyLogin } from '@/lib/auth';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const canAccess = user.role === 'kepala_BP' || user.role === 'super_admin';
     if (!canAccess) return false;
 
-    // Verify password against the database
+    // Verify password against the source of truth (localStorage via verifyLogin)
     const verifiedUser = await verifyLogin(user.username, password);
 
     if (verifiedUser) {

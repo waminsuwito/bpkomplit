@@ -1,87 +1,88 @@
+'use client';
 
 import { type User } from '@/lib/types';
-import { firestore } from '@/lib/firebase';
-import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, query, where, writeBatch, limit } from 'firebase/firestore';
 
+const USERS_STORAGE_KEY = 'app-users';
 
-const USERS_COLLECTION = 'users';
-
-const initialUsers: Omit<User, 'id'>[] = [
-  { username: 'admin', password: 'admin', role: 'super_admin', location: 'BP PEKANBARU' },
-  { username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU' },
-  { username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI' },
-  { username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG' },
-  { username: 'kepala_bp', password: 'password', role: 'kepala_BP', location: 'BP IKN' },
-  { username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU' },
+// The default users to seed localStorage with if it's empty.
+const initialUsers: User[] = [
+  { id: 'superadmin-main', username: 'admin', password: 'admin', role: 'super_admin', location: 'BP PEKANBARU' },
+  { id: 'op-1', username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU' },
+  { id: 'op-2', username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI' },
+  { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG' },
+  { id: 'head-1', username: 'kepala_bp', password: 'password', role: 'kepala_BP', location: 'BP IKN' },
+  { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU' },
 ];
 
-async function seedInitialUsers() {
-    const usersCollection = collection(firestore, USERS_COLLECTION);
-    const batch = writeBatch(firestore);
-    initialUsers.forEach(user => {
-        const newUserRef = doc(usersCollection);
-        batch.set(newUserRef, user);
-    });
-    await batch.commit();
-    console.log("Initial users seeded to Firestore.");
-}
-
-
-export async function getUsers(): Promise<User[]> {
-    const usersCollection = collection(firestore, USERS_COLLECTION);
-    const userSnapshot = await getDocs(usersCollection);
-    return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-}
-
-export async function addUser(userData: Omit<User, 'id'>): Promise<User> {
-    const usersCollection = collection(firestore, USERS_COLLECTION);
-    const docRef = await addDoc(usersCollection, userData);
-    return { id: docRef.id, ...userData };
-}
-
-export async function updateUser(userId: string, userData: Partial<User>): Promise<void> {
-    const userDoc = doc(firestore, USERS_COLLECTION, userId);
-    // 'id' is not a field in the document, so we remove it
-    const { id, ...dataToUpdate } = userData;
-    await setDoc(userDoc, dataToUpdate, { merge: true });
-}
-
-export async function deleteUser(userId: string): Promise<void> {
-    const userDoc = doc(firestore, USERS_COLLECTION, userId);
-    await deleteDoc(userDoc);
-}
-
-
-export async function verifyLogin(username: string, password: string): Promise<Omit<User, 'password'> | null> {
-    const usersCollection = collection(firestore, USERS_COLLECTION);
-    
-    // First, check if the collection is empty.
-    const checkQuery = query(usersCollection, limit(1));
-    const checkSnapshot = await getDocs(checkQuery);
-    
-    if (checkSnapshot.empty) {
-        // If it's empty, seed the initial users and wait for it to complete.
-        console.log("No users found. Seeding initial users...");
-        await seedInitialUsers();
+function getInitialUsers(): User[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+      if (storedUsers) {
+        return JSON.parse(storedUsers);
+      } else {
+        // If no users are stored, seed with initial users
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
+        return initialUsers;
+      }
+    } catch (error) {
+      console.error('Failed to access users from localStorage:', error);
+      return initialUsers; // Fallback
     }
-    
-    // Now, perform the actual login query.
-    const loginQuery = query(
-        usersCollection, 
-        where("username", "==", username), 
-        where("password", "==", password)
+  }
+  return [];
+}
+
+
+export function getUsers(): User[] {
+  return getInitialUsers();
+}
+
+export function saveUsers(users: User[]): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    } catch (error) {
+      console.error('Failed to save users to localStorage:', error);
+    }
+  }
+}
+
+export function verifyLogin(username: string, password: string): Promise<Omit<User, 'password'> | null> {
+  return new Promise((resolve) => {
+    const users = getUsers(); // Ensures seeding happens if needed
+    const user = users.find(
+      (u) => u.username === username && u.password === password
     );
 
-    const querySnapshot = await getDocs(loginQuery);
-
-    if (querySnapshot.empty) {
-        return null;
+    if (user) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = user;
+      resolve(userWithoutPassword);
+    } else {
+      resolve(null);
     }
-    
-    const userDoc = querySnapshot.docs[0];
-    const user = { id: userDoc.id, ...userDoc.data() } as User;
-    
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+  });
+}
+
+export function addUser(userData: Omit<User, 'id'>): User {
+  const users = getUsers();
+  const newUser: User = { ...userData, id: new Date().toISOString() };
+  const updatedUsers = [...users, newUser];
+  saveUsers(updatedUsers);
+  return newUser;
+}
+
+export function updateUser(userId: string, userData: Partial<Omit<User, 'id'>>): void {
+  const users = getUsers();
+  const updatedUsers = users.map((u) =>
+    u.id === userId ? { ...u, ...userData } : u
+  );
+  saveUsers(updatedUsers);
+}
+
+export function deleteUser(userId: string): void {
+  const users = getUsers();
+  const updatedUsers = users.filter((u) => u.id !== userId);
+  saveUsers(updatedUsers);
 }
