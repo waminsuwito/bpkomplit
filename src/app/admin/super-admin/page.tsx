@@ -1,47 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
 import { type User, type UserRole, type UserLocation } from '@/lib/types';
-import { users as initialUsersData } from '@/lib/auth';
+import { getUsers, saveUsers } from '@/lib/auth';
+import { useToast } from '@/hooks/use-toast';
 
-// In a real app, you would fetch and update users via an API.
-// For this prototype, we manage the user list in the client-side state.
-// Note: Changes made here won't persist across page reloads.
 
 export default function SuperAdminPage() {
-  const [users, setUsers] = useState<User[]>(initialUsersData.map(({ password, ...user }) => user));
+  const [users, setUsers] = useState<User[]>([]);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setUsers(getUsers());
+  }, []);
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
+    let updatedUsers: User[];
+
     if (userId) {
       // Update existing user
-      setUsers(users.map(u => 
-        u.id === userId 
-        ? { 
-            ...u, 
-            username: data.username, 
+      updatedUsers = users.map(u => {
+        if (u.id === userId) {
+          const updatedUser: User = {
+            ...u,
+            username: data.username,
             role: data.role as UserRole,
             location: data.location as UserLocation,
-            // Password is not saved in this prototype state
-          } 
-        : u
-      ));
+          };
+          // Only update password if a new one was entered
+          if (data.password) {
+            updatedUser.password = data.password;
+          }
+          return updatedUser;
+        }
+        return u;
+      });
     } else {
       // Add new user
+      if (!data.password) {
+        toast({
+          variant: 'destructive',
+          title: 'Creation Failed',
+          description: 'Password is required for new users.',
+        });
+        return;
+      }
       const newUser: User = { 
         id: new Date().toISOString(),
         username: data.username,
+        password: data.password,
         role: data.role as UserRole,
         location: data.location as UserLocation,
       };
-      setUsers([...users, newUser]);
+      updatedUsers = [...users, newUser];
     }
-    setUserToEdit(null); // Reset edit state
+    
+    setUsers(updatedUsers);
+    saveUsers(updatedUsers);
+    setUserToEdit(null);
   };
   
   const handleEditUser = (id: string) => {
@@ -53,12 +75,17 @@ export default function SuperAdminPage() {
   };
 
   const handleDeleteUser = (id: string) => {
-    setUsers(users.filter(u => u.id !== id));
+    const updatedUsers = users.filter(u => u.id !== id)
+    setUsers(updatedUsers);
+    saveUsers(updatedUsers);
   };
 
   const handleCancelEdit = () => {
     setUserToEdit(null);
   };
+
+  // We need to pass users without their passwords to the list component for display
+  const usersForDisplay = users.map(({ password, ...user }) => user);
 
   return (
     <div className="w-full max-w-4xl space-y-6 mx-auto">
@@ -89,7 +116,7 @@ export default function SuperAdminPage() {
               <CardDescription>View, edit, or delete existing users.</CardDescription>
           </CardHeader>
           <CardContent>
-              <UserList users={users} onEdit={handleEditUser} onDelete={handleDeleteUser} />
+              <UserList users={usersForDisplay} onEdit={handleEditUser} onDelete={handleDeleteUser} />
           </CardContent>
       </Card>
     </div>

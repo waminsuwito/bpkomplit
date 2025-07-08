@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
-import { users } from '@/lib/auth'; // Import the full user list for password verification
+import { getUsers } from '@/lib/auth'; // Import the function to get users
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -57,8 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginDashboardAdmin = async (password: string): Promise<boolean> => {
     if (!user) return false;
 
-    // Find the full user object to check the password
-    const userWithPassword = users.find(u => u.id === user.id);
+    // Get the full, current user list from storage for verification
+    const allUsers = getUsers();
+    const userWithPassword = allUsers.find(u => u.id === user.id);
     
     const canAccess = user.role === 'kepala_BP' || user.role === 'super_admin';
 

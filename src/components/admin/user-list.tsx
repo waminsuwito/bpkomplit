@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2 } from 'lucide-react';
 
 interface UserListProps {
-  users: User[];
+  users: Omit<User, 'password'>[];
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
