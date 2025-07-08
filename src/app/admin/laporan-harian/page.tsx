@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -93,7 +94,7 @@ export default function LaporanHarianPage() {
 
   return (
     <div className="space-y-4">
-      <Card id="print-content">
+      <Card className="print-content">
         <CardHeader>
           <CardTitle>Laporan Harian Produksi</CardTitle>
           <CardDescription>

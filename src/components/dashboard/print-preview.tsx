@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,7 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
       </SheetHeader>
       
       <div className="flex-grow overflow-y-auto p-4">
-        <div id="print-content" className="bg-white text-black p-8 rounded-md shadow-lg max-w-2xl mx-auto font-sans">
+        <div className="print-content bg-white text-black p-8 rounded-md shadow-lg max-w-2xl mx-auto font-sans">
           <header className="flex items-center justify-between border-b-2 border-black pb-4">
             <div className="flex items-center gap-4">
               <Image src="https://i.ibb.co/V0NgdX7z/images.jpg" alt="Company Logo" width={60} height={60} />

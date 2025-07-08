@@ -85,7 +85,7 @@ export default function PemasukanMaterialPage() {
 
   return (
     <div className="space-y-6">
-      <Card id="print-content">
+      <Card className="print-content">
         <CardHeader>
           <div className="flex justify-between items-start no-print">
             <div>

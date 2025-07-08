@@ -1,3 +1,4 @@
+
 @media print {
   @page {
     size: A4 landscape;
@@ -10,12 +11,12 @@
   }
   
   /* Now, make the print container and everything inside it visible again */
-  #print-content, #print-content * {
+  .print-content, .print-content * {
     visibility: visible;
   }
   
   /* Position the print container to fill the page */
-  #print-content {
+  .print-content {
     position: absolute;
     left: 0;
     top: 0;
@@ -43,18 +44,18 @@
   }
 
   /* Style the table and inputs for printing */
-  #print-content table, 
-  #print-content th, 
-  #print-content td {
+  .print-content table, 
+  .print-content th, 
+  .print-content td {
      border: 1px solid #333 !important;
      color: #000 !important;
   }
 
-  #print-content th {
+  .print-content th {
     background-color: #f0f0f0 !important;
   }
 
-  #print-content input {
+  .print-content input {
      background-color: transparent !important;
      color: #000 !important;
      border: none !important;
