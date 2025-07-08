@@ -9,12 +9,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { userRoles, type User } from '@/lib/types';
+import { userRoles, type User, userLocations } from '@/lib/types';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: 'Username must be at least 3 characters long.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }).optional().or(z.literal('')),
   role: z.enum(userRoles),
+  location: z.enum(userLocations),
 });
 
 export type UserFormValues = z.infer<typeof formSchema>;
@@ -35,6 +36,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
       username: '',
       password: '',
       role: 'operator',
+      location: 'BP PEKANBARU',
     },
   });
 
@@ -44,18 +46,21 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
         username: userToEdit.username,
         password: '', // Don't pre-fill password
         role: userToEdit.role,
+        location: userToEdit.location || 'BP PEKANBARU',
       });
     } else {
       form.reset({
         username: '',
         password: '',
         role: 'operator',
+        location: 'BP PEKANBARU',
       });
     }
   }, [userToEdit, form]);
 
   function onSubmit(values: UserFormValues) {
     if (isEditing && !values.password) {
+      // @ts-ignore
       delete values.password;
     }
     
@@ -116,6 +121,30 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
                   {userRoles.map((role) => (
                     <SelectItem key={role} value={role}>
                       {role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Location</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a location" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {userLocations.map((location) => (
+                    <SelectItem key={location} value={location}>
+                      {location}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -41,9 +41,19 @@ export const userRoles = [
 
 export type UserRole = (typeof userRoles)[number];
 
+export const userLocations = [
+  "BP PEKANBARU",
+  "BP DUMAI",
+  "BP BAUNG",
+  "BP IKN",
+] as const;
+
+export type UserLocation = (typeof userLocations)[number];
+
 export interface User {
   id: string;
   username: string;
   password?: string;
   role: UserRole;
+  location?: UserLocation;
 }

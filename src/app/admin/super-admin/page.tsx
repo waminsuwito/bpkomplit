@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
-import { type User, type UserRole } from '@/lib/types';
+import { type User, type UserRole, type UserLocation } from '@/lib/types';
 import { users as initialUsersData } from '@/lib/auth';
 
 // In a real app, you would fetch and update users via an API.
@@ -26,6 +26,7 @@ export default function SuperAdminPage() {
             ...u, 
             username: data.username, 
             role: data.role as UserRole,
+            location: data.location as UserLocation,
             // Password is not saved in this prototype state
           } 
         : u
@@ -35,7 +36,8 @@ export default function SuperAdminPage() {
       const newUser: User = { 
         id: new Date().toISOString(),
         username: data.username,
-        role: data.role as UserRole
+        role: data.role as UserRole,
+        location: data.location as UserLocation,
       };
       setUsers([...users, newUser]);
     }

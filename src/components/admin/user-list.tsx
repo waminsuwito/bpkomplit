@@ -63,6 +63,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
           <TableRow>
             <TableHead>Username</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Location</TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -73,6 +74,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
               <TableCell>
                 <Badge variant={roleVariantMap[user.role] || 'default'}>{formatRoleName(user.role)}</Badge>
               </TableCell>
+              <TableCell>{user.location || 'N/A'}</TableCell>
               <TableCell className="flex justify-center items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => onEdit(user.id)} disabled={user.id === 'superadmin-main'}>
                   <Edit className="h-4 w-4" />
