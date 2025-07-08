@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, FileText, CalendarCheck, PackagePlus } from 'lucide-react';
+import { Shield, FileText, CalendarCheck, PackagePlus, Truck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -19,6 +19,7 @@ const adminLokasiNav = [
 
 const logistikMaterialNav = [
   { href: '/admin/pemasukan-material', label: 'Pemasukan Material', icon: PackagePlus },
+  { href: '/admin/pengiriman-material', label: 'Pengiriman Material', icon: Truck },
 ];
 
 export function AdminSidebar() {
