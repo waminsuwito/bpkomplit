@@ -206,34 +206,57 @@ export default function LaporanHarianPage() {
         </CardContent>
       </Card>
       <style jsx global>{`
+        .print-only {
+          display: none;
+        }
+
         @media print {
+          /* Hide all non-essential UI */
+          body > div:first-child > header,
+          body > div:first-child > div > aside,
           .no-print {
             display: none !important;
           }
-           .print-only {
-            display: block !important;
+
+          /* Reset layout for printing */
+          body {
+            background: #fff !important;
+            color: #000 !important;
+            padding: 0;
+            margin: 0;
           }
-          body, #print-content {
-            background: white !important;
-            color: black !important;
-          }
-          #print-content {
-            border: none !important;
-            box-shadow: none !important;
+          main {
             padding: 0 !important;
             margin: 0 !important;
           }
+          main > div {
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          /* Style the report itself for printing */
+          #print-content {
+            position: static;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 1rem;
+            width: 100%;
+          }
+
+          .print-only {
+            display: block !important;
+          }
+          
+          /* Ensure table and inputs are styled correctly for print */
           .table, .table th, .table td {
-             border-color: #666 !important;
+             border-color: #000 !important;
+             color: #000 !important;
           }
           input {
              background-color: transparent !important;
-             color: black !important;
+             color: #000 !important;
              border: none !important;
           }
-        }
-        .print-only {
-            display: none;
         }
       `}</style>
     </div>
