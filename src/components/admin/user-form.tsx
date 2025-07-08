@@ -1,0 +1,134 @@
+'use client';
+
+import { useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { userRoles, type User } from '@/lib/types';
+
+const formSchema = z.object({
+  username: z.string().min(3, { message: 'Username must be at least 3 characters long.' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }).optional().or(z.literal('')),
+  role: z.enum(userRoles),
+});
+
+export type UserFormValues = z.infer<typeof formSchema>;
+
+interface UserFormProps {
+  onSave: (data: UserFormValues, userId: string | null) => void;
+  onCancel: () => void;
+  userToEdit: User | null;
+}
+
+export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
+  const { toast } = useToast();
+  const isEditing = !!userToEdit;
+
+  const form = useForm<UserFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+      role: 'operator',
+    },
+  });
+
+  useEffect(() => {
+    if (userToEdit) {
+      form.reset({
+        username: userToEdit.username,
+        password: '', // Don't pre-fill password
+        role: userToEdit.role,
+      });
+    } else {
+      form.reset({
+        username: '',
+        password: '',
+        role: 'operator',
+      });
+    }
+  }, [userToEdit, form]);
+
+  function onSubmit(values: UserFormValues) {
+    if (isEditing && !values.password) {
+      delete values.password;
+    }
+    
+    onSave(values, userToEdit?.id || null);
+    
+    toast({
+      title: isEditing ? 'User Updated' : 'User Created',
+      description: `User "${values.username}" has been ${isEditing ? 'updated' : 'created'} successfully.`,
+    });
+    
+    if (!isEditing) {
+      form.reset();
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., john.doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder={isEditing ? 'Leave blank to keep current password' : 'Enter password'} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {userRoles.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end gap-2">
+          {isEditing && <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>}
+          <Button type="submit">{isEditing ? 'Update User' : 'Create User'}</Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
