@@ -46,11 +46,15 @@ export function printElement(elementId: string) {
   printWindow.document.write(printContent.innerHTML);
   printWindow.document.write('</body></html>');
   printWindow.document.close();
-  printWindow.focus();
   
-  // Use a timeout to ensure styles are loaded before printing
-  setTimeout(() => {
-    printWindow.print();
+  // This event handler is called after the user prints or cancels the print dialog
+  printWindow.onafterprint = function() {
     printWindow.close();
+  };
+
+  // Use a timeout to ensure content is rendered before triggering print
+  setTimeout(() => {
+    printWindow.focus();
+    printWindow.print();
   }, 250);
 }
