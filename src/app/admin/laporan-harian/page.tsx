@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Printer } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn, printElement } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -88,13 +88,9 @@ export default function LaporanHarianPage() {
     setTableData(newData);
   };
   
-  const handlePrint = () => {
-    window.print();
-  }
-
   return (
     <div className="space-y-4">
-      <Card className="print-content">
+      <Card id="print-content">
         <CardHeader>
           <CardTitle>Laporan Harian Produksi</CardTitle>
           <CardDescription>
@@ -130,7 +126,7 @@ export default function LaporanHarianPage() {
                <span className="font-semibold print-only">{date ? format(date, 'PPP') : ''}</span>
             </div>
             <button
-              onClick={handlePrint}
+              onClick={() => printElement('print-content')}
               className="no-print inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium"
             >
               <Printer className="mr-2 h-4 w-4" />

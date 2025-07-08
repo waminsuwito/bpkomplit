@@ -34,7 +34,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { PackagePlus, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import type { BongkarMaterial } from '@/lib/types';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, printElement } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
 const BONGKAR_MATERIAL_STORAGE_KEY = 'app-bongkar-material';
@@ -79,13 +79,9 @@ export default function PemasukanMaterialPage() {
     setSelectedDate(undefined);
   };
   
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="space-y-6">
-      <Card className="print-content">
+      <Card id="print-content">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -98,7 +94,7 @@ export default function PemasukanMaterialPage() {
               </CardDescription>
             </div>
             <button
-              onClick={handlePrint}
+              onClick={() => printElement('print-content')}
               className="no-print inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium"
             >
               <Printer className="mr-2 h-4 w-4" />

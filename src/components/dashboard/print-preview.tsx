@@ -4,6 +4,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import Image from 'next/image';
+import { printElement } from '@/lib/utils';
+
 
 interface PrintPreviewProps {
   data: any; // Ideally, a well-defined type
@@ -11,10 +13,6 @@ interface PrintPreviewProps {
 }
 
 export function PrintPreview({ data, onClose }: PrintPreviewProps) {
-  const handlePrint = () => {
-    // This uses CSS media queries to print only the desired content
-    window.print();
-  };
   
   if (!data || !data.startTime || !data.endTime) return null;
 
@@ -44,7 +42,7 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
       </SheetHeader>
       
       <div className="flex-grow overflow-y-auto p-4">
-        <div className="print-content bg-white text-black p-8 rounded-md shadow-lg max-w-2xl mx-auto font-sans">
+        <div id="print-preview-content" className="bg-white text-black p-8 rounded-md shadow-lg max-w-2xl mx-auto font-sans">
           <header className="flex items-center justify-between border-b-2 border-black pb-4">
             <div className="flex items-center gap-4">
               <Image src="https://i.ibb.co/V0NgdX7z/images.jpg" alt="Company Logo" width={60} height={60} />
@@ -155,7 +153,7 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
           Close
         </button>
         <button
-          onClick={handlePrint}
+          onClick={() => printElement('print-preview-content')}
           className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium"
         >
           Print
