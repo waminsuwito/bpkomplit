@@ -129,10 +129,13 @@ export default function LaporanHarianPage() {
               </Popover>
                <span className="font-semibold print-only">{date ? format(date, 'PPP') : ''}</span>
             </div>
-            <Button onClick={handlePrint} className="no-print">
+            <button
+              onClick={handlePrint}
+              className="no-print inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium"
+            >
               <Printer className="mr-2 h-4 w-4" />
               Cetak
-            </Button>
+            </button>
           </div>
 
           <div className="overflow-x-auto">

@@ -1,7 +1,6 @@
 
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import Image from 'next/image';
@@ -149,8 +148,18 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
       </div>
       
       <div className="flex-shrink-0 p-4 border-t bg-background flex justify-end gap-2 no-print">
-        <Button variant="outline" onClick={onClose}>Close</Button>
-        <Button onClick={handlePrint}>Print</Button>
+        <button
+          onClick={onClose}
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 text-sm font-medium"
+        >
+          Close
+        </button>
+        <button
+          onClick={handlePrint}
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium"
+        >
+          Print
+        </button>
       </div>
     </div>
   );
