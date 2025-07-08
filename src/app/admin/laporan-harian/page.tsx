@@ -118,7 +118,7 @@ export default function LaporanHarianPage() {
                     {date ? format(date, 'PPP') : <span>Pilih tanggal</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 no-print">
                   <Calendar
                     mode="single"
                     selected={date}

@@ -87,7 +87,7 @@ export default function PemasukanMaterialPage() {
     <div className="space-y-6">
       <Card className="print-content">
         <CardHeader>
-          <div className="flex justify-between items-start no-print">
+          <div className="flex justify-between items-start">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <PackagePlus className="h-6 w-6 text-primary" />
@@ -97,7 +97,7 @@ export default function PemasukanMaterialPage() {
                 Menampilkan laporan material yang telah selesai dibongkar. Gunakan filter untuk menyortir data.
               </CardDescription>
             </div>
-            <Button onClick={handlePrint}>
+            <Button onClick={handlePrint} className="no-print">
               <Printer className="mr-2 h-4 w-4" />
               Cetak
             </Button>

@@ -1,8 +1,7 @@
-
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 1cm; /* Standard margin for the printed page */
+    size: A4;
+    margin: 1.5cm;
   }
 
   /* Hide everything by default */
@@ -15,43 +14,28 @@
     visibility: visible;
   }
 
-  /* Position the print content at the top-left of the print area */
+  /*
+    Position the .print-content element at the top-left of the page,
+    taking it out of the flow of its now-invisible parent elements.
+  */
   .print-content {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%; /* Take full width of the printable area */
+    width: 100%;
     border: none !important;
     box-shadow: none !important;
   }
 
-  /* --- General Setup --- */
+  /* Don't print elements that we specifically mark with this class */
+  .no-print, .no-print * {
+    display: none !important;
+  }
+  
+  /* Ensure the body has a white background for printing */
   body {
-    background-color: #fff !important;
+    background-color: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    margin: 0; /* Remove body margin for printing */
-  }
-
-  .print-only { display: block !important; }
-  .no-print { display: none !important; }
-  
-  /* --- Common Styling for Printed Tables/Inputs --- */
-  .print-content table,
-  .print-content th,
-  .print-content td {
-    border: 1px solid #333 !important;
-    color: #000 !important;
-  }
-
-  .print-content th {
-    background-color: #f0f0f0 !important;
-  }
-
-  .print-content input {
-    background-color: transparent !important;
-    color: #000 !important;
-    border: none !important;
-    box-shadow: none !important;
   }
 }
