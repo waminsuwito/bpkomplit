@@ -57,3 +57,12 @@ export interface User {
   role: UserRole;
   location?: UserLocation;
 }
+
+export interface JobMixFormula {
+  id: string;
+  mutuBeton: string;
+  pasir: number;
+  batu: number;
+  air: number;
+  semen: number;
+}

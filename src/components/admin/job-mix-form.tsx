@@ -1,8 +1,6 @@
-// This component is no longer used and has been removed as per the new authentication flow.
-// The admin panel is now solely for user management.
+// This component is no longer used. Formula management is now handled in the dashboard.
 'use client';
 export function JobMixForm() {
   return null;
 }
 export type JobMixValues = {};
-export interface JobMixFormula { id: string };

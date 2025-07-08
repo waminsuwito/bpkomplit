@@ -3,12 +3,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
+import { users } from '@/lib/auth'; // Import the full user list for password verification
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
   login: (userData: Omit<User, 'password'>) => void;
   logout: () => void;
   isLoading: boolean;
+  isDashboardAdmin: boolean;
+  loginDashboardAdmin: (password: string) => Promise<boolean>;
+  logoutDashboardAdmin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDashboardAdmin, setIsDashboardAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     if (userData.role === 'super_admin') {
-      router.push('/admin');
+      router.push('/admin/super-admin');
     } else {
       router.push('/dashboard');
     }
@@ -45,11 +50,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
+    setIsDashboardAdmin(false); // Reset admin mode on full logout
     router.push('/');
   };
 
+  const loginDashboardAdmin = async (password: string): Promise<boolean> => {
+    if (!user) return false;
+
+    // Find the full user object to check the password
+    const userWithPassword = users.find(u => u.id === user.id);
+    
+    const canAccess = user.role === 'kepala_BP' || user.role === 'super_admin';
+
+    if (userWithPassword && userWithPassword.password === password && canAccess) {
+      setIsDashboardAdmin(true);
+      return true;
+    }
+    
+    return false;
+  };
+
+  const logoutDashboardAdmin = () => {
+    setIsDashboardAdmin(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, isDashboardAdmin, loginDashboardAdmin, logoutDashboardAdmin }}>
       {children}
     </AuthContext.Provider>
   );

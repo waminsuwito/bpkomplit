@@ -5,13 +5,15 @@ import { WeightDisplayPanel } from './material-inventory';
 import { ControlPanel } from './batch-control';
 import { StatusPanel, type TimerDisplayState } from './status-panel';
 import { ManualControlPanel, type ManualControlsState } from './batch-history';
-import type { JobMixFormula } from '@/components/admin/job-mix-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiAdvisor } from './ai-advisor';
 import { PrintPreview } from './print-preview';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess } from '@/lib/config';
 import type { MixingProcessConfig, MixingProcessStep } from '@/components/admin/mixing-process-form';
+import { useAuth } from '@/context/auth-provider';
+import { FormulaManager } from './formula-manager';
+import type { JobMixFormula } from '@/lib/types';
 
 // Define rates for weight change, units per second
 const AGGREGATE_RATE = 250; // kg/s
@@ -57,6 +59,7 @@ type TimerMode = 'idle' | 'mixing' | 'unloading' | 'closing';
 type MaterialDischargeStatus = 'pending' | 'active' | 'done';
 
 export function Dashboard() {
+  const { isDashboardAdmin } = useAuth();
   const [aggregateWeight, setAggregateWeight] = useState(0);
   const [airWeight, setAirWeight] = useState(0);
   const [semenWeight, setSemenWeight] = useState(0);
@@ -69,7 +72,7 @@ export function Dashboard() {
     colorClass: 'text-primary',
   });
 
-  const [formulas] = useState<JobMixFormula[]>(initialFormulas);
+  const [formulas, setFormulas] = useState<JobMixFormula[]>(initialFormulas);
   const [targetWeights, setTargetWeights] = useState({ pasir: 0, batu: 0, air: 0, semen: 0 });
   const [actualMaterialWeights, setActualMaterialWeights] = useState({ pasir: 0, batu: 0, semen: 0, air: 0 });
   
@@ -163,6 +166,19 @@ export function Dashboard() {
   
   const prevControlsRef = useRef<ManualControlsState>();
   const prevAutoStepRef = useRef<AutoProcessStep>();
+
+  const handleAddFormula = (newFormulaData: Omit<JobMixFormula, 'id'>) => {
+    const newFormula = { ...newFormulaData, id: new Date().toISOString() };
+    setFormulas(prev => [...prev, newFormula]);
+  };
+
+  const handleUpdateFormula = (updatedFormula: JobMixFormula) => {
+    setFormulas(prev => prev.map(f => f.id === updatedFormula.id ? updatedFormula : f));
+  };
+
+  const handleDeleteFormula = (formulaId: string) => {
+    setFormulas(prev => prev.filter(f => f.id !== formulaId));
+  };
 
   // Load config from localStorage on mount
   useEffect(() => {
@@ -824,6 +840,16 @@ export function Dashboard() {
 
   return (
     <div className="space-y-4">
+      {isDashboardAdmin && (
+        <div className="mb-4">
+            <FormulaManager 
+                formulas={formulas}
+                onAdd={handleAddFormula}
+                onUpdate={handleUpdateFormula}
+                onDelete={handleDeleteFormula}
+            />
+        </div>
+      )}
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12">
           <WeightDisplayPanel
