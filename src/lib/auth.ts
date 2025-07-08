@@ -1,7 +1,7 @@
 
 import { type User } from '@/lib/types';
 import { firestore } from '@/lib/firebase';
-import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, query, where, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, query, where, writeBatch, limit } from 'firebase/firestore';
 
 
 const USERS_COLLECTION = 'users';
@@ -30,13 +30,6 @@ async function seedInitialUsers() {
 export async function getUsers(): Promise<User[]> {
     const usersCollection = collection(firestore, USERS_COLLECTION);
     const userSnapshot = await getDocs(usersCollection);
-    
-    if (userSnapshot.empty) {
-        await seedInitialUsers();
-        const seededSnapshot = await getDocs(usersCollection);
-        return seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-    }
-
     return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 }
 
@@ -61,13 +54,25 @@ export async function deleteUser(userId: string): Promise<void> {
 
 export async function verifyLogin(username: string, password: string): Promise<Omit<User, 'password'> | null> {
     const usersCollection = collection(firestore, USERS_COLLECTION);
-    const q = query(
+    
+    // First, check if the collection is empty.
+    const checkQuery = query(usersCollection, limit(1));
+    const checkSnapshot = await getDocs(checkQuery);
+    
+    if (checkSnapshot.empty) {
+        // If it's empty, seed the initial users and wait for it to complete.
+        console.log("No users found. Seeding initial users...");
+        await seedInitialUsers();
+    }
+    
+    // Now, perform the actual login query.
+    const loginQuery = query(
         usersCollection, 
         where("username", "==", username), 
         where("password", "==", password)
     );
 
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(loginQuery);
 
     if (querySnapshot.empty) {
         return null;
