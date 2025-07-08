@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
 const BONGKAR_MATERIAL_STORAGE_KEY = 'app-bongkar-material';
+const materialOptions = ["Pasir", "Batu", "Semen", "Obat Beton"];
 
 export default function PemasukanMaterialPage() {
   const [completedUnloads, setCompletedUnloads] = useState<BongkarMaterial[]>([]);
@@ -56,11 +57,6 @@ export default function PemasukanMaterialPage() {
       console.error("Failed to load data from localStorage", error);
     }
   }, []);
-
-  const materialOptions = useMemo(() => {
-    const materials = new Set(completedUnloads.map(item => item.namaMaterial));
-    return Array.from(materials);
-  }, [completedUnloads]);
 
   const filteredUnloads = useMemo(() => {
     return completedUnloads.filter(item => {
