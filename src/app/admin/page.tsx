@@ -16,6 +16,8 @@ export default function AdminRootPage() {
       router.replace('/admin/super-admin');
     } else if (user?.role === 'admin_lokasi') {
       router.replace('/admin/laporan-harian');
+    } else if (user?.role === 'logistik_material') {
+      router.replace('/admin/pemasukan-material');
     } else if (user) {
       // If an unauthorized user somehow gets here, send them away
       router.replace('/dashboard');

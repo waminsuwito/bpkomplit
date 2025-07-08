@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, FileText, CalendarCheck } from 'lucide-react';
+import { Shield, FileText, CalendarCheck, PackagePlus } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -17,6 +17,10 @@ const adminLokasiNav = [
   { href: '/admin/schedule-cor', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
 ];
 
+const logistikMaterialNav = [
+  { href: '/admin/pemasukan-material', label: 'Pemasukan Material', icon: PackagePlus },
+];
+
 export function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -26,6 +30,8 @@ export function AdminSidebar() {
     navItems = superAdminNav;
   } else if (user?.role === 'admin_lokasi') {
     navItems = adminLokasiNav;
+  } else if (user?.role === 'logistik_material') {
+    navItems = logistikMaterialNav;
   }
 
   return (
