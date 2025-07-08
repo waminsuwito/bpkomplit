@@ -137,7 +137,7 @@ export default function BongkarMaterialPage() {
         return {
           ...item,
           status: 'Proses' as const,
-          waktuMulai: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
+          waktuMulai: new Date().toISOString(),
         };
       }
       return item;
@@ -161,7 +161,7 @@ export default function BongkarMaterialPage() {
         return {
           ...item,
           status: 'Selesai' as const,
-          waktuSelesai: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
+          waktuSelesai: new Date().toISOString(),
           totalIstirahatMs: finalTotalIstirahatMs,
           waktuMulaiIstirahat: null,
         };
@@ -207,6 +207,47 @@ export default function BongkarMaterialPage() {
     const updatedData = daftarBongkar.filter(item => item.id !== id);
     setDaftarBongkar(updatedData);
     saveToLocalStorage(updatedData);
+  };
+
+  const calculatePerformance = (item: BongkarMaterial) => {
+    if (item.status !== 'Selesai' || !item.waktuMulai || !item.waktuSelesai) {
+      return { lamaBongkar: '-', rataRata: '-' };
+    }
+    
+    try {
+      const mulaiMs = new Date(item.waktuMulai).getTime();
+      const selesaiMs = new Date(item.waktuSelesai).getTime();
+      
+      if (isNaN(mulaiMs) || isNaN(selesaiMs)) {
+        return { lamaBongkar: 'Invalid Date', rataRata: 'Invalid Date' };
+      }
+
+      const totalDurasiMs = selesaiMs - mulaiMs;
+      const durasiKerjaMs = totalDurasiMs - item.totalIstirahatMs;
+
+      if (durasiKerjaMs < 0) {
+        return { lamaBongkar: 'N/A', rataRata: 'N/A' };
+      }
+
+      const jam = Math.floor(durasiKerjaMs / (1000 * 60 * 60));
+      const menit = Math.floor((durasiKerjaMs % (1000 * 60 * 60)) / (1000 * 60));
+      const lamaBongkar = `${jam} jam ${menit} mnt`;
+
+      const volumeValue = parseFloat(item.volume);
+      const volumeUnit = item.volume.split(' ').slice(1).join(' ');
+      const durasiKerjaJam = durasiKerjaMs / (1000 * 60 * 60);
+
+      let rataRata = '-';
+      if (durasiKerjaJam > 0 && !isNaN(volumeValue)) {
+        const rate = volumeValue / durasiKerjaJam;
+        rataRata = `${rate.toFixed(2)} ${volumeUnit}/jam`;
+      }
+
+      return { lamaBongkar, rataRata };
+    } catch (error) {
+      console.error("Error calculating performance:", error);
+      return { lamaBongkar: 'Error', rataRata: 'Error' };
+    }
   };
   
   const unit = getUnit(formState.namaMaterial);
@@ -278,73 +319,80 @@ export default function BongkarMaterialPage() {
                             <TableHead>Kapal/Kendaraan</TableHead>
                             <TableHead>Kapten/Sopir</TableHead>
                             <TableHead>Volume</TableHead>
+                            <TableHead>Lama Bongkar</TableHead>
+                            <TableHead>Rata-rata /jam</TableHead>
                             <TableHead>Keterangan</TableHead>
                             <TableHead className="text-center">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {daftarBongkar.map((item) => (
-                            <TableRow key={item.id}>
-                                <TableCell>
-                                  <Badge 
-                                    variant={
-                                      item.status === 'Selesai' ? 'default' :
-                                      item.status === 'Belum Dimulai' ? 'outline' :
-                                      'secondary'
-                                    }
-                                    className={cn(item.status === 'Istirahat' && 'bg-accent text-accent-foreground hover:bg-accent/80')}
-                                  >
-                                    {item.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{item.waktuMulai || '-'}</TableCell>
-                                <TableCell className="text-center">
-                                  {Math.floor((item.totalIstirahatMs || 0) / 60000)}
-                                </TableCell>
-                                <TableCell>{item.waktuSelesai || '-'}</TableCell>
-                                <TableCell>{item.namaMaterial}</TableCell>
-                                <TableCell>{item.kapalKendaraan}</TableCell>
-                                <TableCell>{item.namaKaptenSopir}</TableCell>
-                                <TableCell>{item.volume}</TableCell>
-                                <TableCell>{item.keterangan}</TableCell>
-                                <TableCell className="text-center space-x-2">
-                                    {item.status === 'Belum Dimulai' && (
-                                      <Button variant="default" size="sm" onClick={() => handleMulaiProses(item.id)}>
-                                        <Play className="h-4 w-4 mr-2" />
-                                        Mulai
-                                      </Button>
-                                    )}
-                                    {item.status === 'Proses' && (
-                                        <>
-                                            <Button variant="outline" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
-                                                <Coffee className="h-4 w-4 mr-2" />
-                                                Istirahat
-                                            </Button>
-                                            <Button variant="default" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
-                                                <CheckCircle className="h-4 w-4 mr-2" />
-                                                Selesai
-                                            </Button>
-                                        </>
-                                    )}
-                                    {item.status === 'Istirahat' && (
-                                        <>
-                                            <Button variant="default" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
-                                                <Play className="h-4 w-4 mr-2" />
-                                                Lanjut
-                                            </Button>
-                                            <Button variant="secondary" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
-                                                <CheckCircle className="h-4 w-4 mr-2" />
-                                                Selesai
-                                            </Button>
-                                        </>
-                                    )}
-                                    <Button variant="destructive" size="icon" onClick={() => handleDeleteItem(item.id)}>
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="sr-only">Hapus</span>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {daftarBongkar.map((item) => {
+                            const { lamaBongkar, rataRata } = calculatePerformance(item);
+                            return (
+                                <TableRow key={item.id}>
+                                    <TableCell>
+                                    <Badge 
+                                        variant={
+                                        item.status === 'Selesai' ? 'default' :
+                                        item.status === 'Belum Dimulai' ? 'outline' :
+                                        'secondary'
+                                        }
+                                        className={cn(item.status === 'Istirahat' && 'bg-accent text-accent-foreground hover:bg-accent/80')}
+                                    >
+                                        {item.status}
+                                    </Badge>
+                                    </TableCell>
+                                    <TableCell>{item.waktuMulai ? new Date(item.waktuMulai).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-'}</TableCell>
+                                    <TableCell className="text-center">
+                                    {Math.floor((item.totalIstirahatMs || 0) / 60000)}
+                                    </TableCell>
+                                    <TableCell>{item.waktuSelesai ? new Date(item.waktuSelesai).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : '-'}</TableCell>
+                                    <TableCell>{item.namaMaterial}</TableCell>
+                                    <TableCell>{item.kapalKendaraan}</TableCell>
+                                    <TableCell>{item.namaKaptenSopir}</TableCell>
+                                    <TableCell>{item.volume}</TableCell>
+                                    <TableCell>{lamaBongkar}</TableCell>
+                                    <TableCell>{rataRata}</TableCell>
+                                    <TableCell>{item.keterangan}</TableCell>
+                                    <TableCell className="text-center space-x-2">
+                                        {item.status === 'Belum Dimulai' && (
+                                        <Button variant="default" size="sm" onClick={() => handleMulaiProses(item.id)}>
+                                            <Play className="h-4 w-4 mr-2" />
+                                            Mulai
+                                        </Button>
+                                        )}
+                                        {item.status === 'Proses' && (
+                                            <>
+                                                <Button variant="outline" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
+                                                    <Coffee className="h-4 w-4 mr-2" />
+                                                    Istirahat
+                                                </Button>
+                                                <Button variant="default" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
+                                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                                    Selesai
+                                                </Button>
+                                            </>
+                                        )}
+                                        {item.status === 'Istirahat' && (
+                                            <>
+                                                <Button variant="default" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
+                                                    <Play className="h-4 w-4 mr-2" />
+                                                    Lanjut
+                                                </Button>
+                                                <Button variant="secondary" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
+                                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                                    Selesai
+                                                </Button>
+                                            </>
+                                        )}
+                                        <Button variant="destructive" size="icon" onClick={() => handleDeleteItem(item.id)}>
+                                            <Trash2 className="h-4 w-4" />
+                                            <span className="sr-only">Hapus</span>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
                     </TableBody>
                 </Table>
             </div>
