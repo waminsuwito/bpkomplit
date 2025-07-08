@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: Omit<User, 'password'>) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    if (userData.role === 'super_admin' || userData.role === 'admin_lokasi') {
+    if (userData.role === 'super_admin' || userData.role === 'admin_lokasi' || userData.role === 'logistik_material') {
       router.push('/admin');
     } else {
       router.push('/dashboard');
