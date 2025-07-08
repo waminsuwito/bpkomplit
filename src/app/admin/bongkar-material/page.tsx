@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Anchor, Trash2, CheckCircle } from 'lucide-react';
+import { Anchor, Trash2, CheckCircle, Coffee, Play } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -28,9 +28,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const BONGKAR_MATERIAL_STORAGE_KEY = 'app-bongkar-material';
 const materialOptions = ["Batu", "Pasir", "Semen", "Obat Beton"];
+
+type BongkarStatus = 'Proses' | 'Istirahat' | 'Selesai';
 
 interface BongkarMaterial {
   id: string;
@@ -41,7 +44,7 @@ interface BongkarMaterial {
   keterangan: string;
   waktuMulai: string;
   waktuSelesai: string | null;
-  status: 'Proses' | 'Selesai';
+  status: BongkarStatus;
 }
 
 const initialFormState = {
@@ -138,6 +141,17 @@ export default function BongkarMaterialPage() {
     saveToLocalStorage(updatedData);
   };
 
+  const handleToggleIstirahat = (id: string, newStatus: 'Proses' | 'Istirahat') => {
+    const updatedData = daftarBongkar.map(item => {
+      if (item.id === id) {
+        return { ...item, status: newStatus };
+      }
+      return item;
+    });
+    setDaftarBongkar(updatedData);
+    saveToLocalStorage(updatedData);
+  };
+
   const handleDeleteItem = (id: string) => {
     const updatedData = daftarBongkar.filter(item => item.id !== id);
     setDaftarBongkar(updatedData);
@@ -220,7 +234,12 @@ export default function BongkarMaterialPage() {
                         {daftarBongkar.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell>
-                                  <Badge variant={item.status === 'Selesai' ? 'default' : 'secondary'}>{item.status}</Badge>
+                                  <Badge 
+                                    variant={item.status === 'Selesai' ? 'default' : 'secondary'}
+                                    className={cn(item.status === 'Istirahat' && 'bg-accent text-accent-foreground hover:bg-accent/80')}
+                                  >
+                                    {item.status}
+                                  </Badge>
                                 </TableCell>
                                 <TableCell>{item.waktuMulai}</TableCell>
                                 <TableCell>{item.waktuSelesai || '-'}</TableCell>
@@ -231,10 +250,28 @@ export default function BongkarMaterialPage() {
                                 <TableCell>{item.keterangan}</TableCell>
                                 <TableCell className="text-center space-x-2">
                                     {item.status === 'Proses' && (
-                                      <Button variant="default" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
-                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                        Selesai
-                                      </Button>
+                                        <>
+                                            <Button variant="outline" size="sm" onClick={() => handleToggleIstirahat(item.id, 'Istirahat')}>
+                                                <Coffee className="h-4 w-4 mr-2" />
+                                                Istirahat
+                                            </Button>
+                                            <Button variant="default" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
+                                                <CheckCircle className="h-4 w-4 mr-2" />
+                                                Selesai
+                                            </Button>
+                                        </>
+                                    )}
+                                    {item.status === 'Istirahat' && (
+                                        <>
+                                            <Button variant="default" size="sm" onClick={() => handleToggleIstirahat(item.id, 'Proses')}>
+                                                <Play className="h-4 w-4 mr-2" />
+                                                Lanjut
+                                            </Button>
+                                            <Button variant="secondary" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
+                                                <CheckCircle className="h-4 w-4 mr-2" />
+                                                Selesai
+                                            </Button>
+                                        </>
                                     )}
                                     <Button variant="destructive" size="icon" onClick={() => handleDeleteItem(item.id)}>
                                         <Trash2 className="h-4 w-4" />
