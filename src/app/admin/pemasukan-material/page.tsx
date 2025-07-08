@@ -79,6 +79,20 @@ export default function PemasukanMaterialPage() {
     setFormState(prev => ({...prev, [name]: value}));
   };
 
+  const getUnit = (material: string): string => {
+    switch (material) {
+        case "Batu":
+        case "Pasir":
+            return "Ton";
+        case "Semen":
+            return "Kg";
+        case "Obat Beton":
+            return "Liter"; // Assuming Liter for this
+        default:
+            return "";
+    }
+  };
+
   const handleAddMaterial = (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -89,9 +103,13 @@ export default function PemasukanMaterialPage() {
       alert('Nama Material, Asal Material, dan Volume harus diisi.');
       return;
     }
+    const unit = getUnit(formState.namaMaterial);
     const newItem: MaterialMasuk = {
       id: new Date().toISOString(),
-      ...formState,
+      namaMaterial: formState.namaMaterial,
+      asalMaterial: formState.asalMaterial,
+      keterangan: formState.keterangan,
+      volume: `${formState.volume} ${unit}`.trim(),
       tanggal: new Date().toLocaleDateString('id-ID'),
     };
     const updatedData = [...daftarMaterialMasuk, newItem];
@@ -105,6 +123,8 @@ export default function PemasukanMaterialPage() {
     setDaftarMaterialMasuk(updatedData);
     saveToLocalStorage(updatedData);
   };
+  
+  const unit = getUnit(formState.namaMaterial);
 
   return (
     <div className="space-y-6">
@@ -146,13 +166,15 @@ export default function PemasukanMaterialPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="volume">Volume / Jumlah</Label>
+              <Label htmlFor="volume">Volume / Jumlah {unit && `(${unit})`}</Label>
               <Input
                 id="volume"
                 name="volume"
+                type="number"
                 value={formState.volume}
                 onChange={handleInputChange}
-                placeholder="Contoh: 10 Ton"
+                placeholder={unit ? "Contoh: 10" : "Pilih material"}
+                disabled={!formState.namaMaterial}
               />
             </div>
             <div className="space-y-2 lg:col-span-1">
