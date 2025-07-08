@@ -20,6 +20,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { CalendarCheck, PlusCircle, Trash2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Schedule {
   id: string;
@@ -28,6 +35,7 @@ interface Schedule {
   concreteQuality: string;
   slump: string;
   volume: string;
+  mediaCor: 'Co' | 'Manual';
 }
 
 const initialFormState = {
@@ -36,6 +44,7 @@ const initialFormState = {
   concreteQuality: '',
   slump: '',
   volume: '',
+  mediaCor: 'Co' as const,
 };
 
 export default function ScheduleCorPage() {
@@ -47,10 +56,19 @@ export default function ScheduleCorPage() {
     setFormState(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleMediaCorChange = (value: 'Co' | 'Manual') => {
+    setFormState(prev => ({...prev, mediaCor: value}));
+  };
+
   const handleAddSchedule = (e: React.FormEvent) => {
     e.preventDefault();
-    if (Object.values(formState).some(field => field.trim() === '')) {
-      // Basic validation: ensure no fields are empty
+    if (
+      !formState.customerName.trim() ||
+      !formState.projectLocation.trim() ||
+      !formState.concreteQuality.trim() ||
+      !formState.slump.trim() ||
+      !formState.volume.trim()
+    ) {
       alert('Semua kolom harus diisi.');
       return;
     }
@@ -133,6 +151,22 @@ export default function ScheduleCorPage() {
                 placeholder="Contoh: 7.5"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="mediaCor">Media Cor</Label>
+              <Select
+                name="mediaCor"
+                value={formState.mediaCor}
+                onValueChange={handleMediaCorChange}
+              >
+                <SelectTrigger id="mediaCor">
+                  <SelectValue placeholder="Pilih media cor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Co">Co</SelectItem>
+                  <SelectItem value="Manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="md:col-span-3 flex justify-end items-end">
               <Button type="submit">Tambah Jadwal</Button>
             </div>
@@ -161,6 +195,7 @@ export default function ScheduleCorPage() {
                             <TableHead>Mutu Beton</TableHead>
                             <TableHead>Slump (cm)</TableHead>
                             <TableHead>Volume (M³)</TableHead>
+                            <TableHead>Media Cor</TableHead>
                             <TableHead className="text-center">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -172,6 +207,7 @@ export default function ScheduleCorPage() {
                                 <TableCell>{schedule.concreteQuality}</TableCell>
                                 <TableCell>{schedule.slump}</TableCell>
                                 <TableCell>{schedule.volume}</TableCell>
+                                <TableCell>{schedule.mediaCor}</TableCell>
                                 <TableCell className="text-center">
                                     <Button variant="destructive" size="icon" onClick={() => handleDeleteSchedule(schedule.id)}>
                                         <Trash2 className="h-4 w-4" />
