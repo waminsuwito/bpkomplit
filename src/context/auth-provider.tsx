@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
-import { getUsers } from '@/lib/auth'; // Import the function to get users
+import { getUsers, verifyLogin } from '@/lib/auth';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -56,14 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginDashboardAdmin = async (password: string): Promise<boolean> => {
     if (!user) return false;
-
-    // Get the full, current user list from storage for verification
-    const allUsers = getUsers();
-    const userWithPassword = allUsers.find(u => u.id === user.id);
     
     const canAccess = user.role === 'kepala_BP' || user.role === 'super_admin';
+    if (!canAccess) return false;
 
-    if (userWithPassword && userWithPassword.password === password && canAccess) {
+    // Verify password against the database
+    const verifiedUser = await verifyLogin(user.username, password);
+
+    if (verifiedUser) {
       setIsDashboardAdmin(true);
       return true;
     }
