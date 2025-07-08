@@ -156,19 +156,24 @@ export default function BongkarMaterialPage() {
     setDaftarBongkar(currentDaftar => {
         const updatedData = currentDaftar.map(item => {
           if (item.id === id) {
+            const waktuSelesaiObj = new Date();
             let finalTotalIstirahatMs = item.totalIstirahatMs || 0;
-            // If finishing while on break, calculate the final break duration
+            
             if (item.status === 'Istirahat' && item.waktuMulaiIstirahat) {
-               const istirahatMulai = new Date(item.waktuMulaiIstirahat).getTime();
-               const istirahatSelesai = new Date().getTime();
-               const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
-               finalTotalIstirahatMs += durasiIstirahatIni;
+               try {
+                   const istirahatMulai = new Date(item.waktuMulaiIstirahat).getTime();
+                   if (!isNaN(istirahatMulai)) {
+                     const istirahatSelesai = waktuSelesaiObj.getTime();
+                     const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
+                     finalTotalIstirahatMs += durasiIstirahatIni;
+                   }
+               } catch (e) { console.error("Invalid break start date", e); }
             }
             
             return {
               ...item,
               status: 'Selesai' as const,
-              waktuSelesai: new Date().toISOString(),
+              waktuSelesai: waktuSelesaiObj.toISOString(),
               totalIstirahatMs: finalTotalIstirahatMs,
               waktuMulaiIstirahat: null,
             };
@@ -185,18 +190,23 @@ export default function BongkarMaterialPage() {
         const updatedData = currentDaftar.map(item => {
           if (item.id === id) {
             if (item.status === 'Proses') {
-              // Starting a break
               return { 
                 ...item, 
                 status: 'Istirahat' as const,
                 waktuMulaiIstirahat: new Date().toISOString(),
               };
             } else if (item.status === 'Istirahat') {
-              // Resuming work
-              const istirahatMulai = item.waktuMulaiIstirahat ? new Date(item.waktuMulaiIstirahat).getTime() : new Date().getTime();
-              const istirahatSelesai = new Date().getTime();
-              const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
-              const totalIstirahatBaru = (item.totalIstirahatMs || 0) + durasiIstirahatIni;
+              let totalIstirahatBaru = item.totalIstirahatMs || 0;
+              if (item.waktuMulaiIstirahat) {
+                  try {
+                      const istirahatMulai = new Date(item.waktuMulaiIstirahat).getTime();
+                      if (!isNaN(istirahatMulai)) {
+                        const istirahatSelesai = new Date().getTime();
+                        const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
+                        totalIstirahatBaru += durasiIstirahatIni;
+                      }
+                  } catch(e) { console.error("Invalid break start date on resume", e); }
+              }
               
               return { 
                 ...item, 
@@ -231,7 +241,7 @@ export default function BongkarMaterialPage() {
       const selesaiMs = new Date(item.waktuSelesai).getTime();
       
       if (isNaN(mulaiMs) || isNaN(selesaiMs)) {
-        return { lamaBongkar: 'Invalid Date', rataRata: 'Invalid Date' };
+        return { lamaBongkar: 'Error', rataRata: 'Error' };
       }
 
       const totalDurasiMs = selesaiMs - mulaiMs;
