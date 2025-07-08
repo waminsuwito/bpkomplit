@@ -3,8 +3,8 @@ import { type User } from '@/lib/types';
 // In a real application, this would be a database call.
 // Passwords should be hashed.
 export const users: User[] = [
-  { id: 'superadmin-main', username: 'admin', password: 'adminpassword', role: 'super_admin' },
-  { id: 'op-1', username: 'operator', password: 'oppassword', role: 'operator' },
+  { id: 'superadmin-main', username: 'admin', password: 'admin', role: 'super_admin' },
+  { id: 'op-mirul', username: 'mirul', password: '123', role: 'operator' },
   { id: '2', username: 'operator_prod', password: 'password', role: 'operator' },
   { id: '3', username: 'andi_mekanik', password: 'password', role: 'mekanik' },
   { id: '4', username: 'kepala_bp', password: 'password', role: 'kepala_BP' },
