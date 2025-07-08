@@ -31,7 +31,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { PackagePlus, Calendar as CalendarIcon } from 'lucide-react';
+import { PackagePlus, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import type { BongkarMaterial } from '@/lib/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -78,21 +78,33 @@ export default function PemasukanMaterialPage() {
     setSelectedMaterial('all');
     setSelectedDate(undefined);
   };
+  
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card id="print-content">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PackagePlus className="h-6 w-6 text-primary" />
-            Laporan Pemasukan Material
-          </CardTitle>
-          <CardDescription>
-            Menampilkan laporan material yang telah selesai dibongkar. Gunakan filter untuk menyortir data.
-          </CardDescription>
+          <div className="flex justify-between items-start no-print">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <PackagePlus className="h-6 w-6 text-primary" />
+                Laporan Pemasukan Material
+              </CardTitle>
+              <CardDescription>
+                Menampilkan laporan material yang telah selesai dibongkar. Gunakan filter untuk menyortir data.
+              </CardDescription>
+            </div>
+            <Button onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" />
+              Cetak
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 border rounded-lg bg-card-foreground/5">
+          <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 border rounded-lg bg-card-foreground/5 no-print">
             <div className="flex-1 space-y-2">
               <Label htmlFor="material-filter">Filter Berdasarkan Material</Label>
               <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
@@ -136,6 +148,12 @@ export default function PemasukanMaterialPage() {
             <div className="flex items-end">
               <Button onClick={handleResetFilters} variant="ghost">Reset Filter</Button>
             </div>
+          </div>
+          
+          <div className="print-only mb-4">
+              <h2 className="text-xl font-bold mb-2">Laporan Pemasukan Material</h2>
+              <p><span className="font-semibold">Filter Material:</span> {selectedMaterial === 'all' ? 'Semua' : selectedMaterial}</p>
+              <p><span className="font-semibold">Filter Tanggal:</span> {selectedDate ? format(selectedDate, 'd MMMM yyyy') : 'Semua'}</p>
           </div>
 
           {filteredUnloads.length > 0 ? (
