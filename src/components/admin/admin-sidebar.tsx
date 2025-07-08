@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, FileText } from 'lucide-react';
+import { Shield, FileText, CalendarCheck } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -14,6 +14,7 @@ const superAdminNav = [
 
 const adminLokasiNav = [
   { href: '/admin/laporan-harian', label: 'Laporan Harian', icon: FileText },
+  { href: '/admin/schedule-cor', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
 ];
 
 export function AdminSidebar() {
