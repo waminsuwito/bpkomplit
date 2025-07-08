@@ -125,88 +125,100 @@ export default function BongkarMaterialPage() {
       waktuMulaiIstirahat: null,
       totalIstirahatMs: 0,
     };
-    const updatedData = [...daftarBongkar, newItem];
-    setDaftarBongkar(updatedData);
-    saveToLocalStorage(updatedData);
+    
+    setDaftarBongkar(currentDaftar => {
+        const updatedData = [...currentDaftar, newItem];
+        saveToLocalStorage(updatedData);
+        return updatedData;
+    });
+
     setFormState(initialFormState); // Reset form
   };
 
   const handleMulaiProses = (id: string) => {
-    const updatedData = daftarBongkar.map(item => {
-      if (item.id === id) {
-        return {
-          ...item,
-          status: 'Proses' as const,
-          waktuMulai: new Date().toISOString(),
-        };
-      }
-      return item;
+    setDaftarBongkar(currentDaftar => {
+        const updatedData = currentDaftar.map(item => {
+          if (item.id === id) {
+            return {
+              ...item,
+              status: 'Proses' as const,
+              waktuMulai: new Date().toISOString(),
+            };
+          }
+          return item;
+        });
+        saveToLocalStorage(updatedData);
+        return updatedData;
     });
-    setDaftarBongkar(updatedData);
-    saveToLocalStorage(updatedData);
   };
 
   const handleSelesaiBongkar = (id: string) => {
-    const updatedData = daftarBongkar.map(item => {
-      if (item.id === id) {
-        let finalTotalIstirahatMs = item.totalIstirahatMs || 0;
-        // If finishing while on break, calculate the final break duration
-        if (item.status === 'Istirahat' && item.waktuMulaiIstirahat) {
-           const istirahatMulai = new Date(item.waktuMulaiIstirahat).getTime();
-           const istirahatSelesai = new Date().getTime();
-           const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
-           finalTotalIstirahatMs += durasiIstirahatIni;
-        }
-        
-        return {
-          ...item,
-          status: 'Selesai' as const,
-          waktuSelesai: new Date().toISOString(),
-          totalIstirahatMs: finalTotalIstirahatMs,
-          waktuMulaiIstirahat: null,
-        };
-      }
-      return item;
+    setDaftarBongkar(currentDaftar => {
+        const updatedData = currentDaftar.map(item => {
+          if (item.id === id) {
+            let finalTotalIstirahatMs = item.totalIstirahatMs || 0;
+            // If finishing while on break, calculate the final break duration
+            if (item.status === 'Istirahat' && item.waktuMulaiIstirahat) {
+               const istirahatMulai = new Date(item.waktuMulaiIstirahat).getTime();
+               const istirahatSelesai = new Date().getTime();
+               const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
+               finalTotalIstirahatMs += durasiIstirahatIni;
+            }
+            
+            return {
+              ...item,
+              status: 'Selesai' as const,
+              waktuSelesai: new Date().toISOString(),
+              totalIstirahatMs: finalTotalIstirahatMs,
+              waktuMulaiIstirahat: null,
+            };
+          }
+          return item;
+        });
+        saveToLocalStorage(updatedData);
+        return updatedData;
     });
-    setDaftarBongkar(updatedData);
-    saveToLocalStorage(updatedData);
   };
 
   const handleToggleIstirahat = (id: string) => {
-    const updatedData = daftarBongkar.map(item => {
-      if (item.id === id) {
-        if (item.status === 'Proses') {
-          // Starting a break
-          return { 
-            ...item, 
-            status: 'Istirahat' as const,
-            waktuMulaiIstirahat: new Date().toISOString(),
-          };
-        } else if (item.status === 'Istirahat') {
-          // Resuming work
-          const istirahatMulai = item.waktuMulaiIstirahat ? new Date(item.waktuMulaiIstirahat).getTime() : new Date().getTime();
-          const istirahatSelesai = new Date().getTime();
-          const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
-          const totalIstirahatBaru = (item.totalIstirahatMs || 0) + durasiIstirahatIni;
-          
-          return { 
-            ...item, 
-            status: 'Proses' as const,
-            waktuMulaiIstirahat: null,
-            totalIstirahatMs: totalIstirahatBaru,
-          };
-        }
-      }
-      return item;
+    setDaftarBongkar(currentDaftar => {
+        const updatedData = currentDaftar.map(item => {
+          if (item.id === id) {
+            if (item.status === 'Proses') {
+              // Starting a break
+              return { 
+                ...item, 
+                status: 'Istirahat' as const,
+                waktuMulaiIstirahat: new Date().toISOString(),
+              };
+            } else if (item.status === 'Istirahat') {
+              // Resuming work
+              const istirahatMulai = item.waktuMulaiIstirahat ? new Date(item.waktuMulaiIstirahat).getTime() : new Date().getTime();
+              const istirahatSelesai = new Date().getTime();
+              const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
+              const totalIstirahatBaru = (item.totalIstirahatMs || 0) + durasiIstirahatIni;
+              
+              return { 
+                ...item, 
+                status: 'Proses' as const,
+                waktuMulaiIstirahat: null,
+                totalIstirahatMs: totalIstirahatBaru,
+              };
+            }
+          }
+          return item;
+        });
+        saveToLocalStorage(updatedData);
+        return updatedData;
     });
-    setDaftarBongkar(updatedData);
-    saveToLocalStorage(updatedData);
   };
 
   const handleDeleteItem = (id: string) => {
-    const updatedData = daftarBongkar.filter(item => item.id !== id);
-    setDaftarBongkar(updatedData);
-    saveToLocalStorage(updatedData);
+    setDaftarBongkar(currentDaftar => {
+        const updatedData = currentDaftar.filter(item => item.id !== id);
+        saveToLocalStorage(updatedData);
+        return updatedData;
+    });
   };
 
   const calculatePerformance = (item: BongkarMaterial) => {
@@ -223,7 +235,7 @@ export default function BongkarMaterialPage() {
       }
 
       const totalDurasiMs = selesaiMs - mulaiMs;
-      const durasiKerjaMs = totalDurasiMs - item.totalIstirahatMs;
+      const durasiKerjaMs = totalDurasiMs - (item.totalIstirahatMs || 0);
 
       if (durasiKerjaMs < 0) {
         return { lamaBongkar: 'N/A', rataRata: 'N/A' };
