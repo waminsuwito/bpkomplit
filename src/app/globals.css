@@ -74,6 +74,9 @@
   .blink {
      animation: blink 1.2s linear infinite;
   }
+  .print-only {
+    display: none;
+  }
 }
 
 @layer components {
