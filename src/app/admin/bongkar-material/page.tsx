@@ -41,26 +41,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import type { BongkarMaterial, BongkarStatus } from '@/lib/types';
 
 
 const BONGKAR_MATERIAL_STORAGE_KEY = 'app-bongkar-material';
 const materialOptions = ["Batu", "Pasir", "Semen", "Obat Beton"];
-
-type BongkarStatus = 'Belum Dimulai' | 'Proses' | 'Istirahat' | 'Selesai';
-
-interface BongkarMaterial {
-  id: string;
-  namaMaterial: string;
-  kapalKendaraan: string;
-  namaKaptenSopir: string;
-  volume: string;
-  keterangan: string;
-  waktuMulai: string | null;
-  waktuSelesai: string | null;
-  status: BongkarStatus;
-  waktuMulaiIstirahat: string | null;
-  totalIstirahatMs: number;
-}
 
 const initialFormState = {
   namaMaterial: '',
@@ -533,5 +518,3 @@ export default function BongkarMaterialPage() {
     </div>
   );
 }
-
-    

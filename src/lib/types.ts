@@ -78,3 +78,19 @@ export interface Schedule {
   mediaCor: 'CP' | 'Manual';
   date: string; // YYYY-MM-DD format
 }
+
+export type BongkarStatus = 'Belum Dimulai' | 'Proses' | 'Istirahat' | 'Selesai';
+
+export interface BongkarMaterial {
+  id: string;
+  namaMaterial: string;
+  kapalKendaraan: string;
+  namaKaptenSopir: string;
+  volume: string;
+  keterangan: string;
+  waktuMulai: string | null;
+  waktuSelesai: string | null;
+  status: BongkarStatus;
+  waktuMulaiIstirahat: string | null;
+  totalIstirahatMs: number;
+}
