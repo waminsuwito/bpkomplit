@@ -17,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -85,11 +84,11 @@ export default function PemasukanMaterialPage() {
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 no-print">
                 <PackagePlus className="h-6 w-6 text-primary" />
                 Laporan Pemasukan Material
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="no-print">
                 Menampilkan laporan material yang telah selesai dibongkar. Gunakan filter untuk menyortir data.
               </CardDescription>
             </div>
@@ -122,17 +121,16 @@ export default function PemasukanMaterialPage() {
               <Label htmlFor="date-filter">Filter Berdasarkan Tanggal Masuk</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
+                  <button
                     id="date-filter"
-                    variant={'outline'}
                     className={cn(
-                      'w-full justify-start text-left font-normal',
+                      'w-full justify-start text-left font-normal border border-input bg-background h-10 px-3 py-2 text-sm rounded-md flex items-center',
                       !selectedDate && 'text-muted-foreground'
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {selectedDate ? format(selectedDate, 'PPP') : <span>Pilih tanggal</span>}
-                  </Button>
+                  </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
@@ -145,7 +143,7 @@ export default function PemasukanMaterialPage() {
               </Popover>
             </div>
             <div className="flex items-end">
-              <Button onClick={handleResetFilters} variant="ghost">Reset Filter</Button>
+              <button onClick={handleResetFilters} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">Reset Filter</button>
             </div>
           </div>
           

@@ -71,11 +71,11 @@
 }
 
 @layer utilities {
-  .blink {
-     animation: blink 1.2s linear infinite;
-  }
   .print-only {
     display: none;
+  }
+  .no-print {
+    /* This class is used in JS to hide elements in the print preview. */
   }
 }
 

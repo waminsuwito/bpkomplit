@@ -32,11 +32,14 @@ export function printElement(elementId: string) {
       @media print {
         body { 
           margin: 1.5rem;
-          -webkit-print-color-adjust: exact; /* Chrome, Safari */
-          color-adjust: exact; /* Firefox */
+          -webkit-print-color-adjust: exact;
+          color-adjust: exact;
         }
         .no-print, .no-print * { 
           display: none !important; 
+        }
+        .print-only {
+          display: block !important;
         }
       }
     </style>
@@ -45,16 +48,19 @@ export function printElement(elementId: string) {
   printWindow.document.write('</head><body>');
   printWindow.document.write(printContent.innerHTML);
   printWindow.document.write('</body></html>');
+  
   printWindow.document.close();
   
-  // This event handler is called after the user prints or cancels the print dialog
-  printWindow.onafterprint = function() {
-    printWindow.close();
+  printWindow.onload = () => {
+    // This function runs after the document and its resources (like CSS) are loaded.
+    setTimeout(() => { // Give the browser a moment to render styles
+      printWindow.focus();
+      printWindow.print();
+    }, 100);
   };
 
-  // Use a timeout to ensure content is rendered before triggering print
-  setTimeout(() => {
-    printWindow.focus();
-    printWindow.print();
-  }, 250);
+  printWindow.onafterprint = () => {
+    // This runs after the user clicks "Print" or "Cancel".
+    printWindow.close();
+  };
 }
