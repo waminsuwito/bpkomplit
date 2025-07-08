@@ -840,7 +840,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-4">
-      {isDashboardAdmin && (
+      {isDashboardAdmin ? (
         <div className="mb-4">
             <FormulaManager 
                 formulas={formulas}
@@ -849,77 +849,80 @@ export function Dashboard() {
                 onDelete={handleDeleteFormula}
             />
         </div>
-      )}
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12">
-          <WeightDisplayPanel
-            aggregateWeight={aggregateWeight}
-            airWeight={airWeight}
-            semenWeight={semenWeight}
-            targetAggregate={targetWeights.pasir + targetWeights.batu}
-            targetAir={targetWeights.air}
-            targetSemen={targetWeights.semen}
-            joggingValues={joggingValues}
-            onJoggingChange={handleJoggingChange}
-            disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
-          />
-        </div>
-
-        <div className="col-span-9">
-          <ControlPanel
-            powerOn={powerOn}
-            setPowerOn={handleSetPowerOn}
-            formulas={formulas}
-            operasiMode={operasiMode}
-            setOperasiMode={setOperasiMode}
-            handleProcessControl={handleProcessControl}
-            jobInfo={jobInfo}
-            setJobInfo={setJobInfo}
-          />
-        </div>
-        <div className="col-span-3">
-          <StatusPanel 
-            log={activityLog}
-            timerDisplay={timerDisplay}
-            mixingTime={mixingTime}
-            setMixingTime={setMixingTime}
-            currentMixInfo={ operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete' ? {
-              current: currentMixNumber,
-              total: jobInfo.jumlahMixing
-            } : undefined}
-            disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {operasiMode === 'MANUAL' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Manual Controls</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ManualControlPanel
-                activeControls={activeControls}
-                handleToggle={handleToggle}
-                handlePress={handlePress}
-                handleSiloChange={handleSiloChange}
-                disabled={!powerOn || operasiMode === 'AUTO'}
+      ) : (
+        <>
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12">
+              <WeightDisplayPanel
+                aggregateWeight={aggregateWeight}
+                airWeight={airWeight}
+                semenWeight={semenWeight}
+                targetAggregate={targetWeights.pasir + targetWeights.batu}
+                targetAir={targetWeights.air}
+                targetSemen={targetWeights.semen}
+                joggingValues={joggingValues}
+                onJoggingChange={handleJoggingChange}
+                disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
               />
-            </CardContent>
-          </Card>
-        )}
-        <AiAdvisor />
-      </div>
+            </div>
 
-      <Sheet open={showPrintPreview} onOpenChange={setShowPrintPreview}>
-        <SheetContent className="w-full sm:max-w-4xl p-0">
-            <PrintPreview 
-                data={completedBatchData}
-                onClose={() => setShowPrintPreview(false)} 
-            />
-        </SheetContent>
-      </Sheet>
+            <div className="col-span-9">
+              <ControlPanel
+                powerOn={powerOn}
+                setPowerOn={handleSetPowerOn}
+                formulas={formulas}
+                operasiMode={operasiMode}
+                setOperasiMode={setOperasiMode}
+                handleProcessControl={handleProcessControl}
+                jobInfo={jobInfo}
+                setJobInfo={setJobInfo}
+              />
+            </div>
+            <div className="col-span-3">
+              <StatusPanel 
+                log={activityLog}
+                timerDisplay={timerDisplay}
+                mixingTime={mixingTime}
+                setMixingTime={setMixingTime}
+                currentMixInfo={ operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete' ? {
+                  current: currentMixNumber,
+                  total: jobInfo.jumlahMixing
+                } : undefined}
+                disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {operasiMode === 'MANUAL' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manual Controls</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ManualControlPanel
+                    activeControls={activeControls}
+                    handleToggle={handleToggle}
+                    handlePress={handlePress}
+                    handleSiloChange={handleSiloChange}
+                    disabled={!powerOn || operasiMode === 'AUTO'}
+                  />
+                </CardContent>
+              </Card>
+            )}
+            <AiAdvisor />
+          </div>
+
+          <Sheet open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+            <SheetContent className="w-full sm:max-w-4xl p-0">
+                <PrintPreview 
+                    data={completedBatchData}
+                    onClose={() => setShowPrintPreview(false)} 
+                />
+            </SheetContent>
+          </Sheet>
+        </>
+      )}
     </div>
   );
 }
