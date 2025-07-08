@@ -3,10 +3,14 @@
 import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { UserCircle, LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { UserCircle, LogOut, Shield } from 'lucide-react';
 
 export function Header() {
   const { user, logout } = useAuth();
+  const pathname = usePathname();
+  const isAdminPage = pathname.startsWith('/admin');
 
   const formatRoleName = (role: string) => {
     return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -37,6 +41,14 @@ export function Header() {
               </p>
               <p className="text-xs text-muted-foreground">{formatRoleName(user.role)}</p>
             </div>
+            {(user.role === 'super_admin' || user.role === 'kepala_BP') && !isAdminPage && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/super-admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Panel
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout

@@ -4,23 +4,34 @@ import { useAuth } from '@/context/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { type UserRole } from '@/lib/types';
 
-export function AuthGuard({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) {
-  const { user, isLoading, logout } = useAuth();
+export function AuthGuard({ children, requiredRoles }: { children: React.ReactNode, requiredRoles?: UserRole[] }) {
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        router.replace('/');
-      } else if (requiredRole && user.role !== requiredRole) {
-        // If the user does not have the required role, log them out and redirect.
-        logout();
-      }
+    if (isLoading) {
+      return; // Don't do anything while loading
     }
-  }, [user, isLoading, router, requiredRole, logout]);
 
-  if (isLoading || !user || (requiredRole && user.role !== requiredRole)) {
+    if (!user) {
+      // Not logged in, redirect to login page
+      router.replace('/');
+      return;
+    }
+
+    // Check if the route requires specific roles
+    if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+      // User is logged in but doesn't have the required role. Redirect them.
+      router.replace('/dashboard');
+    }
+  }, [user, isLoading, router, requiredRoles]);
+
+  // Determine if the user is authorized to see the content
+  const isAuthorized = !!user && (!requiredRoles || requiredRoles.length === 0 || requiredRoles.includes(user.role));
+
+  if (isLoading || !isAuthorized) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
