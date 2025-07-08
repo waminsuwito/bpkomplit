@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -40,7 +41,7 @@ const BONGKAR_MATERIAL_STORAGE_KEY = 'app-bongkar-material';
 
 export default function PemasukanMaterialPage() {
   const [completedUnloads, setCompletedUnloads] = useState<BongkarMaterial[]>([]);
-  const [selectedMaterial, setSelectedMaterial] = useState<string>('');
+  const [selectedMaterial, setSelectedMaterial] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function PemasukanMaterialPage() {
 
   const filteredUnloads = useMemo(() => {
     return completedUnloads.filter(item => {
-      const isMaterialMatch = selectedMaterial ? item.namaMaterial === selectedMaterial : true;
+      const isMaterialMatch = selectedMaterial === 'all' ? true : item.namaMaterial === selectedMaterial;
       let isDateMatch = true;
       if (selectedDate && item.waktuSelesai) {
         try {
@@ -78,7 +79,7 @@ export default function PemasukanMaterialPage() {
   }, [completedUnloads, selectedMaterial, selectedDate]);
 
   const handleResetFilters = () => {
-    setSelectedMaterial('');
+    setSelectedMaterial('all');
     setSelectedDate(undefined);
   };
 
@@ -103,7 +104,7 @@ export default function PemasukanMaterialPage() {
                   <SelectValue placeholder="Semua Material" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Semua Material</SelectItem>
+                  <SelectItem value="all">Semua Material</SelectItem>
                   {materialOptions.map(material => (
                     <SelectItem key={material} value={material}>{material}</SelectItem>
                   ))}
