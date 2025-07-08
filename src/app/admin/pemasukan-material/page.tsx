@@ -118,7 +118,7 @@ export default function PemasukanMaterialPage() {
               </Select>
             </div>
             <div className="flex-1 space-y-2">
-              <Label htmlFor="date-filter">Filter Berdasarkan Tanggal Masuk</Label>
+              <Label htmlFor="date-filter">Tanggal Masuk</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
