@@ -51,7 +51,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 flex h-20 items-center justify-between gap-4 border-b border-primary/20 bg-background px-6 z-10">
+      <header id="main-header" className="sticky top-0 flex h-20 items-center justify-between gap-4 border-b border-primary/20 bg-background px-6 z-10">
         <div className="flex items-center gap-4">
           <Image
             src="https://i.ibb.co/V0NgdX7z/images.jpg"

@@ -5,50 +5,52 @@
     margin: 1cm;
   }
 
-  /* Hide everything by default */
-  body * {
-    visibility: hidden;
-  }
-  
-  /* Now, make the print container and everything inside it visible again */
-  .print-content, .print-content * {
-    visibility: visible;
-  }
-  
-  /* Position the print container to fill the page */
-  .print-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-  /* These utility classes are still useful */
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-only {
-    display: inline !important; /* Or block, depending on context */
-  }
-  
-  /* Reset body styles for printing */
+  /* --- General Setup --- */
   body {
     background-color: #fff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  .print-only { display: block !important; }
+  .no-print { display: none !important; }
 
-  /* Style the table and inputs for printing */
-  .print-content table, 
-  .print-content th, 
+  /* --- Default Print Mode (for admin pages) --- */
+  #main-header, #admin-sidebar {
+    display: none !important;
+  }
+  #main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #main-content .print-content {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* --- Preview Sheet Print Mode --- */
+  body.print-preview-active * {
+    visibility: hidden;
+  }
+  body.print-preview-active .print-content,
+  body.print-preview-active .print-content * {
+    visibility: visible;
+  }
+  body.print-preview-active .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 1rem;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* --- Common Styling for Printed Tables/Inputs --- */
+  .print-content table,
+  .print-content th,
   .print-content td {
-     border: 1px solid #333 !important;
-     color: #000 !important;
+    border: 1px solid #333 !important;
+    color: #000 !important;
   }
 
   .print-content th {
@@ -56,9 +58,9 @@
   }
 
   .print-content input {
-     background-color: transparent !important;
-     color: #000 !important;
-     border: none !important;
-     box-shadow: none !important;
+    background-color: transparent !important;
+    color: #000 !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 }
