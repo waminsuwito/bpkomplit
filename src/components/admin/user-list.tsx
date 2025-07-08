@@ -32,6 +32,7 @@ interface UserListProps {
 
 const roleVariantMap: Record<UserRole, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     super_admin: 'destructive',
+    admin_lokasi: 'secondary',
     operator: 'default',
     kepala_BP: 'secondary',
     laborat: 'secondary',

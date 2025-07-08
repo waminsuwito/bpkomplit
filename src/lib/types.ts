@@ -30,6 +30,7 @@ export interface Batch {
 
 export const userRoles = [
   "super_admin",
+  "admin_lokasi",
   "operator",
   "logistik_spareparts",
   "mekanik",
