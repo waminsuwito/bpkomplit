@@ -167,19 +167,6 @@ export function Dashboard() {
   const prevControlsRef = useRef<ManualControlsState>();
   const prevAutoStepRef = useRef<AutoProcessStep>();
 
-  // Effect to manage body class for printing context
-  useEffect(() => {
-    if (showPrintPreview) {
-      document.body.classList.add('print-preview-active');
-    } else {
-      document.body.classList.remove('print-preview-active');
-    }
-    // Cleanup function to remove class when component unmounts
-    return () => {
-      document.body.classList.remove('print-preview-active');
-    };
-  }, [showPrintPreview]);
-
   const handleAddFormula = (newFormulaData: Omit<JobMixFormula, 'id'>) => {
     const newFormula = { ...newFormulaData, id: new Date().toISOString() };
     setFormulas(prev => [...prev, newFormula]);
