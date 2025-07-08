@@ -30,6 +30,18 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 
 const BONGKAR_MATERIAL_STORAGE_KEY = 'app-bongkar-material';
 const materialOptions = ["Batu", "Pasir", "Semen", "Obat Beton"];
@@ -385,32 +397,125 @@ export default function BongkarMaterialPage() {
                                         )}
                                         {item.status === 'Proses' && (
                                             <>
-                                                <Button variant="outline" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
-                                                    <Coffee className="h-4 w-4 mr-2" />
-                                                    Istirahat
-                                                </Button>
-                                                <Button variant="default" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
-                                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                                    Selesai
-                                                </Button>
+                                                <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button variant="outline" size="sm">
+                                                      <Coffee className="h-4 w-4 mr-2" />
+                                                      Istirahat
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                      <AlertDialogTitle>Konfirmasi Istirahat</AlertDialogTitle>
+                                                      <AlertDialogDescription>
+                                                        Apakah Anda yakin ingin memulai waktu istirahat? Waktu kerja akan dijeda.
+                                                      </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                      <AlertDialogAction onClick={() => handleToggleIstirahat(item.id)}>
+                                                        Ya, Mulai Istirahat
+                                                      </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                  </AlertDialogContent>
+                                                </AlertDialog>
+
+                                                <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button variant="default" size="sm">
+                                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                                        Selesai
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                      <AlertDialogTitle>Konfirmasi Selesai</AlertDialogTitle>
+                                                      <AlertDialogDescription>
+                                                        Apakah Anda yakin ingin menyelesaikan proses bongkar ini? Tindakan ini tidak dapat dibatalkan.
+                                                      </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                      <AlertDialogAction onClick={() => handleSelesaiBongkar(item.id)}>
+                                                        Ya, Selesaikan
+                                                      </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                  </AlertDialogContent>
+                                                </AlertDialog>
                                             </>
                                         )}
                                         {item.status === 'Istirahat' && (
                                             <>
-                                                <Button variant="default" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
-                                                    <Play className="h-4 w-4 mr-2" />
-                                                    Lanjut
-                                                </Button>
-                                                <Button variant="secondary" size="sm" onClick={() => handleSelesaiBongkar(item.id)}>
-                                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                                    Selesai
-                                                </Button>
+                                                <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button variant="default" size="sm">
+                                                      <Play className="h-4 w-4 mr-2" />
+                                                      Lanjut
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                      <AlertDialogTitle>Konfirmasi Lanjut Kerja</AlertDialogTitle>
+                                                      <AlertDialogDescription>
+                                                        Apakah Anda yakin ingin melanjutkan proses bongkar? Waktu kerja akan kembali dihitung.
+                                                      </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                      <AlertDialogAction onClick={() => handleToggleIstirahat(item.id)}>
+                                                        Ya, Lanjutkan
+                                                      </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                  </AlertDialogContent>
+                                                </AlertDialog>
+                                                
+                                                <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button variant="secondary" size="sm">
+                                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                                      Selesai
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                      <AlertDialogTitle>Konfirmasi Selesai</AlertDialogTitle>
+                                                      <AlertDialogDescription>
+                                                        Apakah Anda yakin ingin menyelesaikan proses bongkar ini bahkan saat sedang istirahat? Tindakan ini tidak dapat dibatalkan.
+                                                      </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                      <AlertDialogAction onClick={() => handleSelesaiBongkar(item.id)}>
+                                                        Ya, Selesaikan
+                                                      </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                  </AlertDialogContent>
+                                                </AlertDialog>
                                             </>
                                         )}
-                                        <Button variant="destructive" size="icon" onClick={() => handleDeleteItem(item.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                            <span className="sr-only">Hapus</span>
-                                        </Button>
+
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="icon">
+                                              <Trash2 className="h-4 w-4" />
+                                              <span className="sr-only">Hapus</span>
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Apakah Anda yakin ingin menghapus data bongkar untuk <span className='font-bold'>{item.kapalKendaraan}</span>? Tindakan ini tidak dapat dibatalkan.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteItem(item.id)}>
+                                                Ya, Hapus
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             )
@@ -428,3 +533,5 @@ export default function BongkarMaterialPage() {
     </div>
   );
 }
+
+    
