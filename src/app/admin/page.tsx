@@ -1,6 +1,33 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect } from 'react';
+import { useAuth } from '@/context/auth-provider';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export default function AdminRootPage() {
-  // The main entry for the admin section should be user management.
-  redirect('/admin/super-admin');
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (user?.role === 'super_admin') {
+      router.replace('/admin/super-admin');
+    } else if (user?.role === 'admin_lokasi') {
+      router.replace('/admin/laporan-harian');
+    } else if (user) {
+      // If an unauthorized user somehow gets here, send them away
+      router.replace('/dashboard');
+    } else {
+      // If no user, send to login
+      router.replace('/');
+    }
+  }, [user, isLoading, router]);
+
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
 }

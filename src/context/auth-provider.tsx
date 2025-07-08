@@ -40,8 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: Omit<User, 'password'>) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    if (userData.role === 'super_admin') {
-      router.push('/admin/super-admin');
+    if (userData.role === 'super_admin' || userData.role === 'admin_lokasi') {
+      router.push('/admin');
     } else {
       router.push('/dashboard');
     }

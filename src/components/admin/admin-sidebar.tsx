@@ -2,17 +2,30 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield } from 'lucide-react';
+import { Shield, FileText } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
+import { useAuth } from '@/context/auth-provider';
 
-const navItems = [
+const superAdminNav = [
   { href: '/admin/super-admin', label: 'User Management', icon: Shield },
+];
+
+const adminLokasiNav = [
+  { href: '/admin/laporan-harian', label: 'Laporan Harian', icon: FileText },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  let navItems = [];
+  if (user?.role === 'super_admin') {
+    navItems = superAdminNav;
+  } else if (user?.role === 'admin_lokasi') {
+    navItems = adminLokasiNav;
+  }
 
   return (
     <aside className="hidden w-64 flex-col border-r bg-card p-4 md:flex">
