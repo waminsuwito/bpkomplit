@@ -2,15 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ClipboardList, Wrench, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 
 const navItems = [
-  { href: '/admin/formulas', label: 'Job Mix Formulas', icon: ClipboardList },
-  { href: '/admin/mixing-process', label: 'Mixing Process', icon: Wrench },
-  { href: '/admin/super-admin', label: 'Super Admin', icon: Shield },
+  { href: '/admin/super-admin', label: 'User Management', icon: Shield },
 ];
 
 export function AdminSidebar() {

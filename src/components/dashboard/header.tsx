@@ -1,26 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
-import { LoginDialog } from './login-dialog';
 import Image from 'next/image';
+import { UserCircle, LogOut } from 'lucide-react';
 
 export function Header() {
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
+  const { user, logout } = useAuth();
 
-  const handleLoginSuccess = () => {
-    setIsLoginDialogOpen(false);
-    router.push('/admin');
-  };
-
-  const handleLogout = () => {
-    router.push('/');
-  };
-
-  const isAdminPage = pathname.startsWith('/admin');
+  const formatRoleName = (role: string) => {
+    return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
 
   return (
     <>
@@ -38,19 +28,22 @@ export function Header() {
             <p className="text-sm text-muted-foreground">Sistem Kontrol Otomatisasi Produksi Batching Plant</p>
           </div>
         </div>
-        {isAdminPage ? (
-          <Button variant="outline" onClick={handleLogout}>Keluar</Button>
-        ) : (
-          <Button variant="outline" onClick={() => setIsLoginDialogOpen(true)}>Admin Login</Button>
+        {user && (
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="font-semibold flex items-center gap-2">
+                <UserCircle className="h-4 w-4 text-primary" />
+                {user.username}
+              </p>
+              <p className="text-xs text-muted-foreground">{formatRoleName(user.role)}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={logout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         )}
       </header>
-      {!isAdminPage && (
-        <LoginDialog 
-          open={isLoginDialogOpen}
-          onOpenChange={setIsLoginDialogOpen}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      )}
     </>
   );
 }

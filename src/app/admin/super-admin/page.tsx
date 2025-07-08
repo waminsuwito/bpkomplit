@@ -7,15 +7,14 @@ import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
 import { type User, type UserRole } from '@/lib/types';
+import { users as initialUsersData } from '@/lib/auth';
 
-const initialUsers: User[] = [
-  { id: 'superadmin-main', username: 'superadmin', role: 'super_admin' },
-  { id: '2', username: 'operator_prod', role: 'operator' },
-  { id: '3', username: 'andi_mekanik', role: 'mekanik' },
-];
+// In a real app, you would fetch and update users via an API.
+// For this prototype, we manage the user list in the client-side state.
+// Note: Changes made here won't persist across page reloads.
 
 export default function SuperAdminPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>(initialUsersData.map(({ password, ...user }) => user));
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
@@ -27,6 +26,7 @@ export default function SuperAdminPage() {
             ...u, 
             username: data.username, 
             role: data.role as UserRole,
+            // Password is not saved in this prototype state
           } 
         : u
       ));

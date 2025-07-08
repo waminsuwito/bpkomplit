@@ -44,6 +44,6 @@ export type UserRole = (typeof userRoles)[number];
 export interface User {
   id: string;
   username: string;
-  password?: string; // Optional because we don't fetch it back from a DB
+  password?: string;
   role: UserRole;
 }

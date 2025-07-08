@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import './print.css';
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from '@/context/auth-provider';
 
 export const metadata: Metadata = {
   title: 'PT. FARIKA RIAU PERKASA',
@@ -35,8 +36,10 @@ export default function RootLayout({
 
       </head>
       <body className="font-body antialiased">
-        {children}
-        <Toaster />
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );
