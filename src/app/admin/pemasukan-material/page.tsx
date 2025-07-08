@@ -37,7 +37,7 @@ interface MaterialMasuk {
   asalMaterial: string;
   volume: string;
   keterangan: string;
-  tanggal: string;
+  waktu: string;
 }
 
 const initialFormState = {
@@ -110,7 +110,7 @@ export default function PemasukanMaterialPage() {
       asalMaterial: formState.asalMaterial,
       keterangan: formState.keterangan,
       volume: `${formState.volume} ${unit}`.trim(),
-      tanggal: new Date().toLocaleDateString('id-ID'),
+      waktu: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
     };
     const updatedData = [...daftarMaterialMasuk, newItem];
     setDaftarMaterialMasuk(updatedData);
@@ -207,7 +207,7 @@ export default function PemasukanMaterialPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Waktu</TableHead>
                             <TableHead>Nama Material</TableHead>
                             <TableHead>Asal Material</TableHead>
                             <TableHead>Volume</TableHead>
@@ -218,7 +218,7 @@ export default function PemasukanMaterialPage() {
                     <TableBody>
                         {daftarMaterialMasuk.map((item) => (
                             <TableRow key={item.id}>
-                                <TableCell>{item.tanggal}</TableCell>
+                                <TableCell>{item.waktu}</TableCell>
                                 <TableCell>{item.namaMaterial}</TableCell>
                                 <TableCell>{item.asalMaterial}</TableCell>
                                 <TableCell>{item.volume}</TableCell>

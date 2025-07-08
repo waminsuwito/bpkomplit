@@ -39,7 +39,7 @@ interface MaterialKeluar {
   volume: string;
   alamatPengiriman: string;
   keterangan: string;
-  tanggal: string;
+  waktu: string;
 }
 
 const initialFormState = {
@@ -112,7 +112,7 @@ export default function PengirimanMaterialPage() {
       id: new Date().toISOString(),
       ...formState,
       volume: `${formState.volume} ${unit}`.trim(),
-      tanggal: new Date().toLocaleDateString('id-ID'),
+      waktu: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
     };
     const updatedData = [...daftarMaterialKeluar, newItem];
     setDaftarMaterialKeluar(updatedData);
@@ -229,7 +229,7 @@ export default function PengirimanMaterialPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Waktu</TableHead>
                             <TableHead>Nama Material</TableHead>
                             <TableHead>No. Kendaraan</TableHead>
                             <TableHead>Nama Sopir</TableHead>
@@ -242,7 +242,7 @@ export default function PengirimanMaterialPage() {
                     <TableBody>
                         {daftarMaterialKeluar.map((item) => (
                             <TableRow key={item.id}>
-                                <TableCell>{item.tanggal}</TableCell>
+                                <TableCell>{item.waktu}</TableCell>
                                 <TableCell>{item.namaMaterial}</TableCell>
                                 <TableCell>{item.nomorKendaraan}</TableCell>
                                 <TableCell>{item.namaSopir}</TableCell>
