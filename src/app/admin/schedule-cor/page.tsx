@@ -35,7 +35,7 @@ interface Schedule {
   concreteQuality: string;
   slump: string;
   volume: string;
-  mediaCor: 'Co' | 'Manual';
+  mediaCor: 'CP' | 'Manual';
 }
 
 const initialFormState = {
@@ -44,7 +44,7 @@ const initialFormState = {
   concreteQuality: '',
   slump: '',
   volume: '',
-  mediaCor: 'Co' as const,
+  mediaCor: 'CP' as const,
 };
 
 export default function ScheduleCorPage() {
@@ -56,7 +56,7 @@ export default function ScheduleCorPage() {
     setFormState(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleMediaCorChange = (value: 'Co' | 'Manual') => {
+  const handleMediaCorChange = (value: 'CP' | 'Manual') => {
     setFormState(prev => ({...prev, mediaCor: value}));
   };
 
@@ -162,7 +162,7 @@ export default function ScheduleCorPage() {
                   <SelectValue placeholder="Pilih media cor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Co">Co</SelectItem>
+                  <SelectItem value="CP">CP</SelectItem>
                   <SelectItem value="Manual">Manual</SelectItem>
                 </SelectContent>
               </Select>
