@@ -72,6 +72,28 @@ export default function PemasukanMaterialPage() {
       return isMaterialMatch && isDateMatch;
     });
   }, [completedUnloads, selectedMaterial, selectedDate]);
+  
+  const materialTotals = useMemo(() => {
+    const totals: { [key: string]: { total: number; unit: string } } = {};
+
+    filteredUnloads.forEach(item => {
+      if (!item.volume) return;
+      const parts = item.volume.split(' ');
+      const value = parseFloat(parts[0]);
+      const unit = parts.slice(1).join(' ');
+
+      if (!isNaN(value) && unit) {
+        if (totals[item.namaMaterial]) {
+          totals[item.namaMaterial].total += value;
+        } else {
+          totals[item.namaMaterial] = { total: value, unit: unit };
+        }
+      }
+    });
+
+    return totals;
+  }, [filteredUnloads]);
+
 
   const handleResetFilters = () => {
     setSelectedMaterial('all');
@@ -184,6 +206,24 @@ export default function PemasukanMaterialPage() {
             <div className="text-center text-muted-foreground py-12">
               <p>Tidak ada data pemasukan material yang cocok dengan filter Anda.</p>
               <p>Coba reset filter atau selesaikan proses bongkar di menu "Bongkar Material".</p>
+            </div>
+          )}
+          
+          {filteredUnloads.length > 0 && (
+            <div className="print-only mt-8 text-sm">
+                <h3 className="text-md font-bold mb-2">Total Material Masuk</h3>
+                <div className="border-t-2 border-black pt-2 space-y-1">
+                    {Object.entries(materialTotals).length > 0 ? (
+                        Object.entries(materialTotals).map(([material, data]) => (
+                            <div key={material} className="flex justify-between">
+                                <span className="font-semibold">{material}:</span>
+                                <span className="font-mono">{data.total.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} {data.unit}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <p>Tidak ada data untuk dihitung.</p>
+                    )}
+                </div>
             </div>
           )}
         </CardContent>
