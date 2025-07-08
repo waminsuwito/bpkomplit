@@ -83,11 +83,11 @@ export default function PemasukanMaterialPage() {
     switch (material) {
         case "Batu":
         case "Pasir":
-            return "Ton";
+            return "M³";
         case "Semen":
             return "Kg";
         case "Obat Beton":
-            return "Liter"; // Assuming Liter for this
+            return "Liter";
         default:
             return "";
     }
