@@ -45,6 +45,8 @@ interface BongkarMaterial {
   waktuMulai: string;
   waktuSelesai: string | null;
   status: BongkarStatus;
+  waktuMulaiIstirahat: string | null;
+  totalIstirahatMs: number;
 }
 
 const initialFormState = {
@@ -119,6 +121,8 @@ export default function BongkarMaterialPage() {
       waktuMulai: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
       waktuSelesai: null,
       status: 'Proses',
+      waktuMulaiIstirahat: null,
+      totalIstirahatMs: 0,
     };
     const updatedData = [...daftarBongkar, newItem];
     setDaftarBongkar(updatedData);
@@ -129,10 +133,21 @@ export default function BongkarMaterialPage() {
   const handleSelesaiBongkar = (id: string) => {
     const updatedData = daftarBongkar.map(item => {
       if (item.id === id) {
+        let finalTotalIstirahatMs = item.totalIstirahatMs || 0;
+        // If finishing while on break, calculate the final break duration
+        if (item.status === 'Istirahat' && item.waktuMulaiIstirahat) {
+           const istirahatMulai = new Date(item.waktuMulaiIstirahat).getTime();
+           const istirahatSelesai = new Date().getTime();
+           const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
+           finalTotalIstirahatMs += durasiIstirahatIni;
+        }
+        
         return {
           ...item,
           status: 'Selesai' as const,
           waktuSelesai: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
+          totalIstirahatMs: finalTotalIstirahatMs,
+          waktuMulaiIstirahat: null,
         };
       }
       return item;
@@ -141,10 +156,30 @@ export default function BongkarMaterialPage() {
     saveToLocalStorage(updatedData);
   };
 
-  const handleToggleIstirahat = (id: string, newStatus: 'Proses' | 'Istirahat') => {
+  const handleToggleIstirahat = (id: string) => {
     const updatedData = daftarBongkar.map(item => {
       if (item.id === id) {
-        return { ...item, status: newStatus };
+        if (item.status === 'Proses') {
+          // Starting a break
+          return { 
+            ...item, 
+            status: 'Istirahat' as const,
+            waktuMulaiIstirahat: new Date().toISOString(),
+          };
+        } else if (item.status === 'Istirahat') {
+          // Resuming work
+          const istirahatMulai = item.waktuMulaiIstirahat ? new Date(item.waktuMulaiIstirahat).getTime() : new Date().getTime();
+          const istirahatSelesai = new Date().getTime();
+          const durasiIstirahatIni = istirahatSelesai - istirahatMulai;
+          const totalIstirahatBaru = (item.totalIstirahatMs || 0) + durasiIstirahatIni;
+          
+          return { 
+            ...item, 
+            status: 'Proses' as const,
+            waktuMulaiIstirahat: null,
+            totalIstirahatMs: totalIstirahatBaru,
+          };
+        }
       }
       return item;
     });
@@ -221,6 +256,7 @@ export default function BongkarMaterialPage() {
                         <TableRow>
                             <TableHead>Status</TableHead>
                             <TableHead>Mulai Bongkar</TableHead>
+                            <TableHead className="text-center">Istirahat (menit)</TableHead>
                             <TableHead>Selesai Bongkar</TableHead>
                             <TableHead>Nama Material</TableHead>
                             <TableHead>Kapal/Kendaraan</TableHead>
@@ -242,6 +278,9 @@ export default function BongkarMaterialPage() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell>{item.waktuMulai}</TableCell>
+                                <TableCell className="text-center">
+                                  {Math.floor((item.totalIstirahatMs || 0) / 60000)}
+                                </TableCell>
                                 <TableCell>{item.waktuSelesai || '-'}</TableCell>
                                 <TableCell>{item.namaMaterial}</TableCell>
                                 <TableCell>{item.kapalKendaraan}</TableCell>
@@ -251,7 +290,7 @@ export default function BongkarMaterialPage() {
                                 <TableCell className="text-center space-x-2">
                                     {item.status === 'Proses' && (
                                         <>
-                                            <Button variant="outline" size="sm" onClick={() => handleToggleIstirahat(item.id, 'Istirahat')}>
+                                            <Button variant="outline" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
                                                 <Coffee className="h-4 w-4 mr-2" />
                                                 Istirahat
                                             </Button>
@@ -263,7 +302,7 @@ export default function BongkarMaterialPage() {
                                     )}
                                     {item.status === 'Istirahat' && (
                                         <>
-                                            <Button variant="default" size="sm" onClick={() => handleToggleIstirahat(item.id, 'Proses')}>
+                                            <Button variant="default" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
                                                 <Play className="h-4 w-4 mr-2" />
                                                 Lanjut
                                             </Button>
