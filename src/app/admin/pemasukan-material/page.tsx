@@ -150,7 +150,7 @@ export default function PemasukanMaterialPage() {
           <div className="print-only mb-4">
               <h2 className="text-xl font-bold mb-2">Laporan Pemasukan Material</h2>
               <p><span className="font-semibold">Jenis Material:</span> {selectedMaterial === 'all' ? 'Semua' : selectedMaterial}</p>
-              <p><span className="font-semibold">Filter Tanggal:</span> {selectedDate ? format(selectedDate, 'd MMMM yyyy') : 'Semua'}</p>
+              <p><span className="font-semibold">Tanggal Masuk:</span> {selectedDate ? format(selectedDate, 'd MMMM yyyy') : 'Semua'}</p>
           </div>
 
           {filteredUnloads.length > 0 ? (
