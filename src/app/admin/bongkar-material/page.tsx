@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -33,7 +34,7 @@ import { cn } from '@/lib/utils';
 const BONGKAR_MATERIAL_STORAGE_KEY = 'app-bongkar-material';
 const materialOptions = ["Batu", "Pasir", "Semen", "Obat Beton"];
 
-type BongkarStatus = 'Proses' | 'Istirahat' | 'Selesai';
+type BongkarStatus = 'Belum Dimulai' | 'Proses' | 'Istirahat' | 'Selesai';
 
 interface BongkarMaterial {
   id: string;
@@ -42,7 +43,7 @@ interface BongkarMaterial {
   namaKaptenSopir: string;
   volume: string;
   keterangan: string;
-  waktuMulai: string;
+  waktuMulai: string | null;
   waktuSelesai: string | null;
   status: BongkarStatus;
   waktuMulaiIstirahat: string | null;
@@ -103,7 +104,7 @@ export default function BongkarMaterialPage() {
     }
   };
 
-  const handleMulaiBongkar = (e: React.FormEvent) => {
+  const handleTambahBongkar = (e: React.FormEvent) => {
     e.preventDefault();
     const requiredFields: (keyof typeof initialFormState)[] = ['namaMaterial', 'kapalKendaraan', 'namaKaptenSopir', 'volume'];
     for (const field of requiredFields) {
@@ -118,9 +119,9 @@ export default function BongkarMaterialPage() {
       id: new Date().toISOString(),
       ...formState,
       volume: `${formState.volume} ${unit}`.trim(),
-      waktuMulai: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
+      waktuMulai: null,
       waktuSelesai: null,
-      status: 'Proses',
+      status: 'Belum Dimulai',
       waktuMulaiIstirahat: null,
       totalIstirahatMs: 0,
     };
@@ -128,6 +129,21 @@ export default function BongkarMaterialPage() {
     setDaftarBongkar(updatedData);
     saveToLocalStorage(updatedData);
     setFormState(initialFormState); // Reset form
+  };
+
+  const handleMulaiProses = (id: string) => {
+    const updatedData = daftarBongkar.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          status: 'Proses' as const,
+          waktuMulai: new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }),
+        };
+      }
+      return item;
+    });
+    setDaftarBongkar(updatedData);
+    saveToLocalStorage(updatedData);
   };
 
   const handleSelesaiBongkar = (id: string) => {
@@ -208,7 +224,7 @@ export default function BongkarMaterialPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleMulaiBongkar} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+          <form onSubmit={handleTambahBongkar} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
             <div className="space-y-2">
               <Label htmlFor="namaMaterial">Nama Material</Label>
               <Select name="namaMaterial" value={formState.namaMaterial} onValueChange={(value) => handleSelectChange('namaMaterial', value)}>
@@ -235,7 +251,7 @@ export default function BongkarMaterialPage() {
               <Input id="keterangan" name="keterangan" value={formState.keterangan} onChange={handleInputChange} placeholder="Opsional" />
             </div>
             <div className="md:col-span-2 lg:col-span-3 flex justify-end">
-              <Button type="submit" className="w-full md:w-auto">Mulai Bongkar</Button>
+              <Button type="submit" className="w-full md:w-auto">Tambah ke Daftar</Button>
             </div>
           </form>
         </CardContent>
@@ -271,13 +287,17 @@ export default function BongkarMaterialPage() {
                             <TableRow key={item.id}>
                                 <TableCell>
                                   <Badge 
-                                    variant={item.status === 'Selesai' ? 'default' : 'secondary'}
+                                    variant={
+                                      item.status === 'Selesai' ? 'default' :
+                                      item.status === 'Belum Dimulai' ? 'outline' :
+                                      'secondary'
+                                    }
                                     className={cn(item.status === 'Istirahat' && 'bg-accent text-accent-foreground hover:bg-accent/80')}
                                   >
                                     {item.status}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>{item.waktuMulai}</TableCell>
+                                <TableCell>{item.waktuMulai || '-'}</TableCell>
                                 <TableCell className="text-center">
                                   {Math.floor((item.totalIstirahatMs || 0) / 60000)}
                                 </TableCell>
@@ -288,6 +308,12 @@ export default function BongkarMaterialPage() {
                                 <TableCell>{item.volume}</TableCell>
                                 <TableCell>{item.keterangan}</TableCell>
                                 <TableCell className="text-center space-x-2">
+                                    {item.status === 'Belum Dimulai' && (
+                                      <Button variant="default" size="sm" onClick={() => handleMulaiProses(item.id)}>
+                                        <Play className="h-4 w-4 mr-2" />
+                                        Mulai
+                                      </Button>
+                                    )}
                                     {item.status === 'Proses' && (
                                         <>
                                             <Button variant="outline" size="sm" onClick={() => handleToggleIstirahat(item.id)}>
