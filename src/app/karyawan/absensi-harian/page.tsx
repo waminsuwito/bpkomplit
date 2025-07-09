@@ -16,7 +16,14 @@ import { format } from 'date-fns';
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
 const ATTENDANCE_RADIUS_METERS = 50000;
-const getPersonalAttendanceKey = (userId: string) => `attendance-${userId}-${new Date().toISOString().split('T')[0]}`;
+
+const getPersonalAttendanceKey = (userId: string) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `attendance-${userId}-${year}-${month}-${day}`;
+};
 
 type PersonalAttendanceRecord = {
   clockIn?: string;
