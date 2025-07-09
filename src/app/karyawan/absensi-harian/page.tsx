@@ -51,6 +51,7 @@ export default function AbsensiHarianKaryawanPage() {
         icon: <Info className="h-5 w-5" />,
     });
 
+    // Effect to load initial data
     useEffect(() => {
         try {
             const storedData = localStorage.getItem(ATTENDANCE_LOCATIONS_KEY);
@@ -75,21 +76,27 @@ export default function AbsensiHarianKaryawanPage() {
             }
         }
     }, [user]);
-    
+
+    // Effect to determine the current possible action (clock-in/clock-out)
     useEffect(() => {
         const determineAction = () => {
-            if (!user) return;
+            if (!user) {
+              setCurrentAction('none');
+              return;
+            }
 
             const now = toZonedTime(new Date(), TIME_ZONE);
             const hours = now.getHours();
             const minutes = now.getMinutes();
             const currentTime = hours * 100 + minutes;
 
+            // Already clocked out for the day
             if (personalAttendanceRecord?.clockOut) {
                 setCurrentAction('none');
                 return;
             }
 
+            // Already clocked in, check if it's time to clock out
             if (personalAttendanceRecord?.clockIn) {
                 if (currentTime >= 1706 && currentTime <= 2355) {
                     setCurrentAction('clockOut');
@@ -98,9 +105,10 @@ export default function AbsensiHarianKaryawanPage() {
                 }
                 return;
             }
-
+            
+            // Not clocked in yet, check if it's time to clock in
             if (!personalAttendanceRecord?.clockIn) {
-                if (currentTime >= 30 && currentTime <= 1705) {
+                 if (currentTime >= 30 && currentTime <= 1705) {
                     setCurrentAction('clockIn');
                 } else {
                     setCurrentAction('none');
@@ -108,14 +116,16 @@ export default function AbsensiHarianKaryawanPage() {
                 return;
             }
             
+            // Default case
             setCurrentAction('none');
         };
 
         determineAction();
-        const timerId = setInterval(determineAction, 30000);
+        const timerId = setInterval(determineAction, 30000); // check every 30 seconds
         return () => clearInterval(timerId);
     }, [personalAttendanceRecord, user]);
     
+    // Effect for the dynamic description message
     useEffect(() => {
         const getDynamicDescription = () => {
             if (!user) {
@@ -154,7 +164,8 @@ export default function AbsensiHarianKaryawanPage() {
                     return { message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat Waktu dan jangan terlambat. terimakasih.`, variant: 'destructive' as const, icon: <AlertTriangle className="h-5 w-5" /> };
                 }
             }
-
+            
+            // This is the default case when no other condition is met.
             return { message: `Saat ini di luar jam absensi. Silakan kembali lagi nanti, ${userName}.`, variant: 'default' as const, icon: <Timer className="h-5 w-5" /> };
         };
 
