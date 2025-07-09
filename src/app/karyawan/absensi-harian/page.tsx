@@ -20,10 +20,9 @@ const ATTENDANCE_RADIUS_METERS = 50000; // 50km for testing, should be lower in 
 const TIME_ZONE = 'Asia/Jakarta'; // WIB
 
 const getPersonalAttendanceKey = (userId: string) => {
-    const now = new Date();
     // Using zoned time to ensure the date is correct for WIB
-    const zonedDate = toZonedTime(now, TIME_ZONE);
-    const dateStr = format(zonedDate, 'yyyy-MM-dd');
+    const now = toZonedTime(new Date(), TIME_ZONE);
+    const dateStr = format(now, 'yyyy-MM-dd');
     return `attendance-${userId}-${dateStr}`;
 };
 
@@ -75,6 +74,8 @@ export default function AbsensiHarianKaryawanPage() {
         const storedRecord = localStorage.getItem(personalKey);
         if (storedRecord) {
           setPersonalAttendanceRecord(JSON.parse(storedRecord));
+        } else {
+          setPersonalAttendanceRecord(null); // Explicitly reset on user change/day change
         }
       } catch (error) {
           console.error("Failed to load today's attendance record", error);
@@ -196,7 +197,7 @@ export default function AbsensiHarianKaryawanPage() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (video && canvas) {
+    if (video && canvas && video.readyState === 4) {
       const context = canvas.getContext('2d');
       if (context) {
         canvas.width = video.videoWidth;
@@ -259,7 +260,7 @@ export default function AbsensiHarianKaryawanPage() {
     
     const photoDataUri = capturePhoto();
     if (!photoDataUri) {
-        toast({ variant: 'destructive', title: 'Gagal Mengambil Foto', description: 'Tidak dapat mengambil gambar dari kamera.' });
+        toast({ variant: 'destructive', title: 'Gagal Mengambil Foto', description: 'Tidak dapat mengambil gambar dari kamera. Pastikan kamera sudah aktif.' });
         return;
     }
 
@@ -291,7 +292,7 @@ export default function AbsensiHarianKaryawanPage() {
             const nowZoned = toZonedTime(now, TIME_ZONE);
             
             if (currentAction === 'clockIn') {
-                const batasMasuk = toZonedTime(now, TIME_ZONE);
+                const batasMasuk = toZonedTime(new Date(), TIME_ZONE);
                 batasMasuk.setHours(7, 30, 0, 0); // Batas masuk jam 7:30
                 
                 const isLate = nowZoned.getTime() > batasMasuk.getTime();
@@ -302,7 +303,7 @@ export default function AbsensiHarianKaryawanPage() {
                     terlambatDuration = `${Math.floor(selisihMs / 60000)}m`;
                 }
 
-                const newPersonalRecord = { clockIn: now.toISOString(), isLate };
+                const newPersonalRecord: PersonalAttendanceRecord = { clockIn: now.toISOString(), isLate };
                 setPersonalAttendanceRecord(newPersonalRecord);
                 localStorage.setItem(getPersonalAttendanceKey(user.id), JSON.stringify(newPersonalRecord));
 
@@ -320,7 +321,7 @@ export default function AbsensiHarianKaryawanPage() {
             } else if (currentAction === 'clockOut') {
                 const updatedPersonalRecord = { ...personalAttendanceRecord, clockOut: now.toISOString() };
 
-                setPersonalAttendanceRecord(updatedPersonalRecord as PersonalAttendanceRecord);
+                setPersonalAttendanceRecord(updatedPersonalRecord);
                 localStorage.setItem(getPersonalAttendanceKey(user.id), JSON.stringify(updatedPersonalRecord));
                 
                 updateGlobalAttendance({ absenPulang: now.toISOString(), photoPulang: photoDataUri });
