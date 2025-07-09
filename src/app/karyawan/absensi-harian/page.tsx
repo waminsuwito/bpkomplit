@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -17,7 +16,6 @@ const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
 const ATTENDANCE_RADIUS_METERS = 50000;
 
-// This function now correctly uses the local date, not UTC.
 const getPersonalAttendanceKey = (userId: string) => {
     const now = new Date();
     const year = now.getFullYear();
@@ -25,6 +23,7 @@ const getPersonalAttendanceKey = (userId: string) => {
     const day = String(now.getDate()).padStart(2, '0');
     return `attendance-${userId}-${year}-${month}-${day}`;
 };
+
 
 type PersonalAttendanceRecord = {
   clockIn?: string;
@@ -56,7 +55,6 @@ export default function AbsensiHarianKaryawanPage() {
     icon: <Info className="h-5 w-5" />,
   });
 
-
   useEffect(() => {
     try {
       const storedData = localStorage.getItem(ATTENDANCE_LOCATIONS_KEY);
@@ -69,7 +67,8 @@ export default function AbsensiHarianKaryawanPage() {
     
     if (user) {
       try {
-        const storedRecord = localStorage.getItem(getPersonalAttendanceKey(user.id));
+        const personalKey = getPersonalAttendanceKey(user.id);
+        const storedRecord = localStorage.getItem(personalKey);
         if (storedRecord) {
           setPersonalAttendanceRecord(JSON.parse(storedRecord));
         }
@@ -79,7 +78,6 @@ export default function AbsensiHarianKaryawanPage() {
     }
   }, [user]);
 
-  // CORE LOGIC REWRITE: This is now the definitive logic for determining the available action.
   useEffect(() => {
     const updateAction = () => {
       const now = new Date();
@@ -87,42 +85,34 @@ export default function AbsensiHarianKaryawanPage() {
       const minutes = now.getMinutes();
       const currentTime = hours * 100 + minutes;
 
-      // Priority 1: If already clocked out for the day, no more actions are possible.
       if (personalAttendanceRecord?.clockOut) {
         setCurrentAction('none');
         return;
       }
 
-      // Priority 2: If clocked in, check if it's time for clock-out.
       if (personalAttendanceRecord?.clockIn) {
-        // Clock-out is allowed from 17:06 to 23:55.
         if (currentTime >= 1706 && currentTime <= 2355) {
           setCurrentAction('clockOut');
         } else {
-          // Not yet time to clock out.
           setCurrentAction('none');
         }
         return;
       }
       
-      // Priority 3: If not yet clocked in, check if it's time for clock-in.
       if (!personalAttendanceRecord?.clockIn) {
-        // Clock-in is allowed from 00:30 to 17:05.
         if (currentTime >= 30 && currentTime <= 1705) {
           setCurrentAction('clockIn');
         } else {
-          // Outside of clock-in hours.
           setCurrentAction('none');
         }
         return;
       }
       
-      // Fallback in case of an unexpected state.
       setCurrentAction('none');
     };
 
     updateAction();
-    const timerId = setInterval(updateAction, 30000); // Check every 30 seconds
+    const timerId = setInterval(updateAction, 30000); 
 
     return () => clearInterval(timerId);
   }, [personalAttendanceRecord]);
@@ -131,9 +121,9 @@ export default function AbsensiHarianKaryawanPage() {
     const getDynamicDescription = () => {
       if (!user) {
         return {
-          message: 'Pilih lokasi, aktifkan kamera, lalu lakukan absensi. Pastikan Anda berada dalam radius 50000 meter.',
+          message: 'Memuat data pengguna...',
           variant: 'default' as const,
-          icon: <Info className="h-5 w-5" />,
+          icon: <Loader2 className="h-5 w-5 animate-spin" />,
         };
       }
 
@@ -152,28 +142,28 @@ export default function AbsensiHarianKaryawanPage() {
       }
 
       if (currentAction === 'clockIn') {
-        if (currentTime >= 30 && currentTime <= 300) { // 00:30 - 03:00
+        if (currentTime >= 30 && currentTime <= 300) { 
           return {
             message: `Selamat pagi Sdr. ${userName}, kenapa absen masuk masih tengah malam begini? Baru selesai lemburkah? Atau habis begadang? Mohon dapat lebih disiplin waktu absen masuk. Terimakasih.`,
             variant: 'destructive' as const,
             icon: <Bed className="h-5 w-5" />,
           };
         }
-        if (currentTime > 300 && currentTime <= 600) { // 03:01 - 06:00
+        if (currentTime >= 301 && currentTime <= 600) { 
           return {
             message: `Selamat pagi Sdr. ${userName}, cepat sekali absen masuknya, habis lembur atau habis begadang? Semoga memang habis lembur ya. Ingat, begadang yang tidak perlu itu merusak badan. Jaga kesehatan, terimakasih.`,
             variant: 'default' as const,
             icon: <Coffee className="h-5 w-5 text-amber-600" />,
           };
         }
-        if (currentTime > 600 && currentTime < 701) { // 06:01 - 07:00
+        if (currentTime >= 601 && currentTime <= 730) {
           return {
             message: `Selamat pagi Sdr. ${userName}, terimakasih sudah absen tepat waktu. Selamat bekerja, jangan lupa berdo'a. Terimakasih.`,
             variant: 'default' as const,
             icon: <ThumbsUp className="h-5 w-5 text-green-500" />,
           };
         }
-        if (currentTime > 700 && currentTime <= 1705) { // 07:01 - 17:05
+        if (currentTime >= 731 && currentTime <= 1705) { 
           return {
             message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat Waktu dan jangan terlambat. terimakasih.`,
             variant: 'destructive' as const,
@@ -195,7 +185,7 @@ export default function AbsensiHarianKaryawanPage() {
     const intervalId = setInterval(() => {
         const updatedDescription = getDynamicDescription();
         setDescriptionContent(updatedDescription);
-    }, 60000); // update every minute
+    }, 60000);
 
     return () => clearInterval(intervalId);
   }, [user, currentAction]);
@@ -331,11 +321,11 @@ export default function AbsensiHarianKaryawanPage() {
             const now = new Date();
             
             if (currentAction === 'clockIn') {
-                const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 0);
+                const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 30);
                 let terlambatDuration = null;
                 if (isLate) {
                     const batasMasuk = new Date(now);
-                    batasMasuk.setHours(7, 0, 0, 0);
+                    batasMasuk.setHours(7, 30, 0, 0);
                     const selisihMs = now.getTime() - batasMasuk.getTime();
                     terlambatDuration = `${Math.floor(selisihMs / 60000)}m`;
                 }
