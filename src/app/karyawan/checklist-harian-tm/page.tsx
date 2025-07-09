@@ -36,7 +36,7 @@ export default function ChecklistHarianTmPage() {
     const { toast } = useToast();
 
     const [checklistItems, setChecklistItems] = useState<TruckChecklistItem[]>(
-        checklistItemsDefinition.map(item => ({ ...item, status: null, photo: null, notes: '' }))
+        checklistItemsDefinition.map(item => ({ ...item, status: 'baik', photo: null, notes: '' }))
     );
     const [isSubmittedToday, setIsSubmittedToday] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function ChecklistHarianTmPage() {
                 const storedReport = localStorage.getItem(dailyKey);
                 if (storedReport) {
                     const parsedReport: TruckChecklistReport = JSON.parse(storedReport);
-                    const itemsWithNotes = parsedReport.items.map(item => ({ ...item, notes: item.notes || '' }));
+                    const itemsWithNotes = parsedReport.items.map(item => ({ ...item, status: item.status || 'baik', notes: item.notes || '' }));
                     setChecklistItems(itemsWithNotes);
                     setIsSubmittedToday(true);
                 }
