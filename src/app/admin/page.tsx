@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -19,7 +20,7 @@ export default function AdminRootPage() {
     } else if (user?.role === 'logistik_material') {
       router.replace('/admin/pemasukan-material');
     } else if (user?.role === 'hse_hrd_lokasi') {
-      router.replace('/admin/manajemen-karyawan');
+      router.replace('/admin/absensi-karyawan-hari-ini');
     } else if (user?.role === 'karyawan') {
       router.replace('/karyawan');
     } else if (user) {
