@@ -25,8 +25,7 @@ import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
 import { useState, useEffect } from 'react';
-import type { AnonymousReport } from '@/lib/types';
-
+import type { AnonymousReport, AccidentReport } from '@/lib/types';
 
 const superAdminNav = [
   { href: '/admin/super-admin', label: 'User Management', icon: Shield },
@@ -61,50 +60,63 @@ const hseHrdNav = [
 ];
 
 const ANONYMOUS_REPORTS_KEY = 'app-anonymous-reports';
+const ACCIDENT_REPORTS_KEY = 'app-accident-reports';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const [hasUnreadReports, setHasUnreadReports] = useState(false);
+  const [hasUnreadAnonymous, setHasUnreadAnonymous] = useState(false);
+  const [hasUnreadAccidents, setHasUnreadAccidents] = useState(false);
 
   useEffect(() => {
-    if (user?.role !== 'super_admin') return;
+    // No need for notifications if user is not the right role
+    if (user?.role !== 'super_admin' && user?.role !== 'hse_hrd_lokasi') {
+      return;
+    }
 
     const checkUnread = () => {
-      try {
-        const storedData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
-        if (storedData) {
-          const reports: AnonymousReport[] = JSON.parse(storedData);
-          const unread = reports.some(r => r.status === 'new');
-          setHasUnreadReports(unread);
-        } else {
-          setHasUnreadReports(false);
+      // Check for anonymous reports if super_admin
+      if (user?.role === 'super_admin') {
+        try {
+          const storedData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
+          const reports: AnonymousReport[] = storedData ? JSON.parse(storedData) : [];
+          setHasUnreadAnonymous(reports.some(r => r.status === 'new'));
+        } catch (e) {
+          console.error("Failed to check anonymous reports", e);
+          setHasUnreadAnonymous(false);
         }
-      } catch (error) {
-        console.error("Failed to check for unread reports", error);
-        setHasUnreadReports(false);
+      }
+
+      // Check for accident reports if hse_hrd_lokasi
+      if (user?.role === 'hse_hrd_lokasi') {
+        try {
+          const storedData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
+          const reports: AccidentReport[] = storedData ? JSON.parse(storedData) : [];
+          setHasUnreadAccidents(reports.some(r => r.status === 'new'));
+        } catch (e) {
+          console.error("Failed to check accident reports", e);
+          setHasUnreadAccidents(false);
+        }
       }
     };
 
     checkUnread();
-    
-    // Check for changes in local storage. This is more efficient than polling.
+
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === ANONYMOUS_REPORTS_KEY) {
+      if (event.key === ANONYMOUS_REPORTS_KEY || event.key === ACCIDENT_REPORTS_KEY) {
         checkUnread();
       }
     };
-
-    // Also listen for custom events for when a report is marked as read
-    const handleReportsUpdated = () => checkUnread();
-
+    
+    // Custom events are dispatched from the report pages when an item is marked as read
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('reportsUpdated', handleReportsUpdated);
-
+    window.addEventListener('reportsUpdated', checkUnread);
+    window.addEventListener('accidentReportsUpdated', checkUnread);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('reportsUpdated', handleReportsUpdated);
+      window.removeEventListener('reportsUpdated', checkUnread);
+      window.removeEventListener('accidentReportsUpdated', checkUnread);
     };
   }, [user]);
 
@@ -123,27 +135,32 @@ export function AdminSidebar() {
     <aside className="hidden w-64 flex-col border-r bg-card p-4 md:flex no-print">
       <nav className="flex flex-col gap-2">
         <h2 className="mb-2 text-lg font-semibold tracking-tight">Admin Menu</h2>
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              buttonVariants({
-                variant: pathname.startsWith(item.href) ? 'default' : 'ghost',
-              }),
-              'justify-start relative'
-            )}
-          >
-            <item.icon className="mr-2 h-4 w-4" />
-            <span>{item.label}</span>
-            {item.href === '/admin/pesan-anonim' && hasUnreadReports && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-            )}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const showAnonymousDot = item.href === '/admin/pesan-anonim' && hasUnreadAnonymous;
+          const showAccidentDot = item.href === '/admin/insiden-kerja' && hasUnreadAccidents;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                buttonVariants({
+                  variant: pathname.startsWith(item.href) ? 'default' : 'ghost',
+                }),
+                'justify-start relative'
+              )}
+            >
+              <item.icon className="mr-2 h-4 w-4" />
+              <span>{item.label}</span>
+              {(showAnonymousDot || showAccidentDot) && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );
