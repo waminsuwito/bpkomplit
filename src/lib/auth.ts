@@ -53,7 +53,7 @@ export function verifyLogin(username: string, password: string): Promise<Omit<Us
   return new Promise((resolve) => {
     const users = getUsers(); // Ensures seeding happens if needed
     const user = users.find(
-      (u) => u.username === username && u.password === password
+      (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
     );
 
     if (user) {
