@@ -143,6 +143,20 @@ export interface AnonymousReport {
   status: 'new' | 'read';
 }
 
+export interface AccidentReport {
+  id: string;
+  reporterId: string;
+  reporterName: string;
+  reporterNik: string;
+  location: UserLocation;
+  accidentLocation: string; // e.g., "Area Mixer", "Gudang Semen"
+  accidentTimestamp: string; // ISO String
+  description: string;
+  photoDataUri: string | null;
+  timestamp: string; // Submission timestamp
+  status: 'new' | 'reviewed';
+}
+
 export interface DailyActivity {
   text: string | null;
   photo: string | null; // Data URI
