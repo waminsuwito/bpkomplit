@@ -17,6 +17,7 @@ const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
 const ATTENDANCE_RADIUS_METERS = 50000;
 
+// This function now correctly uses the local date, not UTC.
 const getPersonalAttendanceKey = (userId: string) => {
     const now = new Date();
     const year = now.getFullYear();
@@ -78,6 +79,7 @@ export default function AbsensiHarianKaryawanPage() {
     }
   }, [user]);
 
+  // CORE LOGIC REWRITE: This is now the definitive logic for determining the available action.
   useEffect(() => {
     const updateAction = () => {
       const now = new Date();
@@ -85,21 +87,38 @@ export default function AbsensiHarianKaryawanPage() {
       const minutes = now.getMinutes();
       const currentTime = hours * 100 + minutes;
 
-      // Clock out is from 17:06 to 23:55.
-      const isClockOutTime = currentTime >= 1706 && currentTime <= 2355;
-      // Clock in is allowed from 00:30 until clock out time begins (17:06).
-      const isClockInTime = currentTime >= 30 && currentTime < 1706;
-      
+      // Priority 1: If already clocked out for the day, no more actions are possible.
       if (personalAttendanceRecord?.clockOut) {
-        // Already clocked out for the day, no further actions.
         setCurrentAction('none');
-      } else if (personalAttendanceRecord?.clockIn) {
-        // Has clocked in, check if it's time to clock out.
-        setCurrentAction(isClockOutTime ? 'clockOut' : 'none');
-      } else {
-        // Has not clocked in, check if it's time to clock in.
-        setCurrentAction(isClockInTime ? 'clockIn' : 'none');
+        return;
       }
+
+      // Priority 2: If clocked in, check if it's time for clock-out.
+      if (personalAttendanceRecord?.clockIn) {
+        // Clock-out is allowed from 17:06 to 23:55.
+        if (currentTime >= 1706 && currentTime <= 2355) {
+          setCurrentAction('clockOut');
+        } else {
+          // Not yet time to clock out.
+          setCurrentAction('none');
+        }
+        return;
+      }
+      
+      // Priority 3: If not yet clocked in, check if it's time for clock-in.
+      if (!personalAttendanceRecord?.clockIn) {
+        // Clock-in is allowed from 00:30 to 17:05.
+        if (currentTime >= 30 && currentTime <= 1705) {
+          setCurrentAction('clockIn');
+        } else {
+          // Outside of clock-in hours.
+          setCurrentAction('none');
+        }
+        return;
+      }
+      
+      // Fallback in case of an unexpected state.
+      setCurrentAction('none');
     };
 
     updateAction();
@@ -147,16 +166,16 @@ export default function AbsensiHarianKaryawanPage() {
             icon: <Coffee className="h-5 w-5 text-amber-600" />,
           };
         }
-        if (currentTime > 600 && currentTime <= 730) { // 06:01 - 07:30
+        if (currentTime > 600 && currentTime < 701) { // 06:01 - 07:00
           return {
             message: `Selamat pagi Sdr. ${userName}, terimakasih sudah absen tepat waktu. Selamat bekerja, jangan lupa berdo'a. Terimakasih.`,
             variant: 'default' as const,
             icon: <ThumbsUp className="h-5 w-5 text-green-500" />,
           };
         }
-        if (currentTime > 730 && currentTime < 1706) { // 07:31 - 17:05
+        if (currentTime > 700 && currentTime <= 1705) { // 07:01 - 17:05
           return {
-            message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan Anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat waktu dan jangan terlambat. Terimakasih.`,
+            message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat Waktu dan jangan terlambat. terimakasih.`,
             variant: 'destructive' as const,
             icon: <AlertTriangle className="h-5 w-5" />,
           };
@@ -312,11 +331,11 @@ export default function AbsensiHarianKaryawanPage() {
             const now = new Date();
             
             if (currentAction === 'clockIn') {
-                const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 30);
+                const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 0);
                 let terlambatDuration = null;
                 if (isLate) {
                     const batasMasuk = new Date(now);
-                    batasMasuk.setHours(7, 30, 0, 0);
+                    batasMasuk.setHours(7, 0, 0, 0);
                     const selisihMs = now.getTime() - batasMasuk.getTime();
                     terlambatDuration = `${Math.floor(selisihMs / 60000)}m`;
                 }
@@ -466,7 +485,7 @@ export default function AbsensiHarianKaryawanPage() {
               {isCheckingIn && <Loader2 className="h-4 w-4 animate-spin" />}
               <AlertTitle>
                   {attendanceStatus === 'success' ? 'Berhasil!' : attendanceStatus === 'failed' ? 'Gagal!' : 'Status'}
-              </AlertTitle>
+              </Title>
               <AlertDescription>
                 {statusMessage}
               </AlertDescription>
