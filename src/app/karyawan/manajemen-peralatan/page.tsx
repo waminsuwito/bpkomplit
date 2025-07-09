@@ -136,15 +136,16 @@ export default function ManajemenPeralatanPage() {
                     Daftar semua kendaraan yang terdaftar dalam sistem.
                   </DialogDescription>
                 </DialogHeader>
-                <div id="armada-list-print-area" className="py-4">
-                    <Table className="w-full border-collapse border border-muted">
+                <div id="armada-list-print-area" className="p-4 bg-white text-black rounded-md">
+                    <h2 className="text-2xl font-bold text-center mb-4 text-black">LIST ARMADA</h2>
+                    <Table className="w-full border-collapse">
                         <TableHeader>
-                        <TableRow>
-                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">NOMOR LAMBUNG</TableHead>
-                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">NOMOR POLISI</TableHead>
-                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">JENIS KENDARAAN</TableHead>
-                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">NAMA SOPIR/OPRATOR</TableHead>
-                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground no-print">AKSI</TableHead>
+                        <TableRow className="bg-gray-200">
+                            <TableHead className="border border-gray-400 p-2 text-center font-bold text-black">NOMOR LAMBUNG</TableHead>
+                            <TableHead className="border border-gray-400 p-2 text-center font-bold text-black">NOMOR POLISI</TableHead>
+                            <TableHead className="border border-gray-400 p-2 text-center font-bold text-black">JENIS KENDARAAN</TableHead>
+                            <TableHead className="border border-gray-400 p-2 text-center font-bold text-black">NAMA SOPIR/OPRATOR</TableHead>
+                            <TableHead className="border border-gray-400 p-2 text-center font-bold text-black no-print">AKSI</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -152,12 +153,12 @@ export default function ManajemenPeralatanPage() {
                             const vehicle = vehicles[index];
                             if (vehicle) {
                             return (
-                                <TableRow key={vehicle.id}>
-                                <TableCell className="border border-muted p-2">{vehicle.nomorLambung || '-'}</TableCell>
-                                <TableCell className="border border-muted p-2 font-medium">{vehicle.nomorPolisi}</TableCell>
-                                <TableCell className="border border-muted p-2">{vehicle.jenisKendaraan}</TableCell>
-                                <TableCell className="border border-muted p-2">{vehicle.namaOperatorSopir}</TableCell>
-                                <TableCell className="border border-muted p-2 text-center no-print">
+                                <TableRow key={vehicle.id} className="[&_td]:border-gray-400">
+                                <TableCell className="border p-2">{vehicle.nomorLambung || '-'}</TableCell>
+                                <TableCell className="border p-2 font-medium">{vehicle.nomorPolisi}</TableCell>
+                                <TableCell className="border p-2">{vehicle.jenisKendaraan}</TableCell>
+                                <TableCell className="border p-2">{vehicle.namaOperatorSopir}</TableCell>
+                                <TableCell className="border p-2 text-center no-print">
                                     <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="destructive" size="icon">
@@ -184,12 +185,12 @@ export default function ManajemenPeralatanPage() {
                             );
                             } else {
                             return (
-                                <TableRow key={`empty-${index}`}>
-                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
-                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
-                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
-                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
-                                <TableCell className="border border-muted p-2 h-10 no-print">&nbsp;</TableCell>
+                                <TableRow key={`empty-${index}`} className="[&_td]:border-gray-400">
+                                <TableCell className="border p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border p-2 h-10 no-print">&nbsp;</TableCell>
                                 </TableRow>
                             );
                             }
