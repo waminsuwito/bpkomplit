@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft } from 'lucide-react';
+import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
@@ -53,6 +53,20 @@ export function KaryawanSidebar() {
             {item.label}
           </Link>
         ))}
+         {user?.jabatan === 'SOPIR TM' && (
+          <Link
+            href="/karyawan/checklist-harian-tm"
+            className={cn(
+              buttonVariants({
+                variant: pathname.startsWith('/karyawan/checklist-harian-tm') ? 'default' : 'ghost',
+              }),
+              'justify-start'
+            )}
+          >
+            <ClipboardCheck className="mr-2 h-4 w-4" />
+            Checklist Harian TM
+          </Link>
+        )}
       </nav>
     </aside>
   );

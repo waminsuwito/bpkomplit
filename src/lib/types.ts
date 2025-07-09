@@ -217,3 +217,22 @@ interface UserFeedback {
 
 export type Suggestion = UserFeedback;
 export type Complaint = UserFeedback;
+
+export type ChecklistStatus = 'baik' | 'rusak' | 'perlu_perhatian';
+
+export interface TruckChecklistItem {
+  id: string;
+  label: string;
+  status: ChecklistStatus | null;
+  photo: string | null; // Data URI
+}
+
+export interface TruckChecklistReport {
+  id: string; // Composite key like `userId-YYYY-MM-DD`
+  userId: string;
+  userNik: string;
+  username: string;
+  location: UserLocation;
+  timestamp: string; // ISO String of submission time
+  items: TruckChecklistItem[];
+}
