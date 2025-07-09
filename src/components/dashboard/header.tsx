@@ -128,7 +128,7 @@ export function Header() {
                           Absen
                       </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl p-0 border-0">
+                  <DialogContent className="w-screen h-screen max-w-full sm:rounded-none border-0 p-0 flex items-center justify-center">
                       <AttendanceForm />
                   </DialogContent>
               </Dialog>
