@@ -30,6 +30,9 @@ export function printElement(elementId: string) {
    printWindow.document.write(`
     <style>
       @media print {
+        html, body {
+          overflow: visible !important;
+        }
         body { 
           margin: 1.5rem;
           -webkit-print-color-adjust: exact !important;
@@ -71,7 +74,7 @@ export function printElement(elementId: string) {
     setTimeout(() => { // Give the browser a moment to render styles
       printWindow.focus();
       printWindow.print();
-    }, 100);
+    }, 500);
   };
 
   printWindow.onafterprint = () => {
