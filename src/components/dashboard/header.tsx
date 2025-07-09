@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/context/auth-provider';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint } from 'lucide-react';
+import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft } from 'lucide-react';
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -115,12 +114,12 @@ export function Header() {
                 <UserCircle className="h-4 w-4 text-primary" />
                 {user.username}
               </p>
-              <p className="text-xs text-muted-foreground">{formatRoleName(user.role)}</p>
+              <p className="text-xs text-muted-foreground">{user.jabatan || formatRoleName(user.role)}</p>
             </div>
             
-            {pathname.startsWith('/dashboard') && user.jabatan === 'OPRATOR BP' && (
+             {user?.jabatan === 'OPRATOR BP' && pathname.startsWith('/dashboard') && (
               <Button asChild variant="outline" size="sm">
-                <Link href="/karyawan/absensi-harian">
+                <Link href="/karyawan">
                   <Fingerprint className="mr-2 h-4 w-4" />
                   Absen & Kegiatan
                 </Link>
