@@ -57,6 +57,15 @@ export const jabatanOptions = [
   "ADMIN BP",
   "HRD",
   "ADMIN QC",
+  "OPRATOR BP",
+  "OPRATOR LOADER",
+  "OPRATOR CP",
+  "SOPIR TM",
+  "SOPIR DT",
+  "KEPALA PRECAST",
+  "HELPER PRECAST",
+  "OPRATOR PAVING",
+  "OPRATOR BATA RINGAN",
 ] as const;
 
 export type UserJabatan = (typeof jabatanOptions)[number];
