@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -409,7 +408,7 @@ export function AttendanceForm() {
                                     <Camera className="h-12 w-12 mb-4 text-primary" />
                                     <h3 className="text-lg font-bold">Aktifkan Kamera untuk Absensi</h3>
                                     <p className="text-sm text-muted-foreground mb-4">Aplikasi memerlukan izin untuk menggunakan kamera Anda.</p>
-                                    <Button onClick={activateCamera} disabled={!selectedLocation}>
+                                    <Button onClick={activateCamera} disabled={!selectedLocation || currentAction === 'none'}>
                                         <Camera className="mr-2 h-4 w-4" />
                                         Aktifkan Kamera
                                     </Button>
