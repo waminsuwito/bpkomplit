@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription }
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
@@ -35,7 +36,7 @@ export default function ChecklistHarianTmPage() {
     const { toast } = useToast();
 
     const [checklistItems, setChecklistItems] = useState<TruckChecklistItem[]>(
-        checklistItemsDefinition.map(item => ({ ...item, status: null, photo: null }))
+        checklistItemsDefinition.map(item => ({ ...item, status: null, photo: null, notes: '' }))
     );
     const [isSubmittedToday, setIsSubmittedToday] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +52,8 @@ export default function ChecklistHarianTmPage() {
                 const storedReport = localStorage.getItem(dailyKey);
                 if (storedReport) {
                     const parsedReport: TruckChecklistReport = JSON.parse(storedReport);
-                    setChecklistItems(parsedReport.items);
+                    const itemsWithNotes = parsedReport.items.map(item => ({ ...item, notes: item.notes || '' }));
+                    setChecklistItems(itemsWithNotes);
                     setIsSubmittedToday(true);
                 }
             } catch (error) {
@@ -118,6 +120,14 @@ export default function ChecklistHarianTmPage() {
         setChecklistItems(prevItems =>
             prevItems.map(item =>
                 item.id === itemId ? { ...item, status } : item
+            )
+        );
+    };
+
+    const handleNotesChange = (itemId: string, notes: string) => {
+        setChecklistItems(prevItems =>
+            prevItems.map(item =>
+                item.id === itemId ? { ...item, notes } : item
             )
         );
     };
@@ -196,25 +206,43 @@ export default function ChecklistHarianTmPage() {
                         <div key={item.id} className="border-b pb-6">
                             <Label className="text-base font-semibold">{index + 1}. {item.label}</Label>
                             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                                <RadioGroup
-                                    value={item.status || ""}
-                                    onValueChange={(value) => handleStatusChange(item.id, value as ChecklistStatus)}
-                                    className="space-y-2"
-                                    disabled={isSubmittedToday || isLoading}
-                                >
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="baik" id={`${item.id}-baik`} />
-                                        <Label htmlFor={`${item.id}-baik`}>Baik</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="rusak" id={`${item.id}-rusak`} />
-                                        <Label htmlFor={`${item.id}-rusak`}>Rusak</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="perlu_perhatian" id={`${item.id}-perhatian`} />
-                                        <Label htmlFor={`${item.id}-perhatian`}>Perlu Perhatian</Label>
-                                    </div>
-                                </RadioGroup>
+                                <div className="space-y-4">
+                                    <RadioGroup
+                                        value={item.status || ""}
+                                        onValueChange={(value) => handleStatusChange(item.id, value as ChecklistStatus)}
+                                        className="space-y-2"
+                                        disabled={isSubmittedToday || isLoading}
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="baik" id={`${item.id}-baik`} />
+                                            <Label htmlFor={`${item.id}-baik`}>Baik</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="rusak" id={`${item.id}-rusak`} />
+                                            <Label htmlFor={`${item.id}-rusak`}>Rusak</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="perlu_perhatian" id={`${item.id}-perhatian`} />
+                                            <Label htmlFor={`${item.id}-perhatian`}>Perlu Perhatian</Label>
+                                        </div>
+                                    </RadioGroup>
+
+                                    {(item.status === 'rusak' || item.status === 'perlu_perhatian') && (
+                                        <div className="space-y-2 pt-2">
+                                            <Label htmlFor={`notes-${item.id}`} className="text-sm font-medium">
+                                                Catatan (jelaskan kerusakan/detail)
+                                            </Label>
+                                            <Textarea
+                                                id={`notes-${item.id}`}
+                                                placeholder="Contoh: Oli rembes sedikit, alarm mundur mati..."
+                                                value={item.notes || ''}
+                                                onChange={(e) => handleNotesChange(item.id, e.target.value)}
+                                                disabled={isSubmittedToday || isLoading}
+                                                rows={3}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="space-y-2">
                                     {item.photo ? (

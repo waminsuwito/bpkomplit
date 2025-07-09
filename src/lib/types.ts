@@ -1,5 +1,6 @@
 
 
+
 import type { LucideIcon } from 'lucide-react';
 
 export interface Material {
@@ -225,6 +226,7 @@ export interface TruckChecklistItem {
   label: string;
   status: ChecklistStatus | null;
   photo: string | null; // Data URI
+  notes?: string;
 }
 
 export interface TruckChecklistReport {
