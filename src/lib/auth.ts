@@ -88,3 +88,28 @@ export function deleteUser(userId: string): void {
   const updatedUsers = users.filter((u) => u.id !== userId);
   saveUsers(updatedUsers);
 }
+
+export function changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  return new Promise((resolve) => {
+    const users = getUsers();
+    const userIndex = users.findIndex((u) => u.id === userId);
+
+    if (userIndex === -1) {
+      resolve({ success: false, message: 'User not found.' });
+      return;
+    }
+
+    const user = users[userIndex];
+
+    if (user.password !== oldPassword) {
+      resolve({ success: false, message: 'Incorrect old password.' });
+      return;
+    }
+
+    // Update password
+    users[userIndex].password = newPassword;
+    saveUsers(users);
+
+    resolve({ success: true, message: 'Password updated successfully.' });
+  });
+}
