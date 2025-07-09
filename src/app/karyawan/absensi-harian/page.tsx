@@ -36,26 +36,32 @@ export default function AbsensiHarianKaryawanPage() {
     }
   }, []);
 
-  useEffect(() => {
-    const getCameraPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Akses Kamera Ditolak',
-          description: 'Mohon izinkan akses kamera di pengaturan browser Anda untuk melanjutkan.',
-        });
+  const activateCamera = async () => {
+    if (typeof navigator.mediaDevices?.getUserMedia !== 'function') {
+      toast({
+        variant: 'destructive',
+        title: 'Kamera Tidak Didukung',
+        description: 'Browser Anda tidak mendukung akses kamera.',
+      });
+      setHasCameraPermission(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setHasCameraPermission(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
       }
-    };
-    getCameraPermission();
-  }, [toast]);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Akses Kamera Ditolak',
+        description: 'Mohon izinkan akses kamera di pengaturan browser Anda untuk melanjutkan.',
+      });
+    }
+  };
   
   const handleClockIn = () => {
     if (!selectedLocation) {
@@ -116,7 +122,7 @@ export default function AbsensiHarianKaryawanPage() {
     );
   };
 
-  const isButtonDisabled = isCheckingIn || hasCameraPermission === false || locations.length === 0;
+  const isButtonDisabled = isCheckingIn || hasCameraPermission !== true || locations.length === 0 || !selectedLocation;
 
   return (
     <Card className="max-w-2xl mx-auto">
@@ -126,7 +132,7 @@ export default function AbsensiHarianKaryawanPage() {
           Absensi Harian (Selfie)
         </CardTitle>
         <CardDescription>
-          Pilih lokasi Anda dan ambil foto selfie untuk melakukan absensi. Pastikan Anda berada dalam radius 1000 meter dari lokasi.
+          Pilih lokasi, aktifkan kamera, lalu lakukan absensi. Pastikan Anda berada dalam radius 1000 meter.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -146,16 +152,26 @@ export default function AbsensiHarianKaryawanPage() {
         
         <div className="relative aspect-video w-full bg-muted rounded-md overflow-hidden border">
            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline style={{ transform: "scaleX(-1)" }} />
-           {hasCameraPermission === null && (
-             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-               <Loader2 className="h-8 w-8 animate-spin text-white" />
-             </div>
-           )}
-           {hasCameraPermission === false && (
-             <div className="absolute inset-0 flex flex-col items-center justify-center bg-destructive/90 text-destructive-foreground p-4">
-                <XCircle className="h-10 w-10 mb-2"/>
-                <p className="font-bold">Akses Kamera Diperlukan</p>
-                <p className="text-sm text-center">Mohon segarkan halaman dan izinkan akses kamera untuk melanjutkan.</p>
+           
+           {hasCameraPermission !== true && (
+             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-background p-4 text-center">
+                {hasCameraPermission === null ? (
+                    <>
+                        <Camera className="h-12 w-12 mb-4 text-primary" />
+                        <h3 className="text-lg font-bold">Aktifkan Kamera untuk Absensi</h3>
+                        <p className="text-sm text-muted-foreground mb-4">Aplikasi memerlukan izin untuk menggunakan kamera Anda.</p>
+                        <Button onClick={activateCamera}>
+                            <Camera className="mr-2 h-4 w-4" />
+                            Aktifkan Kamera
+                        </Button>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center bg-destructive/90 text-destructive-foreground p-6 rounded-lg">
+                        <XCircle className="h-10 w-10 mb-2"/>
+                        <p className="font-bold">Akses Kamera Ditolak</p>
+                        <p className="text-sm text-center mt-1">Mohon segarkan halaman dan berikan izin kamera di pengaturan browser Anda.</p>
+                     </div>
+                )}
              </div>
            )}
         </div>
