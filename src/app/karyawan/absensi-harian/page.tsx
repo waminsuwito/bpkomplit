@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance } from '@/lib/utils';
-import { MapPin, Camera, Loader2, CheckCircle, XCircle, LogIn, LogOut, Info, Bed, Coffee, ThumbsUp, AlertTriangle, PartyPopper, Timer } from 'lucide-react';
+import { MapPin, Camera, Loader2, CheckCircle, XCircle, LogIn, LogOut, Info, ThumbsUp, AlertTriangle, PartyPopper, Timer, Bed, Coffee } from 'lucide-react';
 import type { AttendanceLocation, GlobalAttendanceRecord, UserLocation } from '@/lib/types';
 import { useAuth } from '@/context/auth-provider';
 import { format } from 'date-fns';
@@ -16,11 +16,10 @@ import { toZonedTime } from 'date-fns-tz';
 
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
-const ATTENDANCE_RADIUS_METERS = 50000; // 50km for testing, should be lower in production
+const ATTENDANCE_RADIUS_METERS = 50000; // 50km for testing
 const TIME_ZONE = 'Asia/Jakarta'; // WIB
 
 const getPersonalAttendanceKey = (userId: string) => {
-    // Using zoned time to ensure the date is correct for WIB
     const now = toZonedTime(new Date(), TIME_ZONE);
     const dateStr = format(now, 'yyyy-MM-dd');
     return `attendance-${userId}-${dateStr}`;
@@ -75,7 +74,7 @@ export default function AbsensiHarianKaryawanPage() {
         if (storedRecord) {
           setPersonalAttendanceRecord(JSON.parse(storedRecord));
         } else {
-          setPersonalAttendanceRecord(null); // Explicitly reset on user change/day change
+          setPersonalAttendanceRecord(null);
         }
       } catch (error) {
           console.error("Failed to load today's attendance record", error);
@@ -83,7 +82,7 @@ export default function AbsensiHarianKaryawanPage() {
     }
   }, [user]);
 
-  // Effect to determine the currently available action based on time and record
+  // Effect to determine the currently available action
   useEffect(() => {
     const determineAction = () => {
       const now = toZonedTime(new Date(), TIME_ZONE);
@@ -91,30 +90,25 @@ export default function AbsensiHarianKaryawanPage() {
       const minutes = now.getMinutes();
       const currentTime = hours * 100 + minutes;
 
-      // Priority 1: Already clocked out for the day.
       if (personalAttendanceRecord?.clockOut) {
         setCurrentAction('none');
         return;
       }
       
-      // Priority 2: Clocked in, check if it's time to clock out.
       if (personalAttendanceRecord?.clockIn) {
-        // Clock out window: 17:06 - 23:55
         if (currentTime >= 1706 && currentTime <= 2355) {
           setCurrentAction('clockOut');
         } else {
-          setCurrentAction('none'); // Not yet time to clock out
+          setCurrentAction('none');
         }
         return;
       }
 
-      // Priority 3: Not clocked in at all, check if it's time to clock in.
       if (!personalAttendanceRecord?.clockIn) {
-         // Clock in window: 00:30 - 17:05
         if (currentTime >= 30 && currentTime <= 1705) {
           setCurrentAction('clockIn');
         } else {
-          setCurrentAction('none'); // Outside clock-in window
+          setCurrentAction('none');
         }
         return;
       }
@@ -288,12 +282,12 @@ export default function AbsensiHarianKaryawanPage() {
         );
 
         if (distance <= ATTENDANCE_RADIUS_METERS) {
-            const now = new Date(); // Use local Date for ISOString
+            const now = new Date();
             const nowZoned = toZonedTime(now, TIME_ZONE);
             
             if (currentAction === 'clockIn') {
                 const batasMasuk = toZonedTime(new Date(), TIME_ZONE);
-                batasMasuk.setHours(7, 30, 0, 0); // Batas masuk jam 7:30
+                batasMasuk.setHours(7, 30, 0, 0);
                 
                 const isLate = nowZoned.getTime() > batasMasuk.getTime();
                 let terlambatDuration = null;
@@ -321,8 +315,8 @@ export default function AbsensiHarianKaryawanPage() {
             } else if (currentAction === 'clockOut') {
                 const updatedPersonalRecord = { ...personalAttendanceRecord, clockOut: now.toISOString() };
 
-                setPersonalAttendanceRecord(updatedPersonalRecord);
-                localStorage.setItem(getPersonalAttendanceKey(user.id), JSON.stringify(updatedPersonalRecord));
+                setPersonalAttendanceRecord(updatedPersonalRecord as PersonalAttendanceRecord);
+                localStorage.setItem(getPersonalAttendanceKey(user.id), JSON.stringify(updatedPersonalRecord as PersonalAttendanceRecord));
                 
                 updateGlobalAttendance({ absenPulang: now.toISOString(), photoPulang: photoDataUri });
 
