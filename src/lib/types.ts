@@ -1,4 +1,5 @@
 
+
 import type { LucideIcon } from 'lucide-react';
 
 export interface Material {
@@ -172,4 +173,10 @@ export interface DailyActivityReport {
   pagi: DailyActivity;
   siang: DailyActivity;
   lembur?: DailyActivity;
+}
+
+export interface BroadcastMessage {
+  id: string;
+  messageText: string;
+  timestamp: string; // ISO String
 }
