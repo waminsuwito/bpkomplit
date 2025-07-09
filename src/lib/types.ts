@@ -118,3 +118,11 @@ export interface GlobalAttendanceRecord {
   photoMasuk: string | null; // Data URI
   photoPulang: string | null; // Data URI
 }
+
+export interface AnonymousReport {
+  id: string;
+  reportText: string;
+  photoDataUri: string | null;
+  timestamp: string; // ISO String
+  status: 'new' | 'read';
+}

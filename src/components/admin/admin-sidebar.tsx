@@ -16,7 +16,9 @@ import {
   AreaChart,
   AlertTriangle,
   Megaphone,
-  MapPin
+  MapPin,
+  MailQuestion,
+  ShieldAlert
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -25,17 +27,20 @@ import { useAuth } from '@/context/auth-provider';
 
 const superAdminNav = [
   { href: '/admin/super-admin', label: 'User Management', icon: Shield },
+  { href: '/admin/pesan-anonim', label: 'Pesan dari Anonim', icon: MailQuestion },
 ];
 
 const adminLokasiNav = [
   { href: '/admin/laporan-harian', label: 'Laporan Harian', icon: FileText },
   { href: '/admin/schedule-cor', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
+  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 
 const logistikMaterialNav = [
   { href: '/admin/pemasukan-material', label: 'Pemasukan Material', icon: PackagePlus },
   { href: '/admin/pengiriman-material', label: 'Pengiriman Material', icon: Truck },
   { href: '/admin/bongkar-material', label: 'Bongkar Material', icon: Anchor },
+  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 
 const hseHrdNav = [
@@ -46,6 +51,7 @@ const hseHrdNav = [
   { href: '/admin/rangkuman-kegiatan-karyawan', label: 'Rangkuman Kegiatan', icon: AreaChart },
   { href: '/admin/insiden-kerja', label: 'Insiden Kerja', icon: AlertTriangle },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
+  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 
 export function AdminSidebar() {
