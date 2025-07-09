@@ -54,12 +54,18 @@ export const jabatanOptions = [
   "HELPER CP",
   "HELPER LABORAT",
   "HELPER PRECAST",
+  "HELPER TAMBAL BAN",
   "HRD",
+  "KEP KOOR BP",
+  "KEP KOOR QC",
+  "KEP KOOR TEKNIK",
   "KEPALA BP",
   "KEPALA GUDANG",
   "KEPALA MEKANIK",
+  "KEPALA OPRATOR",
   "KEPALA PRECAST",
   "KEPALA QC",
+  "KEPALA SOPIR",
   "KEPALA WORKSHOP",
   "OPRATOR BATA RINGAN",
   "OPRATOR BP",
@@ -69,6 +75,7 @@ export const jabatanOptions = [
   "QC",
   "SOPIR DT",
   "SOPIR TM",
+  "TUKANG BOBOK",
 ] as const;
 
 export type UserJabatan = (typeof jabatanOptions)[number];
