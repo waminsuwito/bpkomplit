@@ -41,7 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: Omit<User, 'password'>) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    if (userData.role === 'super_admin' || userData.role === 'admin_lokasi' || userData.role === 'logistik_material' || userData.role === 'hse_hrd_lokasi') {
+
+    // Specific redirection for OPRATOR BP jabatan, takes precedence
+    if (userData.jabatan === 'OPRATOR BP') {
+      router.push('/dashboard');
+    } else if (userData.role === 'super_admin' || userData.role === 'admin_lokasi' || userData.role === 'logistik_material' || userData.role === 'hse_hrd_lokasi') {
       router.push('/admin');
     } else if (userData.role === 'karyawan') {
       router.push('/karyawan');
