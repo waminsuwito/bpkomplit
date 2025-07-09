@@ -2,7 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, FileText, CalendarCheck, PackagePlus, Truck, Anchor, Users } from 'lucide-react';
+import { 
+  Shield, 
+  FileText, 
+  CalendarCheck, 
+  PackagePlus, 
+  Truck, 
+  Anchor, 
+  Users,
+  ClipboardCheck,
+  ClipboardList,
+  BarChart3,
+  AreaChart,
+  AlertTriangle,
+  Megaphone
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -25,6 +39,12 @@ const logistikMaterialNav = [
 
 const hseHrdNav = [
   { href: '/admin/manajemen-karyawan', label: 'Manajemen Karyawan', icon: Users },
+  { href: '/admin/absensi-karyawan-hari-ini', label: 'Absensi Hari Ini', icon: ClipboardCheck },
+  { href: '/admin/kegiatan-karyawan-hari-ini', label: 'Kegiatan Hari Ini', icon: ClipboardList },
+  { href: '/admin/rangkuman-absensi-karyawan', label: 'Rangkuman Absensi', icon: BarChart3 },
+  { href: '/admin/rangkuman-kegiatan-karyawan', label: 'Rangkuman Kegiatan', icon: AreaChart },
+  { href: '/admin/insiden-kerja', label: 'Insiden Kerja', icon: AlertTriangle },
+  { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
 ];
 
 export function AdminSidebar() {
