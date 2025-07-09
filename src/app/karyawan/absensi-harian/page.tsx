@@ -12,7 +12,7 @@ import { MapPin, Camera, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import type { AttendanceLocation } from '@/lib/types';
 
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
-const ATTENDANCE_RADIUS_METERS = 50;
+const ATTENDANCE_RADIUS_METERS = 1000;
 
 export default function AbsensiHarianKaryawanPage() {
   const [locations, setLocations] = useState<AttendanceLocation[]>([]);
@@ -126,7 +126,7 @@ export default function AbsensiHarianKaryawanPage() {
           Absensi Harian (Selfie)
         </CardTitle>
         <CardDescription>
-          Pilih lokasi Anda dan ambil foto selfie untuk melakukan absensi. Pastikan Anda berada dalam radius 50 meter dari lokasi.
+          Pilih lokasi Anda dan ambil foto selfie untuk melakukan absensi. Pastikan Anda berada dalam radius 1000 meter dari lokasi.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
