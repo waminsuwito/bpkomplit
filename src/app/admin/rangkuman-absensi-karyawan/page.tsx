@@ -64,7 +64,7 @@ export default function RangkumanAbsensiKaryawanPage() {
     }
   }, [adminUser]);
 
-  const displayRecords = useMemo(() => {
+  const generatedRecords = useMemo(() => {
     const records: DisplayRecord[] = [];
     if (!date?.from || !allKaryawan.length) return [];
 
@@ -113,28 +113,70 @@ export default function RangkumanAbsensiKaryawanPage() {
             }
         }
     }
+    return records;
+  }, [date, allKaryawan, allAttendance]);
 
-    // Apply search filter
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return generatedRecords;
+    }
     const lowercasedFilter = searchTerm.toLowerCase();
-    const filteredRecords = lowercasedFilter
-      ? records.filter(
-          (r) =>
-            r.nama.toLowerCase().includes(lowercasedFilter) ||
-            r.nik.toLowerCase().includes(lowercasedFilter)
-        )
-      : records;
-      
-    // Sort by date (descending) then by name (ascending)
-    return filteredRecords.sort((a, b) => {
-        const dateA = new Date(a.date.split(' ').reverse().join(' ')).getTime();
-        const dateB = new Date(b.date.split(' ').reverse().join(' ')).getTime();
-        if (dateA !== dateB) {
-            return dateB - dateA;
-        }
-        return a.nama.localeCompare(b.nama);
-    });
+    return generatedRecords.filter(
+      (r) =>
+        r.nama.toLowerCase().includes(lowercasedFilter) ||
+        r.nik.toLowerCase().includes(lowercasedFilter)
+    );
+  }, [generatedRecords, searchTerm]);
 
-  }, [date, allKaryawan, allAttendance, searchTerm]);
+  const displayRecords = useMemo(() => {
+    return [...filteredRecords].sort((a, b) => {
+        // Custom parser for "d MMM yyyy" format is needed because new Date() can be unreliable
+        const parseDate = (dateStr: string) => {
+            const parts = dateStr.split(' '); // e.g., ["1", "Agu", "2024"]
+            if (parts.length !== 3) return new Date(0);
+            
+            const day = parseInt(parts[0], 10);
+            const year = parseInt(parts[2], 10);
+            
+            // A map is more reliable than parsing month names
+            const monthMap: { [key: string]: number } = {
+                'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'Mei': 4, 'Jun': 5,
+                'Jul': 6, 'Agu': 7, 'Sep': 8, 'Okt': 9, 'Nov': 10, 'Des': 11
+            };
+            const month = monthMap[parts[1]];
+
+            if (isNaN(day) || isNaN(year) || month === undefined) return new Date(0);
+            return new Date(year, month, day);
+        };
+
+        const dateA = parseDate(a.date).getTime();
+        const dateB = parseDate(b.date).getTime();
+        
+        if (dateA !== dateB) {
+            return dateB - dateA; // Sort by date descending
+        }
+        return a.nama.localeCompare(b.nama); // Then by name ascending
+    });
+  }, [filteredRecords]);
+
+  const summaryStats = useMemo(() => {
+    if (!searchTerm.trim() || filteredRecords.length === 0) {
+      return null;
+    }
+    
+    // Check if all filtered records belong to the same person
+    const uniqueNiks = new Set(filteredRecords.map(r => r.nik));
+    if (uniqueNiks.size !== 1) {
+      return null;
+    }
+
+    const masuk = filteredRecords.filter(r => r.status === 'Hadir').length;
+    const alpha = filteredRecords.filter(r => r.status === 'Tidak Masuk Kerja').length;
+    const terlambat = filteredRecords.filter(r => r.terlambat !== '-').length;
+
+    return { masuk, alpha, terlambat };
+  }, [searchTerm, filteredRecords]);
+
 
   return (
     <Card id="print-content">
@@ -211,42 +253,73 @@ export default function RangkumanAbsensiKaryawanPage() {
                 Tanggal: {date?.from ? format(date.from, 'd MMM yyyy') : ''}
                 {date?.to ? ` - ${format(date.to, 'd MMM yyyy')}` : ''}
             </p>
+            {searchTerm.trim() && <p className="text-sm">Filter Karyawan: {searchTerm}</p>}
         </div>
         {displayRecords.length > 0 ? (
-          <div className="border rounded-lg overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>NIK</TableHead>
-                  <TableHead>Nama Karyawan</TableHead>
-                  <TableHead>Lokasi</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Jam Masuk</TableHead>
-                  <TableHead>Jam Pulang</TableHead>
-                  <TableHead>Terlambat</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayRecords.map((item) => (
-                  <TableRow key={item.key}>
-                    <TableCell className="font-medium whitespace-nowrap">{item.date}</TableCell>
-                    <TableCell>{item.nik}</TableCell>
-                    <TableCell>{item.nama}</TableCell>
-                    <TableCell>{item.location}</TableCell>
-                    <TableCell>
-                      <Badge variant={item.status === 'Hadir' ? 'secondary' : 'destructive'}>
-                        {item.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.absenMasuk}</TableCell>
-                    <TableCell>{item.absenPulang}</TableCell>
-                    <TableCell>{item.terlambat !== '-' ? <Badge variant="destructive">{item.terlambat}</Badge> : '-'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <>
+            <div className="border rounded-lg overflow-x-auto">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead>NIK</TableHead>
+                    <TableHead>Nama Karyawan</TableHead>
+                    <TableHead>Lokasi</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Jam Masuk</TableHead>
+                    <TableHead>Jam Pulang</TableHead>
+                    <TableHead>Terlambat</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {displayRecords.map((item) => (
+                    <TableRow key={item.key}>
+                        <TableCell className="font-medium whitespace-nowrap">{item.date}</TableCell>
+                        <TableCell>{item.nik}</TableCell>
+                        <TableCell>{item.nama}</TableCell>
+                        <TableCell>{item.location}</TableCell>
+                        <TableCell>
+                        <Badge variant={item.status === 'Hadir' ? 'secondary' : 'destructive'}>
+                            {item.status}
+                        </Badge>
+                        </TableCell>
+                        <TableCell>{item.absenMasuk}</TableCell>
+                        <TableCell>{item.absenPulang}</TableCell>
+                        <TableCell>{item.terlambat !== '-' ? <Badge variant="destructive">{item.terlambat}</Badge> : '-'}</TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
+
+            {summaryStats && (
+              <div className="print-only mt-8 border-t-2 border-black pt-4 break-inside-avoid">
+                <h3 className="text-base font-bold mb-2">Rangkuman untuk: {filteredRecords[0].nama} (NIK: {filteredRecords[0].nik})</h3>
+                <Table className="w-auto text-sm border">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="text-black font-bold border px-2 py-1">Keterangan</TableHead>
+                            <TableHead className="text-black font-bold border text-right px-2 py-1">Jumlah</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow>
+                            <TableCell className="border px-2 py-1">Total Masuk Kerja</TableCell>
+                            <TableCell className="border text-right px-2 py-1">{summaryStats.masuk} hari</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="border px-2 py-1">Total Tidak Masuk (Alpha)</TableCell>
+                            <TableCell className="border text-right px-2 py-1">{summaryStats.alpha} hari</TableCell>
+                        </TableRow>
+                        <TableRow>
+                            <TableCell className="border px-2 py-1">Total Keterlambatan</TableCell>
+                            <TableCell className="border text-right px-2 py-1">{summaryStats.terlambat} kali</TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center text-muted-foreground py-16">
             <UserX className="mx-auto h-12 w-12" />
