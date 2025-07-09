@@ -20,12 +20,13 @@ interface Vehicle {
   nomorLambung: string;
   jenisKendaraan: string;
   namaOperatorSopir: string;
+  nik: string;
 }
 
 type TableRowData = Partial<Vehicle>;
 
-const fields: (keyof Omit<Vehicle, 'id'>)[] = ['nomorLambung', 'nomorPolisi', 'jenisKendaraan', 'namaOperatorSopir'];
-const headers = ['NOMOR LAMBUNG', 'NOMOR POLISI', 'JENIS KENDARAAN', 'NAMA SOPIR/OPRATOR'];
+const fields: (keyof Omit<Vehicle, 'id'>)[] = ['nomorLambung', 'nomorPolisi', 'jenisKendaraan', 'namaOperatorSopir', 'nik'];
+const headers = ['NOMOR LAMBUNG', 'NOMOR POLISI', 'JENIS KENDARAAN', 'NAMA SOPIR/OPRATOR', 'NIK'];
 
 export function EditableVehicleList() {
   const [tableData, setTableData] = useState<TableRowData[]>(Array(TOTAL_ROWS).fill({}));
@@ -76,6 +77,7 @@ export function EditableVehicleList() {
           nomorPolisi: vehicleData.nomorPolisi || '',
           jenisKendaraan: vehicleData.jenisKendaraan || '',
           namaOperatorSopir: vehicleData.namaOperatorSopir || '',
+          nik: vehicleData.nik || '',
           id: vehicleData.id || new Date().toISOString() + Math.random(),
         }));
 

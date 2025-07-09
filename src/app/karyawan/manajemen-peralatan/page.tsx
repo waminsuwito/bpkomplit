@@ -19,7 +19,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
 
@@ -31,6 +30,7 @@ interface Vehicle {
   nomorLambung: string;
   jenisKendaraan: string;
   namaOperatorSopir: string;
+  nik: string;
 }
 
 const initialFormState = {
@@ -38,6 +38,7 @@ const initialFormState = {
   nomorLambung: '',
   jenisKendaraan: '',
   namaOperatorSopir: '',
+  nik: '',
 };
 
 export default function ManajemenPeralatanPage() {
@@ -129,22 +130,26 @@ export default function ManajemenPeralatanPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleAddVehicle} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <form onSubmit={handleAddVehicle} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                         <div className="space-y-2">
                             <Label htmlFor="nomorLambung">Nomor Lambung</Label>
-                            <Input id="nomorLambung" name="nomorLambung" value={formState.nomorLambung} onChange={handleInputChange} />
+                            <Input id="nomorLambung" name="nomorLambung" value={formState.nomorLambung} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="nomorPolisi">Nomor Polisi</Label>
-                            <Input id="nomorPolisi" name="nomorPolisi" value={formState.nomorPolisi} onChange={handleInputChange} />
+                            <Input id="nomorPolisi" name="nomorPolisi" value={formState.nomorPolisi} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
                         </div>
                          <div className="space-y-2 md:col-span-1">
                             <Label htmlFor="jenisKendaraan">Jenis Kendaraan</Label>
-                            <Input id="jenisKendaraan" name="jenisKendaraan" value={formState.jenisKendaraan} onChange={handleInputChange} />
+                            <Input id="jenisKendaraan" name="jenisKendaraan" value={formState.jenisKendaraan} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
                         </div>
                         <div className="space-y-2 md:col-span-1">
                             <Label htmlFor="namaOperatorSopir">Nama Sopir/Operator</Label>
-                            <Input id="namaOperatorSopir" name="namaOperatorSopir" value={formState.namaOperatorSopir} onChange={handleInputChange} />
+                            <Input id="namaOperatorSopir" name="namaOperatorSopir" value={formState.namaOperatorSopir} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
+                        </div>
+                         <div className="space-y-2 md:col-span-1">
+                            <Label htmlFor="nik">NIK</Label>
+                            <Input id="nik" name="nik" value={formState.nik} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
                         </div>
                         <div className="md:col-span-1">
                             <Button type="submit" className="w-full">
@@ -177,6 +182,7 @@ export default function ManajemenPeralatanPage() {
                                 <TableHead>Nomor Polisi</TableHead>
                                 <TableHead>Jenis Kendaraan</TableHead>
                                 <TableHead>Nama Sopir/Operator</TableHead>
+                                <TableHead>NIK</TableHead>
                                 <TableHead className="text-center">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -189,6 +195,7 @@ export default function ManajemenPeralatanPage() {
                                     <TableCell>{v.nomorPolisi}</TableCell>
                                     <TableCell>{v.jenisKendaraan}</TableCell>
                                     <TableCell>{v.namaOperatorSopir}</TableCell>
+                                    <TableCell>{v.nik}</TableCell>
                                     <TableCell className="text-center">
                                        <AlertDialog>
                                           <AlertDialogTrigger asChild>
@@ -216,7 +223,7 @@ export default function ManajemenPeralatanPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
+                                    <TableCell colSpan={7} className="h-24 text-center">
                                         Belum ada kendaraan yang ditambahkan.
                                     </TableCell>
                                 </TableRow>
