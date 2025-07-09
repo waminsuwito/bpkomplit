@@ -35,7 +35,7 @@ export function KaryawanSidebar() {
   }
 
   // Conditionally insert the management item for the correct user role
-  if (user?.jabatan === 'KEPALA MEKANIK') {
+  if (user?.jabatan === 'KEPALA MEKANIK' || user?.jabatan === 'KEPALA WORKSHOP') {
       navItems.splice(1, 0, {
           href: '/karyawan/manajemen-alat',
           label: 'Manajemen Alat',

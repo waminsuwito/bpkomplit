@@ -1,3 +1,4 @@
+
 'use client';
 
 import { type User } from '@/lib/types';
@@ -7,13 +8,16 @@ const USERS_STORAGE_KEY = 'app-users';
 // The default users to seed localStorage with if it's empty.
 const initialUsers: User[] = [
   { id: 'superadmin-main', username: 'admin', password: 'admin', role: 'super_admin', location: 'BP PEKANBARU', nik: 'SUPER-001' },
-  { id: 'op-1', username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU', nik: 'OP-001' },
-  { id: 'op-2', username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI', nik: 'OP-002' },
-  { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG', nik: 'MECH-001' },
+  { id: 'op-1', username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU', nik: 'OP-001', jabatan: 'OPRATOR BP' },
+  { id: 'op-2', username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI', nik: 'OP-002', jabatan: 'OPRATOR LOADER' },
+  { id: 'kepmek-1', username: 'kepala_mekanik', password: 'password', role: 'karyawan', location: 'BP PEKANBARU', nik: 'KEPMEK-001', jabatan: 'KEPALA MEKANIK' },
+  { id: 'kepws-1', username: 'kepala_workshop', password: 'password', role: 'karyawan', location: 'BP DUMAI', nik: 'KWS-001', jabatan: 'KEPALA WORKSHOP' },
+  { id: 'sopirtm-1', username: 'budi_tm', password: 'password', role: 'karyawan', location: 'BP BAUNG', nik: 'SOPIR-001', jabatan: 'SOPIR TM' },
+  { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG', nik: 'MECH-001', jabatan: 'HELPER' },
   { id: 'head-1', username: 'supervisor', password: 'password', role: 'supervisor', location: 'BP IKN', nik: 'SUP-001' },
   { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU', nik: 'LAB-001' },
   { id: 'hse-1', username: 'hse', password: 'hse', role: 'hse_hrd_lokasi', location: 'BP PEKANBARU', nik: 'HSE-001' },
-  { id: 'karyawan-1', username: 'karyawan', password: 'karyawan', role: 'karyawan', location: 'BP PEKANBARU', nik: 'K001' },
+  { id: 'karyawan-1', username: 'karyawan', password: 'karyawan', role: 'karyawan', location: 'BP PEKANBARU', nik: 'K001', jabatan: 'HELPER' },
 ];
 
 function getInitialUsers(): User[] {
