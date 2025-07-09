@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/context/auth-provider';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2 } from 'lucide-react';
+import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint } from 'lucide-react';
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -25,6 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { changePassword } from '@/lib/auth';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { AttendanceForm } from '@/components/karyawan/attendance-form';
 
 
 const passwordFormSchema = z
@@ -49,6 +51,7 @@ export function Header() {
   const [password, setPassword] = useState('');
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   
   const { toast } = useToast();
@@ -108,7 +111,7 @@ export function Header() {
           </div>
         </div>
         {user && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="font-semibold flex items-center gap-2">
                 <UserCircle className="h-4 w-4 text-primary" />
@@ -116,6 +119,20 @@ export function Header() {
               </p>
               <p className="text-xs text-muted-foreground">{formatRoleName(user.role)}</p>
             </div>
+            
+            {pathname.startsWith('/dashboard') && user.jabatan === 'OPRATOR BP' && (
+              <Dialog open={isAttendanceOpen} onOpenChange={setIsAttendanceOpen}>
+                  <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                          <Fingerprint className="mr-2 h-4 w-4" />
+                          Absen
+                      </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl p-0 border-0">
+                      <AttendanceForm />
+                  </DialogContent>
+              </Dialog>
+            )}
 
             {/* In-Dashboard Admin for Formulas */}
             {(user.role === 'supervisor' || user.role === 'super_admin') && !isAdminPage && (
