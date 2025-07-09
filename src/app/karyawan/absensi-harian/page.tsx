@@ -85,10 +85,10 @@ export default function AbsensiHarianKaryawanPage() {
       const minutes = now.getMinutes();
       const currentTime = hours * 100 + minutes;
 
-      // Clock in is allowed from 00:30 until clock out time begins (17:05).
-      const isClockInTime = currentTime >= 30 && currentTime < 1705;
-      // Clock out is from 17:05 to 23:55.
-      const isClockOutTime = currentTime >= 1705 && currentTime <= 2355;
+      // Clock out is from 17:06 to 23:55.
+      const isClockOutTime = currentTime >= 1706 && currentTime <= 2355;
+      // Clock in is allowed from 00:30 until clock out time begins (17:06).
+      const isClockInTime = currentTime >= 30 && currentTime < 1706;
       
       if (personalAttendanceRecord?.clockOut) {
         // Already clocked out for the day, no further actions.
@@ -154,7 +154,7 @@ export default function AbsensiHarianKaryawanPage() {
             icon: <ThumbsUp className="h-5 w-5 text-green-500" />,
           };
         }
-        if (currentTime > 730 && currentTime < 1705) { // 07:31 - 17:04
+        if (currentTime > 730 && currentTime < 1706) { // 07:31 - 17:05
           return {
             message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan Anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat waktu dan jangan terlambat. Terimakasih.`,
             variant: 'destructive' as const,
