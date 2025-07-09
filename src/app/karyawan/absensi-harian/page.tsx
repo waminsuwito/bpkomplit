@@ -8,11 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance } from '@/lib/utils';
-import { MapPin, Camera, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { MapPin, Camera, Loader2, CheckCircle, XCircle, LogIn, LogOut } from 'lucide-react';
 import type { AttendanceLocation } from '@/lib/types';
 
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const ATTENDANCE_RADIUS_METERS = 1000;
+const getAttendanceKey = () => `attendance-${new Date().toISOString().split('T')[0]}`;
+
+type AttendanceRecord = {
+  clockIn?: string;
+  isLate?: boolean;
+  clockOut?: string;
+};
+
+type AttendanceAction = 'clockIn' | 'clockOut' | 'none';
 
 export default function AbsensiHarianKaryawanPage() {
   const [locations, setLocations] = useState<AttendanceLocation[]>([]);
@@ -24,6 +33,10 @@ export default function AbsensiHarianKaryawanPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  
+  const [attendanceRecord, setAttendanceRecord] = useState<AttendanceRecord | null>(null);
+  const [currentAction, setCurrentAction] = useState<AttendanceAction>('none');
+
 
   useEffect(() => {
     try {
@@ -34,7 +47,48 @@ export default function AbsensiHarianKaryawanPage() {
     } catch (error) {
       console.error("Failed to load attendance locations from localStorage", error);
     }
+    
+    // Load today's attendance record
+    try {
+      const storedRecord = localStorage.getItem(getAttendanceKey());
+      if (storedRecord) {
+        setAttendanceRecord(JSON.parse(storedRecord));
+      }
+    } catch (error) {
+        console.error("Failed to load today's attendance record", error);
+    }
   }, []);
+
+  useEffect(() => {
+    const updateAction = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      
+      // Clock-in available from 00:30 until 17:05 (allows for late clock-ins)
+      const isClockInTime = (hours === 0 && minutes >= 30) || (hours > 0 && hours < 17) || (hours === 17 && minutes < 5);
+      
+      // Clock-out available from 17:05 until 23:55
+      const isClockOutTime = (hours === 17 && minutes >= 5) || (hours > 17 && hours <= 23 && (hours !== 23 || minutes <= 55));
+      
+      setAttendanceRecord(prevRecord => {
+        if (prevRecord?.clockOut) {
+          setCurrentAction('none');
+        } else if (prevRecord?.clockIn) {
+          setCurrentAction(isClockOutTime ? 'clockOut' : 'none');
+        } else {
+          setCurrentAction(isClockInTime ? 'clockIn' : 'none');
+        }
+        return prevRecord;
+      });
+    };
+
+    updateAction();
+    const timerId = setInterval(updateAction, 30000); // Check every 30 seconds
+
+    return () => clearInterval(timerId);
+  }, [attendanceRecord?.clockIn, attendanceRecord?.clockOut]);
+
 
   const activateCamera = async () => {
     if (typeof navigator.mediaDevices?.getUserMedia !== 'function') {
@@ -63,9 +117,9 @@ export default function AbsensiHarianKaryawanPage() {
     }
   };
   
-  const handleClockIn = () => {
-    if (!selectedLocation) {
-      toast({ variant: 'destructive', title: 'Lokasi Belum Dipilih', description: 'Silakan pilih lokasi Batching Plant Anda.' });
+  const handleAttendance = () => {
+    if (!selectedLocation || currentAction === 'none') {
+      toast({ variant: 'destructive', title: 'Aksi Tidak Tersedia', description: 'Pastikan Anda telah memilih lokasi dan berada dalam jam absensi.' });
       return;
     }
     
@@ -93,14 +147,31 @@ export default function AbsensiHarianKaryawanPage() {
         );
 
         if (distance <= ATTENDANCE_RADIUS_METERS) {
-          // Logika sukses absensi
-          setAttendanceStatus('success');
-          const successMsg = `Absensi berhasil! Jarak Anda ${distance.toFixed(0)} meter dari ${selectedLocation.name}.`;
-          setStatusMessage(successMsg);
-          toast({ title: 'Absensi Berhasil', description: `Tercatat pada ${new Date().toLocaleTimeString()}`});
-          // Di sini Anda akan menambahkan logika untuk menyimpan data ke Firestore, termasuk gambar dari video stream.
+            const now = new Date();
+            
+            if (currentAction === 'clockIn') {
+                const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 30);
+                const newRecord = { clockIn: now.toISOString(), isLate };
+
+                setAttendanceRecord(newRecord);
+                localStorage.setItem(getAttendanceKey(), JSON.stringify(newRecord));
+
+                const toastDescription = isLate ? 'Anda tercatat terlambat hari ini.' : 'Absensi masuk berhasil dicatat.';
+                toast({ title: 'Absensi Masuk Berhasil', description: toastDescription });
+                setAttendanceStatus('success');
+                setStatusMessage(`Berhasil absen masuk pada ${now.toLocaleTimeString()}.`);
+
+            } else if (currentAction === 'clockOut') {
+                const updatedRecord = { ...attendanceRecord, clockOut: now.toISOString() };
+
+                setAttendanceRecord(updatedRecord as AttendanceRecord);
+                localStorage.setItem(getAttendanceKey(), JSON.stringify(updatedRecord));
+
+                toast({ title: 'Absensi Pulang Berhasil', description: 'Absensi pulang berhasil dicatat.' });
+                setAttendanceStatus('success');
+                setStatusMessage(`Berhasil absen pulang pada ${now.toLocaleTimeString()}.`);
+            }
         } else {
-          // Logika gagal absensi
           setAttendanceStatus('failed');
           const failMsg = `Anda terlalu jauh! Jarak Anda ${distance.toFixed(0)} meter dari lokasi. Radius yang diizinkan adalah ${ATTENDANCE_RADIUS_METERS} meter.`;
           setStatusMessage(failMsg);
@@ -121,8 +192,24 @@ export default function AbsensiHarianKaryawanPage() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
+  
+  const getButtonText = () => {
+    if (isCheckingIn) return 'Memvalidasi...';
+    switch (currentAction) {
+      case 'clockIn': return 'Absen Masuk Sekarang';
+      case 'clockOut': return 'Absen Pulang Sekarang';
+      default:
+        if (attendanceRecord?.clockIn && !attendanceRecord.clockOut) {
+          return 'Belum Waktunya Absen Pulang';
+        }
+        if (attendanceRecord?.clockOut) {
+          return 'Absensi Hari Ini Selesai';
+        }
+        return 'Di Luar Jam Absensi';
+    }
+  };
 
-  const isButtonDisabled = isCheckingIn || hasCameraPermission !== true || locations.length === 0 || !selectedLocation;
+  const isButtonDisabled = isCheckingIn || hasCameraPermission !== true || locations.length === 0 || !selectedLocation || currentAction === 'none';
 
   return (
     <Card className="max-w-2xl mx-auto">
@@ -160,7 +247,7 @@ export default function AbsensiHarianKaryawanPage() {
                         <Camera className="h-12 w-12 mb-4 text-primary" />
                         <h3 className="text-lg font-bold">Aktifkan Kamera untuk Absensi</h3>
                         <p className="text-sm text-muted-foreground mb-4">Aplikasi memerlukan izin untuk menggunakan kamera Anda.</p>
-                        <Button onClick={activateCamera}>
+                        <Button onClick={activateCamera} disabled={!selectedLocation}>
                             <Camera className="mr-2 h-4 w-4" />
                             Aktifkan Kamera
                         </Button>
@@ -175,6 +262,17 @@ export default function AbsensiHarianKaryawanPage() {
              </div>
            )}
         </div>
+
+        {attendanceRecord?.clockIn && (
+            <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-500">
+                <CheckCircle className="h-4 w-4 text-blue-600" />
+                <AlertTitle>Status Absensi Hari Ini</AlertTitle>
+                <AlertDescription>
+                   <p>Masuk: <span className="font-semibold">{new Date(attendanceRecord.clockIn).toLocaleTimeString('id-ID')}</span> {attendanceRecord.isLate && <span className="text-destructive font-bold">(Terlambat)</span>}</p>
+                   {attendanceRecord.clockOut && <p>Pulang: <span className="font-semibold">{new Date(attendanceRecord.clockOut).toLocaleTimeString('id-ID')}</span></p>}
+                </AlertDescription>
+            </Alert>
+        )}
         
         {statusMessage && (
            <Alert variant={attendanceStatus === 'success' ? 'default' : attendanceStatus === 'failed' ? 'destructive' : 'default'} className={attendanceStatus === 'success' ? 'bg-green-100 dark:bg-green-900/40 border-green-500' : ''}>
@@ -192,13 +290,15 @@ export default function AbsensiHarianKaryawanPage() {
 
       </CardContent>
       <CardFooter>
-        <Button onClick={handleClockIn} disabled={isButtonDisabled} className="w-full" size="lg">
+        <Button onClick={handleAttendance} disabled={isButtonDisabled} className="w-full" size="lg">
           {isCheckingIn ? (
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
           ) : (
+            currentAction === 'clockIn' ? <LogIn className="mr-2 h-5 w-5" /> :
+            currentAction === 'clockOut' ? <LogOut className="mr-2 h-5 w-5" /> :
             <MapPin className="mr-2 h-5 w-5" />
           )}
-          {isCheckingIn ? 'Memvalidasi Lokasi...' : 'Absen Masuk Sekarang'}
+          {getButtonText()}
         </Button>
       </CardFooter>
     </Card>
