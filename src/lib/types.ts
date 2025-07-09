@@ -141,4 +141,5 @@ export interface DailyActivityReport {
   date: string; // YYYY-MM-DD
   pagi: DailyActivity;
   siang: DailyActivity;
+  lembur?: DailyActivity;
 }

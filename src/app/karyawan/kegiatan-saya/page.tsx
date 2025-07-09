@@ -10,14 +10,41 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import { format } from 'date-fns';
-import { ClipboardList, Camera, Loader2, Video, VideoOff, CheckCircle, Save, Info } from 'lucide-react';
+import { ClipboardList, Camera, Loader2, Video, VideoOff, CheckCircle, Save, Info, Moon } from 'lucide-react';
 import type { DailyActivityReport, DailyActivity } from '@/lib/types';
 import Image from 'next/image';
 
 const GLOBAL_ACTIVITIES_KEY = 'app-daily-activities';
-const getPersonalActivityKey = (userId: string) => `daily-activity-${userId}-${format(new Date(), 'yyyy-MM-dd')}`;
 
-type Session = 'pagi' | 'siang';
+type Session = 'pagi' | 'siang' | 'lembur';
+
+const getPersonalActivityKeyForSession = (userId: string): string => {
+    const now = new Date();
+    const hours = now.getHours();
+    
+    // Jika antara tengah malam dan jam 4 pagi, aktivitas tersebut milik laporan hari sebelumnya.
+    if (hours >= 0 && hours < 4) {
+        const yesterday = new Date();
+        yesterday.setDate(now.getDate() - 1);
+        return `daily-activity-${userId}-${format(yesterday, 'yyyy-MM-dd')}`;
+    }
+    
+    // Jika tidak, aktivitas tersebut milik laporan hari ini.
+    return `daily-activity-${userId}-${format(now, 'yyyy-MM-dd')}`;
+};
+
+const getReportDateForSession = (): string => {
+    const now = new Date();
+    const hours = now.getHours();
+
+    if (hours >= 0 && hours < 4) {
+        const yesterday = new Date();
+        yesterday.setDate(now.getDate() - 1);
+        return format(yesterday, 'yyyy-MM-dd');
+    }
+    
+    return format(now, 'yyyy-MM-dd');
+}
 
 export default function KegiatanSayaPage() {
   const { user } = useAuth();
@@ -30,8 +57,10 @@ export default function KegiatanSayaPage() {
 
   const [pagiText, setPagiText] = useState('');
   const [siangText, setSiangText] = useState('');
+  const [lemburText, setLemburText] = useState('');
   const [pagiPhoto, setPagiPhoto] = useState<string | null>(null);
   const [siangPhoto, setSiangPhoto] = useState<string | null>(null);
+  const [lemburPhoto, setLemburPhoto] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,7 +68,8 @@ export default function KegiatanSayaPage() {
   useEffect(() => {
     if (user) {
       try {
-        const storedReport = localStorage.getItem(getPersonalActivityKey(user.id));
+        const personalKey = getPersonalActivityKeyForSession(user.id);
+        const storedReport = localStorage.getItem(personalKey);
         if (storedReport) {
           const parsedReport: DailyActivityReport = JSON.parse(storedReport);
           setReport(parsedReport);
@@ -47,6 +77,8 @@ export default function KegiatanSayaPage() {
           setPagiPhoto(parsedReport.pagi?.photo || null);
           setSiangText(parsedReport.siang?.text || '');
           setSiangPhoto(parsedReport.siang?.photo || null);
+          setLemburText(parsedReport.lembur?.text || '');
+          setLemburPhoto(parsedReport.lembur?.photo || null);
         }
       } catch (error) {
         console.error("Failed to load today's activity report", error);
@@ -63,6 +95,8 @@ export default function KegiatanSayaPage() {
         setCurrentSession('pagi');
       } else if (currentTime >= 1300 && currentTime < 1700) {
         setCurrentSession('siang');
+      } else if (currentTime >= 2200 || currentTime < 400) {
+        setCurrentSession('lembur');
       } else {
         setCurrentSession(null);
         if (isCameraActive) stopCamera();
@@ -123,8 +157,10 @@ export default function KegiatanSayaPage() {
     if (photoDataUri && currentSession) {
       if (currentSession === 'pagi') {
         setPagiPhoto(photoDataUri);
-      } else {
+      } else if (currentSession === 'siang') {
         setSiangPhoto(photoDataUri);
+      } else if (currentSession === 'lembur') {
+        setLemburPhoto(photoDataUri);
       }
     }
   };
@@ -137,8 +173,23 @@ export default function KegiatanSayaPage() {
 
     setIsLoading(true);
 
-    const activityText = session === 'pagi' ? pagiText : siangText;
-    const activityPhoto = session === 'pagi' ? pagiPhoto : siangPhoto;
+    let activityText: string;
+    let activityPhoto: string | null;
+
+    switch (session) {
+      case 'pagi':
+        activityText = pagiText;
+        activityPhoto = pagiPhoto;
+        break;
+      case 'siang':
+        activityText = siangText;
+        activityPhoto = siangPhoto;
+        break;
+      case 'lembur':
+        activityText = lemburText;
+        activityPhoto = lemburPhoto;
+        break;
+    }
 
     if (!activityText.trim()) {
         toast({ variant: 'destructive', title: 'Gagal', description: 'Mohon isi deskripsi kegiatan.' });
@@ -146,51 +197,53 @@ export default function KegiatanSayaPage() {
         return;
     }
 
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const personalKey = getPersonalActivityKey(user.id);
+    const reportDateStr = getReportDateForSession();
+    const personalKey = `daily-activity-${user.id}-${reportDateStr}`;
     
-    // 1. Get existing reports (personal and global)
-    const storedPersonal = localStorage.getItem(personalKey);
-    const currentPersonalReport: DailyActivityReport = storedPersonal ? JSON.parse(storedPersonal) : {
-        userId: user.id,
-        nik: user.nik,
-        username: user.username,
-        location: user.location,
-        date: todayStr,
-        pagi: { text: null, photo: null, timestamp: null },
-        siang: { text: null, photo: null, timestamp: null },
-    };
-
+    // 1. Dapatkan laporan yang ada (global)
     const storedGlobal = localStorage.getItem(GLOBAL_ACTIVITIES_KEY);
     const allGlobalReports: DailyActivityReport[] = storedGlobal ? JSON.parse(storedGlobal) : [];
 
-    // 2. Update the report data for the specific session
+    // 2. Cari atau buat laporan yang akan diperbarui
+    const globalReportIndex = allGlobalReports.findIndex(r => r.userId === user.id && r.date === reportDateStr);
+    
+    let reportToUpdate: DailyActivityReport;
+    if (globalReportIndex > -1) {
+      reportToUpdate = allGlobalReports[globalReportIndex];
+    } else {
+      // Buat laporan baru jika tidak ada untuk tanggal tersebut
+      reportToUpdate = {
+          userId: user.id,
+          nik: user.nik,
+          username: user.username,
+          location: user.location,
+          date: reportDateStr,
+          pagi: { text: null, photo: null, timestamp: null },
+          siang: { text: null, photo: null, timestamp: null },
+          lembur: { text: null, photo: null, timestamp: null },
+      };
+    }
+
+    // 3. Perbarui data laporan untuk sesi tertentu
     const updatedSessionData: DailyActivity = {
         text: activityText,
         photo: activityPhoto,
         timestamp: new Date().toISOString()
     };
-    currentPersonalReport[session] = updatedSessionData;
+    reportToUpdate[session] = updatedSessionData;
     
-    if (session === 'pagi') {
-        setPagiText(activityText);
-        setPagiPhoto(activityPhoto);
-    } else {
-        setSiangText(activityText);
-        setSiangPhoto(activityPhoto);
-    }
+    setReport(reportToUpdate);
 
-    // 3. Update global report
-    const globalReportIndex = allGlobalReports.findIndex(r => r.userId === user.id && r.date === todayStr);
+    // 4. Perbarui atau tambahkan laporan di daftar global
     if (globalReportIndex > -1) {
-        allGlobalReports[globalReportIndex] = currentPersonalReport;
+        allGlobalReports[globalReportIndex] = reportToUpdate;
     } else {
-        allGlobalReports.push(currentPersonalReport);
+        allGlobalReports.push(reportToUpdate);
     }
 
-    // 4. Save back to localStorage
+    // 5. Simpan kembali ke localStorage
     try {
-        localStorage.setItem(personalKey, JSON.stringify(currentPersonalReport));
+        localStorage.setItem(personalKey, JSON.stringify(reportToUpdate));
         localStorage.setItem(GLOBAL_ACTIVITIES_KEY, JSON.stringify(allGlobalReports));
         toast({ title: 'Berhasil', description: `Laporan kegiatan ${session} telah disimpan.` });
     } catch (error) {
@@ -203,12 +256,19 @@ export default function KegiatanSayaPage() {
 
   const renderSessionCard = (session: Session, title: string, text: string, setText: (val: string) => void, photo: string | null, setPhoto: (val: string | null) => void) => {
     const isSessionActive = currentSession === session;
-    const isSaved = (session === 'pagi' && report.pagi?.timestamp) || (session === 'siang' && report.siang?.timestamp);
+    const isSaved = (session === 'pagi' && report.pagi?.timestamp) 
+                 || (session === 'siang' && report.siang?.timestamp)
+                 || (session === 'lembur' && report.lembur?.timestamp);
 
     return (
       <Card className={!isSessionActive && !isSaved ? 'bg-muted/50' : ''}>
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {session === 'pagi' && <Info className="h-5 w-5" />}
+            {session === 'siang' && <Info className="h-5 w-5" />}
+            {session === 'lembur' && <Moon className="h-5 w-5" />}
+            {title}
+          </CardTitle>
           {!isSessionActive && !isSaved && <CardDescription>Belum memasuki waktu laporan sesi ini.</CardDescription>}
           {isSaved && <CardDescription className="text-primary flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Laporan sesi ini sudah disimpan.</CardDescription>}
         </CardHeader>
@@ -219,7 +279,7 @@ export default function KegiatanSayaPage() {
               id={`kegiatan-${session}`}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={`Tuliskan kegiatan Anda di sesi ${session} di sini...`}
+              placeholder={`Tuliskan kegiatan Anda di sesi ${session.toLowerCase()} di sini...`}
               rows={5}
               disabled={!isSessionActive || isLoading || isSaved}
             />
@@ -273,7 +333,7 @@ export default function KegiatanSayaPage() {
             <Info className="h-4 w-4" />
             <AlertTitle>Petunjuk</AlertTitle>
             <AlertDescription>
-              Isi laporan kegiatan pagi antara pukul 07:30 - 12:00 dan kegiatan siang antara pukul 13:00 - 17:00.
+              Isi laporan kegiatan pagi antara pukul 07:30 - 12:00, kegiatan siang antara pukul 13:00 - 17:00, dan kegiatan lembur antara pukul 22:00 - 04:00.
             </AlertDescription>
           </Alert>
         </CardHeader>
@@ -281,9 +341,10 @@ export default function KegiatanSayaPage() {
       
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {renderSessionCard('pagi', 'Kegiatan Pagi', pagiText, setPagiText, pagiPhoto, setPagiPhoto)}
         {renderSessionCard('siang', 'Kegiatan Siang', siangText, setSiangText, siangPhoto, setSiangPhoto)}
+        {renderSessionCard('lembur', 'Kegiatan Lembur', lemburText, setLemburText, lemburPhoto, setLemburPhoto)}
       </div>
     </div>
   );
