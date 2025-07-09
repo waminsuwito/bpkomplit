@@ -33,14 +33,14 @@ interface Report {
 }
 
 
-const StatCard = ({ title, value, description, icon: Icon, onClick, clickable }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean }) => (
+const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, colorClass }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean, colorClass?: string }) => (
   <Card onClick={onClick} className={cn(clickable && 'cursor-pointer transition-colors hover:bg-muted/50')}>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
       <Icon className="h-4 w-4 text-muted-foreground" />
     </CardHeader>
     <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className={cn("text-2xl font-bold", colorClass)}>{value}</div>
       <p className="text-xs text-muted-foreground">{description}</p>
     </CardContent>
   </Card>
@@ -204,9 +204,9 @@ export default function ManajemenAlatPage() {
         <StatCard title="Total Alat" value={filteredData.totalAlat} description="Klik untuk melihat rincian" icon={Package} clickable onClick={() => handleCardClick('Total')} />
         <StatCard title="Alat Sudah Checklist" value={filteredData.sudahChecklistReports.length} description="Klik untuk melihat rincian" icon={CheckSquare} clickable onClick={() => handleCardClick('Sudah Checklist')} />
         <StatCard title="Alat Belum Checklist" value={filteredData.belumChecklistReports.length} description="Klik untuk melihat rincian" icon={XSquare} clickable onClick={() => handleCardClick('Belum Checklist')} />
-        <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat rincian" icon={CheckCircle2} clickable onClick={() => handleCardClick('Baik')} />
-        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} />
-        <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} />
+        <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat rincian" icon={CheckCircle2} clickable onClick={() => handleCardClick('Baik')} colorClass="text-green-600" />
+        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} colorClass="text-amber-500" />
+        <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} colorClass="text-destructive" />
       </div>
 
       <Card>
