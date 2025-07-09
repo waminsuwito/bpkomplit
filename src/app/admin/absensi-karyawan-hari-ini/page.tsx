@@ -28,6 +28,9 @@ import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 
@@ -124,6 +127,12 @@ export default function AbsensiKaryawanHariIniPage() {
                             </button>
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl p-0 border-0">
+                            <DialogHeader className="sr-only">
+                              <DialogTitle>Foto Masuk: {item.nama}</DialogTitle>
+                              <DialogDescription>
+                                Foto selfie absensi masuk untuk karyawan {item.nama} pada tanggal {tanggalHariIni}.
+                              </DialogDescription>
+                            </DialogHeader>
                             <Image
                               src={item.photoMasuk}
                               alt={`Foto Masuk ${item.nama}`}
@@ -166,6 +175,12 @@ export default function AbsensiKaryawanHariIniPage() {
                              </button>
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl p-0 border-0">
+                            <DialogHeader className="sr-only">
+                                <DialogTitle>Foto Pulang: {item.nama}</DialogTitle>
+                                <DialogDescription>
+                                  Foto selfie absensi pulang untuk karyawan {item.nama} pada tanggal {tanggalHariIni}.
+                                </DialogDescription>
+                            </DialogHeader>
                             <Image
                               src={item.photoPulang}
                               alt={`Foto Pulang ${item.nama}`}
