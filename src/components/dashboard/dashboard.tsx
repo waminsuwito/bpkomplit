@@ -325,7 +325,7 @@ export function Dashboard() {
         unloading_pause_2: 'Jeda pengosongan akhir...',
         unloading_to_closing_transition: 'Menyiapkan penutupan pintu...',
         unloading_door_close: (n, t) => `Menutup pintu mixer (setelah Mix ${n}/${t})...`,
-        unloading_door_close_final: 'Menutup pintu mixer (Final)...`,
+        unloading_door_close_final: 'Menutup pintu mixer (Final)...',
         unloading_klakson: 'Memberi sinyal proses selesai...',
         complete: 'Proses Batching Selesai. Menampilkan pratinjau cetak...',
     };
