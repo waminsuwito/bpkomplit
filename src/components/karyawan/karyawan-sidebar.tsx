@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 
@@ -12,6 +12,8 @@ const navItems = [
   { href: '/karyawan/kegiatan-saya', label: 'Kegiatan Saya', icon: ClipboardList },
   { href: '/karyawan/broadcast', label: 'Broadcast', icon: Megaphone },
   { href: '/karyawan/laporkan-accident', label: 'Laporkan Accident', icon: AlertTriangle },
+  { href: '/karyawan/usulan-saya', label: 'Usulan Saya', icon: Lightbulb },
+  { href: '/karyawan/komplain-saya', label: 'Komplain Saya', icon: MessageSquareWarning },
   { href: '/karyawan/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 

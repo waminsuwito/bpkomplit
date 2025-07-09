@@ -18,14 +18,16 @@ import {
   Megaphone,
   MapPin,
   MailQuestion,
-  ShieldAlert
+  ShieldAlert,
+  Lightbulb,
+  MessageSquareWarning
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
 import { useState, useEffect } from 'react';
-import type { AnonymousReport, AccidentReport } from '@/lib/types';
+import type { AnonymousReport, AccidentReport, Suggestion, Complaint } from '@/lib/types';
 
 const superAdminNav = [
   { href: '/admin/super-admin', label: 'User Management', icon: Shield },
@@ -36,6 +38,8 @@ const superAdminNav = [
 const adminLokasiNav = [
   { href: '/admin/laporan-harian', label: 'Laporan Harian', icon: FileText },
   { href: '/admin/schedule-cor', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
+  { href: '/admin/usulan-karyawan', label: 'Usulan Karyawan', icon: Lightbulb },
+  { href: '/admin/komplain-karyawan', label: 'Komplain Karyawan', icon: MessageSquareWarning },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
   { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
@@ -44,6 +48,8 @@ const logistikMaterialNav = [
   { href: '/admin/pemasukan-material', label: 'Pemasukan Material', icon: PackagePlus },
   { href: '/admin/pengiriman-material', label: 'Pengiriman Material', icon: Truck },
   { href: '/admin/bongkar-material', label: 'Bongkar Material', icon: Anchor },
+  { href: '/admin/usulan-karyawan', label: 'Usulan Karyawan', icon: Lightbulb },
+  { href: '/admin/komplain-karyawan', label: 'Komplain Karyawan', icon: MessageSquareWarning },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
   { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
@@ -55,68 +61,73 @@ const hseHrdNav = [
   { href: '/admin/rangkuman-absensi-karyawan', label: 'Rangkuman Absensi', icon: BarChart3 },
   { href: '/admin/rangkuman-kegiatan-karyawan', label: 'Rangkuman Kegiatan', icon: AreaChart },
   { href: '/admin/insiden-kerja', label: 'Insiden Kerja', icon: AlertTriangle },
+  { href: '/admin/usulan-karyawan', label: 'Usulan Karyawan', icon: Lightbulb },
+  { href: '/admin/komplain-karyawan', label: 'Komplain Karyawan', icon: MessageSquareWarning },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
   { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 
 const ANONYMOUS_REPORTS_KEY = 'app-anonymous-reports';
 const ACCIDENT_REPORTS_KEY = 'app-accident-reports';
+const SUGGESTIONS_KEY = 'app-suggestions';
+const COMPLAINTS_KEY = 'app-complaints';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [hasUnreadAnonymous, setHasUnreadAnonymous] = useState(false);
   const [hasUnreadAccidents, setHasUnreadAccidents] = useState(false);
+  const [hasUnreadSuggestions, setHasUnreadSuggestions] = useState(false);
+  const [hasUnreadComplaints, setHasUnreadComplaints] = useState(false);
 
   useEffect(() => {
-    // No need for notifications if user is not the right role
-    if (user?.role !== 'super_admin' && user?.role !== 'hse_hrd_lokasi') {
-      return;
-    }
-
     const checkUnread = () => {
-      // Check for anonymous reports if super_admin
-      if (user?.role === 'super_admin') {
-        try {
-          const storedData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
-          const reports: AnonymousReport[] = storedData ? JSON.parse(storedData) : [];
-          setHasUnreadAnonymous(reports.some(r => r.status === 'new'));
-        } catch (e) {
-          console.error("Failed to check anonymous reports", e);
-          setHasUnreadAnonymous(false);
+      try {
+        if (user?.role === 'super_admin') {
+          const anonData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
+          const anonReports: AnonymousReport[] = anonData ? JSON.parse(anonData) : [];
+          setHasUnreadAnonymous(anonReports.some(r => r.status === 'new'));
         }
-      }
 
-      // Check for accident reports if hse_hrd_lokasi
-      if (user?.role === 'hse_hrd_lokasi') {
-        try {
-          const storedData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
-          const reports: AccidentReport[] = storedData ? JSON.parse(storedData) : [];
-          setHasUnreadAccidents(reports.some(r => r.status === 'new'));
-        } catch (e) {
-          console.error("Failed to check accident reports", e);
-          setHasUnreadAccidents(false);
+        const suggestionData = localStorage.getItem(SUGGESTIONS_KEY);
+        const suggestions: Suggestion[] = suggestionData ? JSON.parse(suggestionData) : [];
+        setHasUnreadSuggestions(suggestions.some(r => r.status === 'new'));
+
+        const complaintData = localStorage.getItem(COMPLAINTS_KEY);
+        const complaints: Complaint[] = complaintData ? JSON.parse(complaintData) : [];
+        setHasUnreadComplaints(complaints.some(r => r.status === 'new'));
+        
+        if (user?.role === 'hse_hrd_lokasi') {
+          const accidentData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
+          const accidentReports: AccidentReport[] = accidentData ? JSON.parse(accidentData) : [];
+          setHasUnreadAccidents(accidentReports.some(r => r.status === 'new'));
         }
+
+      } catch (e) {
+        console.error("Failed to check unread reports", e);
       }
     };
 
     checkUnread();
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === ANONYMOUS_REPORTS_KEY || event.key === ACCIDENT_REPORTS_KEY) {
+      if ([ANONYMOUS_REPORTS_KEY, ACCIDENT_REPORTS_KEY, SUGGESTIONS_KEY, COMPLAINTS_KEY].includes(event.key || '')) {
         checkUnread();
       }
     };
     
-    // Custom events are dispatched from the report pages when an item is marked as read
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('reportsUpdated', checkUnread);
     window.addEventListener('accidentReportsUpdated', checkUnread);
+    window.addEventListener('suggestionsUpdated', checkUnread);
+    window.addEventListener('complaintsUpdated', checkUnread);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('reportsUpdated', checkUnread);
       window.removeEventListener('accidentReportsUpdated', checkUnread);
+      window.removeEventListener('suggestionsUpdated', checkUnread);
+      window.removeEventListener('complaintsUpdated', checkUnread);
     };
   }, [user]);
 
@@ -138,6 +149,9 @@ export function AdminSidebar() {
         {navItems.map((item) => {
           const showAnonymousDot = item.href === '/admin/pesan-anonim' && hasUnreadAnonymous;
           const showAccidentDot = item.href === '/admin/insiden-kerja' && hasUnreadAccidents;
+          const showSuggestionDot = item.href === '/admin/usulan-karyawan' && hasUnreadSuggestions;
+          const showComplaintDot = item.href === '/admin/komplain-karyawan' && hasUnreadComplaints;
+          const showNotification = showAnonymousDot || showAccidentDot || showSuggestionDot || showComplaintDot;
 
           return (
             <Link
@@ -152,7 +166,7 @@ export function AdminSidebar() {
             >
               <item.icon className="mr-2 h-4 w-4" />
               <span>{item.label}</span>
-              {(showAnonymousDot || showAccidentDot) && (
+              {showNotification && (
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>

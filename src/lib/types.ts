@@ -180,3 +180,17 @@ export interface BroadcastMessage {
   messageText: string;
   timestamp: string; // ISO String
 }
+
+interface UserFeedback {
+    id: string;
+    reporterId: string;
+    reporterName: string;
+    reporterNik: string;
+    location: UserLocation;
+    text: string;
+    timestamp: string; // ISO String
+    status: 'new' | 'read';
+}
+
+export type Suggestion = UserFeedback;
+export type Complaint = UserFeedback;
