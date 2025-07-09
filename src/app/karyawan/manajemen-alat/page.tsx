@@ -19,7 +19,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 
-// Dummy data based on the screenshot and some additions
+// Dummy data for tools that have reports
 const dummyReports = [
   { id: 1, operator: 'Andi Saputra', kendaraan: 'TM-01 (BM 1234 ABC)', lokasi: 'BP PEKANBARU', status: 'Perlu Perhatian', waktu: '10:15' },
   { id: 2, operator: 'Budi Santoso', kendaraan: 'TM-05 (BM 5678 DEF)', lokasi: 'BP DUMAI', status: 'Rusak', waktu: '09:30' },
@@ -28,6 +28,21 @@ const dummyReports = [
   { id: 5, operator: 'Eka Wijaya', kendaraan: 'TM-04 (BM 3344 MNO)', lokasi: 'BP IKN', status: 'Baik', waktu: '07:55' },
   { id: 6, operator: 'Fajar Nugraha', kendaraan: 'TM-06 (BM 5566 PQR)', lokasi: 'BP PEKANBARU', status: 'Baik', waktu: '07:45' },
 ];
+
+// Dummy data for tools that have NOT submitted a report yet
+const dummyBelumChecklist = [
+  { id: 101, operator: 'Gilang Ramadhan', kendaraan: 'TM-11 (BM 1111 GR)', lokasi: 'BP PEKANBARU', status: 'Belum Checklist', waktu: '-' },
+  { id: 102, operator: 'Hani Fitria', kendaraan: 'TM-12 (BM 2222 HF)', lokasi: 'BP DUMAI', status: 'Belum Checklist', waktu: '-' },
+  { id: 103, operator: 'Indra Jaya', kendaraan: 'TM-13 (BM 3333 IJ)', lokasi: 'BP BAUNG', status: 'Belum Checklist', waktu: '-' },
+  { id: 104, operator: 'Joko Susilo', kendaraan: 'TM-14 (BM 4444 JS)', lokasi: 'BP IKN', status: 'Belum Checklist', waktu: '-' },
+  { id: 105, operator: 'Kartika Sari', kendaraan: 'TM-15 (BM 5555 KS)', lokasi: 'BP PEKANBARU', status: 'Belum Checklist', waktu: '-' },
+  { id: 106, operator: 'Lina Marlina', kendaraan: 'TM-16 (BM 6666 LM)', lokasi: 'BP DUMAI', status: 'Belum Checklist', waktu: '-' },
+  { id: 107, operator: 'Mega Putri', kendaraan: 'WL-01 (BM 7777 MP)', lokasi: 'BP PEKANBARU', status: 'Belum Checklist', waktu: '-' },
+  { id: 108, operator: 'Nanda Pratama', kendaraan: 'WL-02 (BM 8888 NP)', lokasi: 'BP DUMAI', status: 'Belum Checklist', waktu: '-' },
+];
+
+
+type Report = typeof dummyReports[0];
 
 const StatCard = ({ title, value, description, icon: Icon, onClick, clickable }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean }) => (
   <Card onClick={onClick} className={cn(clickable && 'cursor-pointer transition-colors hover:bg-muted/50')}>
@@ -44,62 +59,76 @@ const StatCard = ({ title, value, description, icon: Icon, onClick, clickable }:
 
 export default function ManajemenAlatPage() {
   const [selectedLocation, setSelectedLocation] = useState('Semua Lokasi BP');
-  const [dialogContent, setDialogContent] = useState<{ title: string; reports: typeof dummyReports } | null>(null);
+  const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
 
   const filteredData = useMemo(() => {
-    const allReports = dummyReports;
     if (selectedLocation === 'Semua Lokasi BP') {
       return {
-        totalAlat: 32,
-        sudahChecklist: allReports.length,
-        belumChecklist: 32 - allReports.length,
-        alatBaik: allReports.filter(r => r.status === 'Baik').length,
-        perluPerhatian: allReports.filter(r => r.status === 'Perlu Perhatian').length,
-        alatRusak: allReports.filter(r => r.status === 'Rusak').length,
-        laporanTerbaru: allReports,
+        totalAlat: dummyReports.length + dummyBelumChecklist.length,
+        sudahChecklistReports: dummyReports,
+        belumChecklistReports: dummyBelumChecklist,
+        alatBaik: dummyReports.filter(r => r.status === 'Baik'),
+        perluPerhatian: dummyReports.filter(r => r.status === 'Perlu Perhatian'),
+        alatRusak: dummyReports.filter(r => r.status === 'Rusak'),
       };
     }
     
-    const laporanLokasi = allReports.filter(r => r.lokasi === selectedLocation);
-    const totalAlatLokasi = Math.floor(32 / userLocations.length) + (laporanLokasi.length % 2); // Dummy total for location
+    const sudah = dummyReports.filter(r => r.lokasi === selectedLocation);
+    const belum = dummyBelumChecklist.filter(r => r.lokasi === selectedLocation);
 
     return {
-      totalAlat: totalAlatLokasi,
-      sudahChecklist: laporanLokasi.length,
-      belumChecklist: totalAlatLokasi - laporanLokasi.length,
-      alatBaik: laporanLokasi.filter(r => r.status === 'Baik').length,
-      perluPerhatian: laporanLokasi.filter(r => r.status === 'Perlu Perhatian').length,
-      alatRusak: laporanLokasi.filter(r => r.status === 'Rusak').length,
-      laporanTerbaru: laporanLokasi,
+      totalAlat: sudah.length + belum.length,
+      sudahChecklistReports: sudah,
+      belumChecklistReports: belum,
+      alatBaik: sudah.filter(r => r.status === 'Baik'),
+      perluPerhatian: sudah.filter(r => r.status === 'Perlu Perhatian'),
+      alatRusak: sudah.filter(r => r.status === 'Rusak'),
     };
   }, [selectedLocation]);
   
   const getBadgeVariant = (status: string) => {
     switch (status) {
-      case 'Baik':
-        return 'default';
-      case 'Perlu Perhatian':
-        return 'secondary';
-      case 'Rusak':
-        return 'destructive';
-      default:
-        return 'outline';
+      case 'Baik': return 'default';
+      case 'Perlu Perhatian': return 'secondary';
+      case 'Rusak': return 'destructive';
+      case 'Belum Checklist': return 'outline';
+      default: return 'outline';
     }
   };
 
-  const handleCardClick = (status: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'All') => {
+  const handleCardClick = (type: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Sudah Checklist' | 'Belum Checklist' | 'Total') => {
     const titleMap = {
-      'All': 'Daftar Alat Sudah Checklist',
+      'Total': 'Daftar Semua Alat',
+      'Sudah Checklist': 'Daftar Alat Sudah Checklist',
+      'Belum Checklist': 'Daftar Alat Belum Checklist',
       'Baik': 'Daftar Alat Kondisi Baik',
       'Perlu Perhatian': 'Daftar Alat Perlu Perhatian',
       'Rusak': 'Daftar Alat Kondisi Rusak',
     };
     
-    const reports = status === 'All' 
-      ? filteredData.laporanTerbaru
-      : filteredData.laporanTerbaru.filter(r => r.status === status);
+    let reportsToShow: Report[] = [];
+    switch(type) {
+        case 'Total':
+            reportsToShow = [...filteredData.sudahChecklistReports, ...filteredData.belumChecklistReports];
+            break;
+        case 'Sudah Checklist':
+            reportsToShow = filteredData.sudahChecklistReports;
+            break;
+        case 'Belum Checklist':
+            reportsToShow = filteredData.belumChecklistReports;
+            break;
+        case 'Baik':
+            reportsToShow = filteredData.alatBaik;
+            break;
+        case 'Perlu Perhatian':
+            reportsToShow = filteredData.perluPerhatian;
+            break;
+        case 'Rusak':
+            reportsToShow = filteredData.alatRusak;
+            break;
+    }
       
-    setDialogContent({ title: titleMap[status], reports });
+    setDialogContent({ title: titleMap[type], reports: reportsToShow.sort((a,b) => a.kendaraan.localeCompare(b.kendaraan)) });
   };
 
 
@@ -126,12 +155,12 @@ export default function ManajemenAlatPage() {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="Total Alat" value={filteredData.totalAlat} description="Total alat di lokasi ini" icon={Package} />
-        <StatCard title="Alat Sudah Checklist" value={filteredData.sudahChecklist} description="Klik untuk melihat rincian" icon={CheckSquare} clickable onClick={() => handleCardClick('All')} />
-        <StatCard title="Alat Belum Checklist" value={filteredData.belumChecklist} description="Alat yang belum dicek hari ini" icon={XSquare} />
-        <StatCard title="Alat Baik" value={filteredData.alatBaik} description="Klik untuk melihat rincian" icon={CheckCircle2} clickable onClick={() => handleCardClick('Baik')} />
-        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} />
-        <StatCard title="Alat Rusak" value={filteredData.alatRusak} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} />
+        <StatCard title="Total Alat" value={filteredData.totalAlat} description="Klik untuk melihat rincian" icon={Package} clickable onClick={() => handleCardClick('Total')} />
+        <StatCard title="Alat Sudah Checklist" value={filteredData.sudahChecklistReports.length} description="Klik untuk melihat rincian" icon={CheckSquare} clickable onClick={() => handleCardClick('Sudah Checklist')} />
+        <StatCard title="Alat Belum Checklist" value={filteredData.belumChecklistReports.length} description="Klik untuk melihat rincian" icon={XSquare} clickable onClick={() => handleCardClick('Belum Checklist')} />
+        <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat rincian" icon={CheckCircle2} clickable onClick={() => handleCardClick('Baik')} />
+        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} />
+        <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} />
       </div>
 
       <Card>
@@ -154,8 +183,8 @@ export default function ManajemenAlatPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.laporanTerbaru.length > 0 ? (
-                  filteredData.laporanTerbaru.map((report) => (
+                {filteredData.sudahChecklistReports.length > 0 ? (
+                  filteredData.sudahChecklistReports.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="font-medium">{report.operator}</TableCell>
                       <TableCell>{report.kendaraan}</TableCell>
