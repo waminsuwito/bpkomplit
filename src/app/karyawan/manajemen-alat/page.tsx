@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { userLocations } from '@/lib/types';
+import { userLocations, type TruckChecklistReport, type TruckChecklistItem, type UserLocation } from '@/lib/types';
 import { printElement } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import {
@@ -18,31 +18,20 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { getUsers } from '@/lib/auth';
+import { format } from 'date-fns';
 
-// Dummy data for tools that have reports
-const dummyReports = [
-  { id: 1, operator: 'Andi Saputra', kendaraan: 'TM-01 (BM 1234 ABC)', lokasi: 'BP PEKANBARU', status: 'Perlu Perhatian', waktu: '10:15' },
-  { id: 2, operator: 'Budi Santoso', kendaraan: 'TM-05 (BM 5678 DEF)', lokasi: 'BP DUMAI', status: 'Rusak', waktu: '09:30' },
-  { id: 3, operator: 'Citra Lestari', kendaraan: 'TM-02 (BM 9101 GHI)', lokasi: 'BP PEKANBARU', status: 'Rusak', waktu: '08:45' },
-  { id: 4, operator: 'Doni Firmansyah', kendaraan: 'TM-03 (BM 1122 JKL)', lokasi: 'BP BAUNG', status: 'Baik', waktu: '08:00' },
-  { id: 5, operator: 'Eka Wijaya', kendaraan: 'TM-04 (BM 3344 MNO)', lokasi: 'BP IKN', status: 'Baik', waktu: '07:55' },
-  { id: 6, operator: 'Fajar Nugraha', kendaraan: 'TM-06 (BM 5566 PQR)', lokasi: 'BP PEKANBARU', status: 'Baik', waktu: '07:45' },
-];
+const CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
 
-// Dummy data for tools that have NOT submitted a report yet
-const dummyBelumChecklist = [
-  { id: 101, operator: 'Gilang Ramadhan', kendaraan: 'TM-11 (BM 1111 GR)', lokasi: 'BP PEKANBARU', status: 'Belum Checklist', waktu: '-' },
-  { id: 102, operator: 'Hani Fitria', kendaraan: 'TM-12 (BM 2222 HF)', lokasi: 'BP DUMAI', status: 'Belum Checklist', waktu: '-' },
-  { id: 103, operator: 'Indra Jaya', kendaraan: 'TM-13 (BM 3333 IJ)', lokasi: 'BP BAUNG', status: 'Belum Checklist', waktu: '-' },
-  { id: 104, operator: 'Joko Susilo', kendaraan: 'TM-14 (BM 4444 JS)', lokasi: 'BP IKN', status: 'Belum Checklist', waktu: '-' },
-  { id: 105, operator: 'Kartika Sari', kendaraan: 'TM-15 (BM 5555 KS)', lokasi: 'BP PEKANBARU', status: 'Belum Checklist', waktu: '-' },
-  { id: 106, operator: 'Lina Marlina', kendaraan: 'TM-16 (BM 6666 LM)', lokasi: 'BP DUMAI', status: 'Belum Checklist', waktu: '-' },
-  { id: 107, operator: 'Mega Putri', kendaraan: 'WL-01 (BM 7777 MP)', lokasi: 'BP PEKANBARU', status: 'Belum Checklist', waktu: '-' },
-  { id: 108, operator: 'Nanda Pratama', kendaraan: 'WL-02 (BM 8888 NP)', lokasi: 'BP DUMAI', status: 'Belum Checklist', waktu: '-' },
-];
+interface Report {
+  id: string | number;
+  operator: string;
+  kendaraan: string;
+  lokasi: UserLocation | 'N/A';
+  status: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Belum Checklist';
+  waktu: string;
+}
 
-
-type Report = typeof dummyReports[0];
 
 const StatCard = ({ title, value, description, icon: Icon, onClick, clickable }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean }) => (
   <Card onClick={onClick} className={cn(clickable && 'cursor-pointer transition-colors hover:bg-muted/50')}>
@@ -60,21 +49,78 @@ const StatCard = ({ title, value, description, icon: Icon, onClick, clickable }:
 export default function ManajemenAlatPage() {
   const [selectedLocation, setSelectedLocation] = useState('Semua Lokasi BP');
   const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
+  
+  const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
+  const [notSubmittedReports, setNotSubmittedReports] = useState<Report[]>([]);
+
+  useEffect(() => {
+    // 1. Get today's date string
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+    // 2. Get all relevant users (operators)
+    const allUsers = getUsers();
+    const operatorUsers = allUsers.filter(u => 
+        u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR')
+    );
+    
+    // 3. Get all checklist reports ever submitted from localStorage
+    const storedReportsStr = localStorage.getItem(CHECKLIST_STORAGE_KEY);
+    const allChecklists: TruckChecklistReport[] = storedReportsStr ? JSON.parse(storedReportsStr) : [];
+    
+    // 4. Filter for today's reports only
+    const todaysChecklists = allChecklists.filter(report => report.id.endsWith(todayStr));
+
+    // 5. Create a Set of user IDs who have submitted a report today for quick lookup
+    const submittedUserIds = new Set(todaysChecklists.map(r => r.userId));
+
+    // 6. Process the reports that were submitted today
+    const processedSubmittedReports: Report[] = todaysChecklists.map(report => {
+        const getOverallStatus = (items: TruckChecklistItem[]): 'Baik' | 'Rusak' | 'Perlu Perhatian' => {
+            if (items.some(item => item.status === 'rusak')) return 'Rusak';
+            if (items.some(item => item.status === 'perlu_perhatian')) return 'Perlu Perhatian';
+            return 'Baik';
+        };
+
+        return {
+            id: report.id,
+            operator: report.username,
+            kendaraan: `Kendaraan NIK: ${report.userNik}`, // Using NIK as vehicle identifier
+            lokasi: report.location,
+            status: getOverallStatus(report.items),
+            waktu: format(new Date(report.timestamp), 'HH:mm'),
+        };
+    });
+    setSubmittedReports(processedSubmittedReports);
+
+    // 7. Identify users who have NOT submitted a report today
+    const usersWhoDidNotSubmit = operatorUsers.filter(user => !submittedUserIds.has(user.id));
+    const processedNotSubmittedReports: Report[] = usersWhoDidNotSubmit.map(user => ({
+        id: user.id, // Use user ID as a unique key
+        operator: user.username,
+        kendaraan: `Kendaraan NIK: ${user.nik || 'N/A'}`,
+        lokasi: user.location || 'N/A',
+        status: 'Belum Checklist',
+        waktu: '-',
+    }));
+    setNotSubmittedReports(processedNotSubmittedReports);
+
+  }, []);
+
 
   const filteredData = useMemo(() => {
     if (selectedLocation === 'Semua Lokasi BP') {
       return {
-        totalAlat: dummyReports.length + dummyBelumChecklist.length,
-        sudahChecklistReports: dummyReports,
-        belumChecklistReports: dummyBelumChecklist,
-        alatBaik: dummyReports.filter(r => r.status === 'Baik'),
-        perluPerhatian: dummyReports.filter(r => r.status === 'Perlu Perhatian'),
-        alatRusak: dummyReports.filter(r => r.status === 'Rusak'),
+        totalAlat: submittedReports.length + notSubmittedReports.length,
+        sudahChecklistReports: submittedReports,
+        belumChecklistReports: notSubmittedReports,
+        alatBaik: submittedReports.filter(r => r.status === 'Baik'),
+        perluPerhatian: submittedReports.filter(r => r.status === 'Perlu Perhatian'),
+        alatRusak: submittedReports.filter(r => r.status === 'Rusak'),
       };
     }
     
-    const sudah = dummyReports.filter(r => r.lokasi === selectedLocation);
-    const belum = dummyBelumChecklist.filter(r => r.lokasi === selectedLocation);
+    const sudah = submittedReports.filter(r => r.lokasi === selectedLocation);
+    const belum = notSubmittedReports.filter(r => r.lokasi === selectedLocation);
 
     return {
       totalAlat: sudah.length + belum.length,
@@ -84,7 +130,7 @@ export default function ManajemenAlatPage() {
       perluPerhatian: sudah.filter(r => r.status === 'Perlu Perhatian'),
       alatRusak: sudah.filter(r => r.status === 'Rusak'),
     };
-  }, [selectedLocation]);
+  }, [selectedLocation, submittedReports, notSubmittedReports]);
   
   const getBadgeVariant = (status: string) => {
     switch (status) {
