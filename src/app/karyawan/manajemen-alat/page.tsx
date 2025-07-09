@@ -6,11 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Printer, List, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package } from 'lucide-react';
+import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { userLocations } from '@/lib/types';
 import { printElement } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 // Dummy data based on the screenshot and some additions
 const dummyReports = [
@@ -22,8 +29,8 @@ const dummyReports = [
   { id: 6, operator: 'Fajar Nugraha', kendaraan: 'TM-06 (BM 5566 PQR)', lokasi: 'BP PEKANBARU', status: 'Baik', waktu: '07:45' },
 ];
 
-const StatCard = ({ title, value, description, icon: Icon }: { title: string; value: string | number; description: string; icon: React.ElementType }) => (
-  <Card>
+const StatCard = ({ title, value, description, icon: Icon, onClick, clickable }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean }) => (
+  <Card onClick={onClick} className={cn(clickable && 'cursor-pointer transition-colors hover:bg-muted/50')}>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
       <Icon className="h-4 w-4 text-muted-foreground" />
@@ -37,6 +44,7 @@ const StatCard = ({ title, value, description, icon: Icon }: { title: string; va
 
 export default function ManajemenAlatPage() {
   const [selectedLocation, setSelectedLocation] = useState('Semua Lokasi BP');
+  const [dialogContent, setDialogContent] = useState<{ title: string; reports: typeof dummyReports } | null>(null);
 
   const filteredData = useMemo(() => {
     const allReports = dummyReports;
@@ -79,6 +87,21 @@ export default function ManajemenAlatPage() {
     }
   };
 
+  const handleCardClick = (status: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'All') => {
+    const titleMap = {
+      'All': 'Daftar Alat Sudah Checklist',
+      'Baik': 'Daftar Alat Kondisi Baik',
+      'Perlu Perhatian': 'Daftar Alat Perlu Perhatian',
+      'Rusak': 'Daftar Alat Kondisi Rusak',
+    };
+    
+    const reports = status === 'All' 
+      ? filteredData.laporanTerbaru
+      : filteredData.laporanTerbaru.filter(r => r.status === status);
+      
+    setDialogContent({ title: titleMap[status], reports });
+  };
+
 
   return (
     <div className="space-y-6" id="manajemen-alat-content">
@@ -104,11 +127,11 @@ export default function ManajemenAlatPage() {
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard title="Total Alat" value={filteredData.totalAlat} description="Total alat di lokasi ini" icon={Package} />
-        <StatCard title="Alat Sudah Checklist" value={filteredData.sudahChecklist} description="Alat yang sudah dicek hari ini" icon={CheckSquare} />
+        <StatCard title="Alat Sudah Checklist" value={filteredData.sudahChecklist} description="Klik untuk melihat rincian" icon={CheckSquare} clickable onClick={() => handleCardClick('All')} />
         <StatCard title="Alat Belum Checklist" value={filteredData.belumChecklist} description="Alat yang belum dicek hari ini" icon={XSquare} />
-        <StatCard title="Alat Baik" value={filteredData.alatBaik} description="Total alat kondisi baik" icon={CheckCircle2} />
-        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian} description="Total alat perlu perhatian" icon={AlertTriangle} />
-        <StatCard title="Alat Rusak" value={filteredData.alatRusak} description="Total alat kondisi rusak" icon={Wrench} />
+        <StatCard title="Alat Baik" value={filteredData.alatBaik} description="Klik untuk melihat rincian" icon={CheckCircle2} clickable onClick={() => handleCardClick('Baik')} />
+        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} />
+        <StatCard title="Alat Rusak" value={filteredData.alatRusak} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} />
       </div>
 
       <Card>
@@ -162,6 +185,54 @@ export default function ManajemenAlatPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!dialogContent} onOpenChange={(open) => !open && setDialogContent(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{dialogContent?.title}</DialogTitle>
+            <DialogDescription>
+              Menampilkan daftar rinci alat berdasarkan status yang dipilih untuk lokasi: {selectedLocation}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto mt-4">
+            {dialogContent?.reports && dialogContent.reports.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Kendaraan</TableHead>
+                    <TableHead>Lokasi</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Waktu Lapor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dialogContent.reports.map((report) => (
+                    <TableRow key={report.id}>
+                      <TableCell className="font-medium">{report.operator}</TableCell>
+                      <TableCell>{report.kendaraan}</TableCell>
+                      <TableCell>{report.lokasi}</TableCell>
+                      <TableCell>
+                        <Badge variant={getBadgeVariant(report.status)}
+                          className={cn({
+                            'bg-green-600 hover:bg-green-700': report.status === 'Baik',
+                            'bg-amber-500 hover:bg-amber-600': report.status === 'Perlu Perhatian',
+                          })}
+                        >
+                          {report.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{report.waktu}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">Tidak ada data untuk ditampilkan.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
