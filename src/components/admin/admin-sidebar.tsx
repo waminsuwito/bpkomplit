@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -15,7 +16,8 @@ import {
   BarChart3,
   AreaChart,
   AlertTriangle,
-  Megaphone
+  Megaphone,
+  MapPin
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -39,6 +41,7 @@ const logistikMaterialNav = [
 
 const hseHrdNav = [
   { href: '/admin/manajemen-karyawan', label: 'Manajemen Karyawan', icon: Users },
+  { href: '/admin/set-lokasi-absensi', label: 'Set Lokasi Absensi', icon: MapPin },
   { href: '/admin/absensi-karyawan-hari-ini', label: 'Absensi Hari Ini', icon: ClipboardCheck },
   { href: '/admin/kegiatan-karyawan-hari-ini', label: 'Kegiatan Hari Ini', icon: ClipboardList },
   { href: '/admin/rangkuman-absensi-karyawan', label: 'Rangkuman Absensi', icon: BarChart3 },

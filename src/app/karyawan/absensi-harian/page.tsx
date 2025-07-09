@@ -9,25 +9,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance } from '@/lib/utils';
 import { MapPin, Camera, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import type { AttendanceLocation } from '@/lib/types';
 
-interface Location {
-  name: string;
-  latitude: number;
-  longitude: number;
-}
-
-// Data Lokasi Batching Plant (nantinya bisa diambil dari database)
-const bpLocations: Location[] = [
-  { name: 'BP PEKANBARU', latitude: 0.507067, longitude: 101.447779 },
-  { name: 'BP DUMAI', latitude: 1.6242, longitude: 101.4449 },
-  { name: 'BP BAUNG', latitude: 0.6358, longitude: 101.6917 },
-  { name: 'BP IKN', latitude: -0.9754, longitude: 116.9926 },
-];
-
+const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const ATTENDANCE_RADIUS_METERS = 50;
 
 export default function AbsensiHarianKaryawanPage() {
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [locations, setLocations] = useState<AttendanceLocation[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<AttendanceLocation | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [attendanceStatus, setAttendanceStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
@@ -35,6 +24,17 @@ export default function AbsensiHarianKaryawanPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      const storedData = localStorage.getItem(ATTENDANCE_LOCATIONS_KEY);
+      if (storedData) {
+        setLocations(JSON.parse(storedData));
+      }
+    } catch (error) {
+      console.error("Failed to load attendance locations from localStorage", error);
+    }
+  }, []);
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -116,7 +116,7 @@ export default function AbsensiHarianKaryawanPage() {
     );
   };
 
-  const isButtonDisabled = isCheckingIn || hasCameraPermission === false;
+  const isButtonDisabled = isCheckingIn || hasCameraPermission === false || locations.length === 0;
 
   return (
     <Card className="max-w-2xl mx-auto">
@@ -132,13 +132,13 @@ export default function AbsensiHarianKaryawanPage() {
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium">Pilih Lokasi Batching Plant</label>
-           <Select onValueChange={(value) => setSelectedLocation(bpLocations.find(l => l.name === value) || null)}>
+           <Select onValueChange={(value) => setSelectedLocation(locations.find(l => l.name === value) || null)} disabled={locations.length === 0}>
             <SelectTrigger>
-              <SelectValue placeholder="Pilih lokasi Anda..." />
+              <SelectValue placeholder={locations.length > 0 ? "Pilih lokasi Anda..." : "Tidak ada lokasi dikonfigurasi"} />
             </SelectTrigger>
             <SelectContent>
-              {bpLocations.map(loc => (
-                <SelectItem key={loc.name} value={loc.name}>{loc.name}</SelectItem>
+              {locations.map(loc => (
+                <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

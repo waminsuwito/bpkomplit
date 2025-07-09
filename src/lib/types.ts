@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 
 export interface Material {
@@ -95,4 +96,11 @@ export interface BongkarMaterial {
   status: BongkarStatus;
   waktuMulaiIstirahat: string | null;
   totalIstirahatMs: number;
+}
+
+export interface AttendanceLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
 }
