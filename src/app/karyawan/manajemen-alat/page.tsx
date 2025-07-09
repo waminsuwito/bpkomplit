@@ -238,8 +238,8 @@ export default function ManajemenAlatPage() {
                       <TableCell>
                         <Badge variant={getBadgeVariant(report.status)}
                           className={cn({
-                            'bg-green-600 hover:bg-green-700': report.status === 'Baik',
-                            'bg-amber-500 hover:bg-amber-600': report.status === 'Perlu Perhatian',
+                            'bg-green-600 hover:bg-green-700 text-white': report.status === 'Baik',
+                            'bg-amber-500 hover:bg-amber-600 text-white': report.status === 'Perlu Perhatian',
                           })}
                         >
                           {report.status}
@@ -290,8 +290,8 @@ export default function ManajemenAlatPage() {
                       <TableCell>
                         <Badge variant={getBadgeVariant(report.status)}
                           className={cn({
-                            'bg-green-600 hover:bg-green-700': report.status === 'Baik',
-                            'bg-amber-500 hover:bg-amber-600': report.status === 'Perlu Perhatian',
+                            'bg-green-600 hover:bg-green-700 text-white': report.status === 'Baik',
+                            'bg-amber-500 hover:bg-amber-600 text-white': report.status === 'Perlu Perhatian',
                           })}
                         >
                           {report.status}
