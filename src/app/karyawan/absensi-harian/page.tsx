@@ -12,17 +12,19 @@ import { MapPin, Camera, Loader2, CheckCircle, XCircle, LogIn, LogOut, Info, Bed
 import type { AttendanceLocation, GlobalAttendanceRecord, UserLocation } from '@/lib/types';
 import { useAuth } from '@/context/auth-provider';
 import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
-const ATTENDANCE_RADIUS_METERS = 50000;
+const ATTENDANCE_RADIUS_METERS = 50000; // 50km for testing, should be lower in production
+const TIME_ZONE = 'Asia/Jakarta'; // WIB
 
 const getPersonalAttendanceKey = (userId: string) => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `attendance-${userId}-${year}-${month}-${day}`;
+    // Using zoned time to ensure the date is correct for WIB
+    const zonedDate = toZonedTime(now, TIME_ZONE);
+    const dateStr = format(zonedDate, 'yyyy-MM-dd');
+    return `attendance-${userId}-${dateStr}`;
 };
 
 type PersonalAttendanceRecord = {
@@ -83,7 +85,7 @@ export default function AbsensiHarianKaryawanPage() {
   // Effect to determine the currently available action based on time and record
   useEffect(() => {
     const determineAction = () => {
-      const now = new Date();
+      const now = toZonedTime(new Date(), TIME_ZONE);
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const currentTime = hours * 100 + minutes;
@@ -132,7 +134,7 @@ export default function AbsensiHarianKaryawanPage() {
         return { message: 'Memuat data pengguna...', variant: 'default' as const, icon: <Loader2 className="h-5 w-5 animate-spin" /> };
       }
 
-      const now = new Date();
+      const now = toZonedTime(new Date(), TIME_ZONE);
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const userName = user.username;
@@ -216,7 +218,7 @@ export default function AbsensiHarianKaryawanPage() {
       const storedData = localStorage.getItem(GLOBAL_ATTENDANCE_KEY);
       const allRecords: GlobalAttendanceRecord[] = storedData ? JSON.parse(storedData) : [];
       
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const today = format(toZonedTime(new Date(), TIME_ZONE), 'yyyy-MM-dd');
       const userRecordIndex = allRecords.findIndex(r => r.nik === user.nik && r.date === today);
 
       if (userRecordIndex > -1) {
@@ -285,16 +287,18 @@ export default function AbsensiHarianKaryawanPage() {
         );
 
         if (distance <= ATTENDANCE_RADIUS_METERS) {
-            const now = new Date();
+            const now = new Date(); // Use local Date for ISOString
+            const nowZoned = toZonedTime(now, TIME_ZONE);
             
             if (currentAction === 'clockIn') {
-                const batasMasuk = new Date();
+                const batasMasuk = toZonedTime(now, TIME_ZONE);
                 batasMasuk.setHours(7, 30, 0, 0); // Batas masuk jam 7:30
-                const isLate = now.getTime() > batasMasuk.getTime();
+                
+                const isLate = nowZoned.getTime() > batasMasuk.getTime();
                 let terlambatDuration = null;
                 
                 if (isLate) {
-                    const selisihMs = now.getTime() - batasMasuk.getTime();
+                    const selisihMs = nowZoned.getTime() - batasMasuk.getTime();
                     terlambatDuration = `${Math.floor(selisihMs / 60000)}m`;
                 }
 
@@ -311,7 +315,7 @@ export default function AbsensiHarianKaryawanPage() {
                 const toastDescription = isLate ? 'Anda tercatat terlambat hari ini.' : 'Absensi masuk berhasil dicatat.';
                 toast({ title: 'Absensi Masuk Berhasil', description: toastDescription });
                 setAttendanceStatus('success');
-                setStatusMessage(`Berhasil absen masuk pada ${now.toLocaleTimeString()}.`);
+                setStatusMessage(`Berhasil absen masuk pada ${nowZoned.toLocaleTimeString('id-ID')}.`);
 
             } else if (currentAction === 'clockOut') {
                 const updatedPersonalRecord = { ...personalAttendanceRecord, clockOut: now.toISOString() };
@@ -323,7 +327,7 @@ export default function AbsensiHarianKaryawanPage() {
 
                 toast({ title: 'Absensi Pulang Berhasil', description: 'Absensi pulang berhasil dicatat.' });
                 setAttendanceStatus('success');
-                setStatusMessage(`Berhasil absen pulang pada ${now.toLocaleTimeString()}.`);
+                setStatusMessage(`Berhasil absen pulang pada ${nowZoned.toLocaleTimeString('id-ID')}.`);
             }
         } else {
           setAttendanceStatus('failed');
