@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardHeader,
@@ -18,18 +19,41 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck } from 'lucide-react';
+import { useAuth } from '@/context/auth-provider';
+import type { GlobalAttendanceRecord } from '@/lib/types';
+import { format } from 'date-fns';
 
-// Data contoh telah dihapus.
-// Di aplikasi sesungguhnya, data ini akan diambil dari database (misalnya, Firestore).
+const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
 
 export default function AbsensiKaryawanHariIniPage() {
-  const [daftarAbsensi] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [daftarAbsensi, setDaftarAbsensi] = useState<GlobalAttendanceRecord[]>([]);
   const tanggalHariIni = new Date().toLocaleDateString('id-ID', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
+
+  useEffect(() => {
+    if (!user) return;
+
+    try {
+      const storedData = localStorage.getItem(GLOBAL_ATTENDANCE_KEY);
+      if (storedData) {
+        const allRecords: GlobalAttendanceRecord[] = JSON.parse(storedData);
+        const today = format(new Date(), 'yyyy-MM-dd');
+        
+        const filteredRecords = allRecords.filter(
+          (record) => record.date === today && record.location === user.location
+        );
+        
+        setDaftarAbsensi(filteredRecords);
+      }
+    } catch (error) {
+      console.error("Failed to load global attendance data", error);
+    }
+  }, [user]);
 
   return (
     <Card>
@@ -39,7 +63,7 @@ export default function AbsensiKaryawanHariIniPage() {
           Absensi Karyawan Hari Ini
         </CardTitle>
         <CardDescription>
-          Laporan absensi karyawan untuk tanggal: {tanggalHariIni}
+          Laporan absensi karyawan untuk lokasi {user?.location || '...'} pada tanggal: {tanggalHariIni}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -63,7 +87,7 @@ export default function AbsensiKaryawanHariIniPage() {
                     <TableCell>{item.nama}</TableCell>
                     <TableCell className="text-center">
                       {item.absenMasuk ? (
-                        item.absenMasuk
+                        new Date(item.absenMasuk).toLocaleTimeString('id-ID')
                       ) : (
                         <Badge variant="outline">Belum Absen</Badge>
                       )}
@@ -77,7 +101,7 @@ export default function AbsensiKaryawanHariIniPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       {item.absenPulang ? (
-                        item.absenPulang
+                        new Date(item.absenPulang).toLocaleTimeString('id-ID')
                       ) : (
                          item.absenMasuk ? <Badge variant="secondary">Belum Pulang</Badge> : <Badge variant="outline">-</Badge>
                       )}
@@ -92,7 +116,7 @@ export default function AbsensiKaryawanHariIniPage() {
           </div>
         ) : (
           <div className="text-center text-muted-foreground py-12">
-            <p>Belum ada data absensi untuk hari ini.</p>
+            <p>Belum ada data absensi untuk hari ini di lokasi Anda.</p>
           </div>
         )}
       </CardContent>

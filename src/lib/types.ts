@@ -105,3 +105,14 @@ export interface AttendanceLocation {
   latitude: number;
   longitude: number;
 }
+
+export interface GlobalAttendanceRecord {
+  nik: string;
+  nama: string;
+  location: UserLocation;
+  date: string; // YYYY-MM-DD
+  absenMasuk: string | null; // ISO String
+  terlambat: string | null; // e.g., "15m" or null
+  absenPulang: string | null; // ISO String
+  lembur: string | null; // e.g., "1h 30m" or null
+}

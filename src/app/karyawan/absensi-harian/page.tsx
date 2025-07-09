@@ -9,13 +9,16 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance } from '@/lib/utils';
 import { MapPin, Camera, Loader2, CheckCircle, XCircle, LogIn, LogOut } from 'lucide-react';
-import type { AttendanceLocation } from '@/lib/types';
+import type { AttendanceLocation, GlobalAttendanceRecord, UserLocation } from '@/lib/types';
+import { useAuth } from '@/context/auth-provider';
+import { format } from 'date-fns';
 
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
+const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
 const ATTENDANCE_RADIUS_METERS = 1000;
-const getAttendanceKey = () => `attendance-${new Date().toISOString().split('T')[0]}`;
+const getPersonalAttendanceKey = (userId: string) => `attendance-${userId}-${new Date().toISOString().split('T')[0]}`;
 
-type AttendanceRecord = {
+type PersonalAttendanceRecord = {
   clockIn?: string;
   isLate?: boolean;
   clockOut?: string;
@@ -24,6 +27,7 @@ type AttendanceRecord = {
 type AttendanceAction = 'clockIn' | 'clockOut' | 'none';
 
 export default function AbsensiHarianKaryawanPage() {
+  const { user } = useAuth();
   const [locations, setLocations] = useState<AttendanceLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<AttendanceLocation | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -34,7 +38,7 @@ export default function AbsensiHarianKaryawanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   
-  const [attendanceRecord, setAttendanceRecord] = useState<AttendanceRecord | null>(null);
+  const [personalAttendanceRecord, setPersonalAttendanceRecord] = useState<PersonalAttendanceRecord | null>(null);
   const [currentAction, setCurrentAction] = useState<AttendanceAction>('none');
 
 
@@ -48,16 +52,17 @@ export default function AbsensiHarianKaryawanPage() {
       console.error("Failed to load attendance locations from localStorage", error);
     }
     
-    // Load today's attendance record
-    try {
-      const storedRecord = localStorage.getItem(getAttendanceKey());
-      if (storedRecord) {
-        setAttendanceRecord(JSON.parse(storedRecord));
+    if (user) {
+      try {
+        const storedRecord = localStorage.getItem(getPersonalAttendanceKey(user.id));
+        if (storedRecord) {
+          setPersonalAttendanceRecord(JSON.parse(storedRecord));
+        }
+      } catch (error) {
+          console.error("Failed to load today's attendance record", error);
       }
-    } catch (error) {
-        console.error("Failed to load today's attendance record", error);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const updateAction = () => {
@@ -65,13 +70,10 @@ export default function AbsensiHarianKaryawanPage() {
       const hours = now.getHours();
       const minutes = now.getMinutes();
       
-      // Clock-in available from 00:30 until 17:05 (allows for late clock-ins)
       const isClockInTime = (hours === 0 && minutes >= 30) || (hours > 0 && hours < 17) || (hours === 17 && minutes < 5);
-      
-      // Clock-out available from 17:05 until 23:55
       const isClockOutTime = (hours === 17 && minutes >= 5) || (hours > 17 && hours <= 23 && (hours !== 23 || minutes <= 55));
       
-      setAttendanceRecord(prevRecord => {
+      setPersonalAttendanceRecord(prevRecord => {
         if (prevRecord?.clockOut) {
           setCurrentAction('none');
         } else if (prevRecord?.clockIn) {
@@ -87,7 +89,7 @@ export default function AbsensiHarianKaryawanPage() {
     const timerId = setInterval(updateAction, 30000); // Check every 30 seconds
 
     return () => clearInterval(timerId);
-  }, [attendanceRecord?.clockIn, attendanceRecord?.clockOut]);
+  }, [personalAttendanceRecord]);
 
 
   const activateCamera = async () => {
@@ -116,10 +118,52 @@ export default function AbsensiHarianKaryawanPage() {
       });
     }
   };
+
+  const updateGlobalAttendance = (updateData: Partial<GlobalAttendanceRecord>) => {
+    if (!user || !user.nik) return;
+    
+    try {
+      const storedData = localStorage.getItem(GLOBAL_ATTENDANCE_KEY);
+      const allRecords: GlobalAttendanceRecord[] = storedData ? JSON.parse(storedData) : [];
+      
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const userRecordIndex = allRecords.findIndex(r => r.nik === user.nik && r.date === today);
+
+      if (userRecordIndex > -1) {
+        // Update existing record
+        allRecords[userRecordIndex] = { ...allRecords[userRecordIndex], ...updateData };
+      } else {
+        // Add new record
+        const newRecord: GlobalAttendanceRecord = {
+          nik: user.nik,
+          nama: user.username,
+          location: user.location as UserLocation,
+          date: today,
+          absenMasuk: null,
+          terlambat: null,
+          absenPulang: null,
+          lembur: null,
+          ...updateData,
+        };
+        allRecords.push(newRecord);
+      }
+
+      localStorage.setItem(GLOBAL_ATTENDANCE_KEY, JSON.stringify(allRecords));
+
+    } catch (error) {
+        console.error("Failed to update global attendance", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal menyimpan data absensi global.' });
+    }
+  };
   
   const handleAttendance = () => {
     if (!selectedLocation || currentAction === 'none') {
       toast({ variant: 'destructive', title: 'Aksi Tidak Tersedia', description: 'Pastikan Anda telah memilih lokasi dan berada dalam jam absensi.' });
+      return;
+    }
+
+    if (!user || !user.nik) {
+      toast({ variant: 'destructive', title: 'Absensi Gagal', description: 'Data NIK Anda tidak ditemukan. Hubungi HRD.' });
       return;
     }
     
@@ -151,10 +195,22 @@ export default function AbsensiHarianKaryawanPage() {
             
             if (currentAction === 'clockIn') {
                 const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 30);
-                const newRecord = { clockIn: now.toISOString(), isLate };
+                let terlambatDuration = null;
+                if (isLate) {
+                    const batasMasuk = new Date(now);
+                    batasMasuk.setHours(7, 30, 0, 0);
+                    const selisihMs = now.getTime() - batasMasuk.getTime();
+                    terlambatDuration = `${Math.floor(selisihMs / 60000)}m`;
+                }
 
-                setAttendanceRecord(newRecord);
-                localStorage.setItem(getAttendanceKey(), JSON.stringify(newRecord));
+                const newPersonalRecord = { clockIn: now.toISOString(), isLate };
+                setPersonalAttendanceRecord(newPersonalRecord);
+                localStorage.setItem(getPersonalAttendanceKey(user.id), JSON.stringify(newPersonalRecord));
+
+                updateGlobalAttendance({
+                  absenMasuk: now.toISOString(),
+                  terlambat: terlambatDuration,
+                });
 
                 const toastDescription = isLate ? 'Anda tercatat terlambat hari ini.' : 'Absensi masuk berhasil dicatat.';
                 toast({ title: 'Absensi Masuk Berhasil', description: toastDescription });
@@ -162,10 +218,12 @@ export default function AbsensiHarianKaryawanPage() {
                 setStatusMessage(`Berhasil absen masuk pada ${now.toLocaleTimeString()}.`);
 
             } else if (currentAction === 'clockOut') {
-                const updatedRecord = { ...attendanceRecord, clockOut: now.toISOString() };
+                const updatedPersonalRecord = { ...personalAttendanceRecord, clockOut: now.toISOString() };
 
-                setAttendanceRecord(updatedRecord as AttendanceRecord);
-                localStorage.setItem(getAttendanceKey(), JSON.stringify(updatedRecord));
+                setPersonalAttendanceRecord(updatedPersonalRecord as PersonalAttendanceRecord);
+                localStorage.setItem(getPersonalAttendanceKey(user.id), JSON.stringify(updatedPersonalRecord));
+                
+                updateGlobalAttendance({ absenPulang: now.toISOString() });
 
                 toast({ title: 'Absensi Pulang Berhasil', description: 'Absensi pulang berhasil dicatat.' });
                 setAttendanceStatus('success');
@@ -199,10 +257,10 @@ export default function AbsensiHarianKaryawanPage() {
       case 'clockIn': return 'Absen Masuk Sekarang';
       case 'clockOut': return 'Absen Pulang Sekarang';
       default:
-        if (attendanceRecord?.clockIn && !attendanceRecord.clockOut) {
+        if (personalAttendanceRecord?.clockIn && !personalAttendanceRecord.clockOut) {
           return 'Belum Waktunya Absen Pulang';
         }
-        if (attendanceRecord?.clockOut) {
+        if (personalAttendanceRecord?.clockOut) {
           return 'Absensi Hari Ini Selesai';
         }
         return 'Di Luar Jam Absensi';
@@ -263,13 +321,13 @@ export default function AbsensiHarianKaryawanPage() {
            )}
         </div>
 
-        {attendanceRecord?.clockIn && (
+        {personalAttendanceRecord?.clockIn && (
             <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/30 border-blue-500">
                 <CheckCircle className="h-4 w-4 text-blue-600" />
                 <AlertTitle>Status Absensi Hari Ini</AlertTitle>
                 <AlertDescription>
-                   <p>Masuk: <span className="font-semibold">{new Date(attendanceRecord.clockIn).toLocaleTimeString('id-ID')}</span> {attendanceRecord.isLate && <span className="text-destructive font-bold">(Terlambat)</span>}</p>
-                   {attendanceRecord.clockOut && <p>Pulang: <span className="font-semibold">{new Date(attendanceRecord.clockOut).toLocaleTimeString('id-ID')}</span></p>}
+                   <p>Masuk: <span className="font-semibold">{new Date(personalAttendanceRecord.clockIn).toLocaleTimeString('id-ID')}</span> {personalAttendanceRecord.isLate && <span className="text-destructive font-bold">(Terlambat)</span>}</p>
+                   {personalAttendanceRecord.clockOut && <p>Pulang: <span className="font-semibold">{new Date(personalAttendanceRecord.clockOut).toLocaleTimeString('id-ID')}</span></p>}
                 </AlertDescription>
             </Alert>
         )}
