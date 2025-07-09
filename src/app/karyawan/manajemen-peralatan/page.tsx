@@ -39,6 +39,7 @@ export default function ManajemenPeralatanPage() {
   const [operators, setOperators] = useState<User[]>([]);
   const [formState, setFormState] = useState(initialFormState);
   const { toast } = useToast();
+  const TOTAL_ROWS = 30; // Total rows for the Excel-like table
 
   useEffect(() => {
     try {
@@ -130,64 +131,71 @@ export default function ManajemenPeralatanPage() {
               </DialogTrigger>
               <DialogContent className="max-w-4xl">
                 <DialogHeader>
-                  <DialogTitle>List Armada</DialogTitle>
+                  <DialogTitle>LIST ARMADA</DialogTitle>
                   <DialogDescription>
                     Daftar semua kendaraan yang terdaftar dalam sistem.
                   </DialogDescription>
                 </DialogHeader>
                 <div id="armada-list-print-area" className="py-4">
-                  {vehicles.length > 0 ? (
-                    <div className="border rounded-lg overflow-x-auto">
-                      <Table>
+                    <Table className="w-full border-collapse border border-muted">
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Nomor Lambung</TableHead>
-                            <TableHead>Nomor Polisi</TableHead>
-                            <TableHead>Jenis Kendaraan</TableHead>
-                            <TableHead>Nama Sopir/Operator</TableHead>
-                            <TableHead className="text-center no-print">Aksi</TableHead>
-                          </TableRow>
+                        <TableRow>
+                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">NOMOR LAMBUNG</TableHead>
+                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">NOMOR POLISI</TableHead>
+                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">JENIS KENDARAAN</TableHead>
+                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground">NAMA SOPIR/OPRATOR</TableHead>
+                            <TableHead className="border border-muted p-2 text-center font-bold text-foreground no-print">AKSI</TableHead>
+                        </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {vehicles.map((vehicle) => (
-                            <TableRow key={vehicle.id}>
-                              <TableCell>{vehicle.nomorLambung || '-'}</TableCell>
-                              <TableCell className="font-medium">{vehicle.nomorPolisi}</TableCell>
-                              <TableCell>{vehicle.jenisKendaraan}</TableCell>
-                              <TableCell>{vehicle.namaOperatorSopir}</TableCell>
-                              <TableCell className="text-center no-print">
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="icon">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Apakah Anda yakin ingin menghapus kendaraan dengan Nopol {vehicle.nomorPolisi}? Tindakan ini tidak dapat dibatalkan.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                                      <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteVehicle(vehicle.id)}>
-                                        Ya, Hapus
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                        {Array.from({ length: TOTAL_ROWS }).map((_, index) => {
+                            const vehicle = vehicles[index];
+                            if (vehicle) {
+                            return (
+                                <TableRow key={vehicle.id}>
+                                <TableCell className="border border-muted p-2">{vehicle.nomorLambung || '-'}</TableCell>
+                                <TableCell className="border border-muted p-2 font-medium">{vehicle.nomorPolisi}</TableCell>
+                                <TableCell className="border border-muted p-2">{vehicle.jenisKendaraan}</TableCell>
+                                <TableCell className="border border-muted p-2">{vehicle.namaOperatorSopir}</TableCell>
+                                <TableCell className="border border-muted p-2 text-center no-print">
+                                    <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="icon">
+                                        <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Apakah Anda yakin ingin menghapus kendaraan dengan Nopol {vehicle.nomorPolisi}? Tindakan ini tidak dapat dibatalkan.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteVehicle(vehicle.id)}>
+                                            Ya, Hapus
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                    </AlertDialog>
+                                </TableCell>
+                                </TableRow>
+                            );
+                            } else {
+                            return (
+                                <TableRow key={`empty-${index}`}>
+                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border border-muted p-2 h-10">&nbsp;</TableCell>
+                                <TableCell className="border border-muted p-2 h-10 no-print">&nbsp;</TableCell>
+                                </TableRow>
+                            );
+                            }
+                        })}
                         </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground py-12">
-                      <p>Belum ada data kendaraan. Gunakan formulir di halaman utama untuk menambahkan.</p>
-                    </div>
-                  )}
+                    </Table>
                 </div>
                 <div className="flex justify-end pt-4 no-print">
                   <Button onClick={() => printElement('armada-list-print-area')}>
