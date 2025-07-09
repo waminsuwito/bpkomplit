@@ -60,7 +60,7 @@ export default function AbsensiKaryawanHariIniPage() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="no-print">
         <div className="flex justify-between items-center">
           <div>
             <CardTitle className="flex items-center gap-2">
@@ -71,13 +71,19 @@ export default function AbsensiKaryawanHariIniPage() {
               Laporan absensi karyawan untuk lokasi {user?.location || '...'} pada tanggal: {tanggalHariIni}
             </CardDescription>
           </div>
-          <Button onClick={() => printElement('print-content')} className="no-print">
+          <Button onClick={() => printElement('print-content')}>
             <Printer className="mr-2 h-4 w-4" />
             Cetak Laporan
           </Button>
         </div>
       </CardHeader>
       <CardContent id="print-content">
+        <div className="print-only mb-6 text-center">
+            <h1 className="text-xl font-bold">Laporan Absensi Harian</h1>
+            <p className="text-sm">Lokasi: {user?.location || '...'}</p>
+            <p className="text-sm">Tanggal: {tanggalHariIni}</p>
+        </div>
+
         {daftarAbsensi.length > 0 ? (
           <div className="border rounded-lg overflow-x-auto">
             <Table>
