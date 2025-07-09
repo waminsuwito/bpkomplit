@@ -18,6 +18,8 @@ export default function AdminRootPage() {
       router.replace('/admin/laporan-harian');
     } else if (user?.role === 'logistik_material') {
       router.replace('/admin/pemasukan-material');
+    } else if (user?.role === 'hse_hrd_lokasi') {
+      router.replace('/admin/manajemen-karyawan');
     } else if (user) {
       // If an unauthorized user somehow gets here, send them away
       router.replace('/dashboard');

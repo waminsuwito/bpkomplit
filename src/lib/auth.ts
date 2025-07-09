@@ -12,6 +12,7 @@ const initialUsers: User[] = [
   { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG' },
   { id: 'head-1', username: 'supervisor', password: 'password', role: 'supervisor', location: 'BP IKN' },
   { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU' },
+  { id: 'hse-1', username: 'hse', password: 'hse', role: 'hse_hrd_lokasi', location: 'BP PEKANBARU' },
 ];
 
 function getInitialUsers(): User[] {

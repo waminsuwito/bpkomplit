@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, FileText, CalendarCheck, PackagePlus, Truck, Anchor } from 'lucide-react';
+import { Shield, FileText, CalendarCheck, PackagePlus, Truck, Anchor, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
@@ -23,6 +23,10 @@ const logistikMaterialNav = [
   { href: '/admin/bongkar-material', label: 'Bongkar Material', icon: Anchor },
 ];
 
+const hseHrdNav = [
+  { href: '/admin/manajemen-karyawan', label: 'Manajemen Karyawan', icon: Users },
+];
+
 export function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -34,6 +38,8 @@ export function AdminSidebar() {
     navItems = adminLokasiNav;
   } else if (user?.role === 'logistik_material') {
     navItems = logistikMaterialNav;
+  } else if (user?.role === 'hse_hrd_lokasi') {
+    navItems = hseHrdNav;
   }
 
   return (
