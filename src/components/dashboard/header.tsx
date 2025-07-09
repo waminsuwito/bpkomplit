@@ -26,7 +26,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { changePassword } from '@/lib/auth';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { AttendanceForm } from '@/components/karyawan/attendance-form';
 
 
 const passwordFormSchema = z
@@ -51,7 +50,6 @@ export function Header() {
   const [password, setPassword] = useState('');
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   
   const { toast } = useToast();
@@ -121,21 +119,12 @@ export function Header() {
             </div>
             
             {pathname.startsWith('/dashboard') && user.jabatan === 'OPRATOR BP' && (
-              <Dialog open={isAttendanceOpen} onOpenChange={setIsAttendanceOpen}>
-                  <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                          <Fingerprint className="mr-2 h-4 w-4" />
-                          Absen
-                      </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-screen h-screen max-w-full sm:rounded-none border-0 p-0 flex items-center justify-center">
-                      <DialogHeader className="sr-only">
-                          <DialogTitle>Absensi Harian</DialogTitle>
-                          <DialogDescription>Formulir untuk melakukan absensi masuk dan pulang.</DialogDescription>
-                      </DialogHeader>
-                      <AttendanceForm />
-                  </DialogContent>
-              </Dialog>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/karyawan/absensi-harian">
+                  <Fingerprint className="mr-2 h-4 w-4" />
+                  Absen & Kegiatan
+                </Link>
+              </Button>
             )}
 
             {/* In-Dashboard Admin for Formulas */}

@@ -3,9 +3,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning } from 'lucide-react';
+import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants, Button } from '@/components/ui/button';
+import { useAuth } from '@/context/auth-provider';
+import { Separator } from '@/components/ui/separator';
 
 const navItems = [
   { href: '/karyawan/absensi-harian', label: 'Absensi Harian', icon: Fingerprint },
@@ -19,10 +21,22 @@ const navItems = [
 
 export function KaryawanSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <aside className="hidden w-64 flex-col border-r bg-card p-4 md:flex no-print">
       <nav className="flex flex-col gap-2">
+        {user?.jabatan === 'OPRATOR BP' && (
+          <>
+            <Button asChild variant="outline">
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Kembali ke Dashboard
+              </Link>
+            </Button>
+            <Separator className="my-2" />
+          </>
+        )}
         <h2 className="mb-2 text-lg font-semibold tracking-tight">Menu Karyawan</h2>
         {navItems.map((item) => (
           <Link

@@ -8,7 +8,7 @@ export default function KaryawanLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard requiredRoles={['karyawan']}>
+    <AuthGuard requiredRoles={['karyawan', 'operator']}>
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <div className="flex flex-1">
