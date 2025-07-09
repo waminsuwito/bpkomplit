@@ -2,17 +2,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Wrench, PlusCircle, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Wrench, PlusCircle, Trash2, List, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { getUsers } from '@/lib/auth';
+import { printElement } from '@/lib/utils';
 
 const VEHICLES_STORAGE_KEY = 'app-vehicles';
 
@@ -109,13 +111,92 @@ export default function ManajemenPeralatanPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PlusCircle className="h-6 w-6 text-primary" />
-            Tambah Kendaraan Baru
-          </CardTitle>
-          <CardDescription>
-            Masukkan detail kendaraan baru ke dalam sistem.
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <PlusCircle className="h-6 w-6 text-primary" />
+                Tambah Kendaraan Baru
+              </CardTitle>
+              <CardDescription>
+                Masukkan detail kendaraan baru ke dalam sistem.
+              </CardDescription>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <List className="mr-2 h-4 w-4" />
+                  List Armada
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                  <DialogTitle>List Armada</DialogTitle>
+                  <DialogDescription>
+                    Daftar semua kendaraan yang terdaftar dalam sistem.
+                  </DialogDescription>
+                </DialogHeader>
+                <div id="armada-list-print-area" className="py-4">
+                  {vehicles.length > 0 ? (
+                    <div className="border rounded-lg overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nomor Lambung</TableHead>
+                            <TableHead>Nomor Polisi</TableHead>
+                            <TableHead>Jenis Kendaraan</TableHead>
+                            <TableHead>Nama Sopir/Operator</TableHead>
+                            <TableHead className="text-center no-print">Aksi</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {vehicles.map((vehicle) => (
+                            <TableRow key={vehicle.id}>
+                              <TableCell>{vehicle.nomorLambung || '-'}</TableCell>
+                              <TableCell className="font-medium">{vehicle.nomorPolisi}</TableCell>
+                              <TableCell>{vehicle.jenisKendaraan}</TableCell>
+                              <TableCell>{vehicle.namaOperatorSopir}</TableCell>
+                              <TableCell className="text-center no-print">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Apakah Anda yakin ingin menghapus kendaraan dengan Nopol {vehicle.nomorPolisi}? Tindakan ini tidak dapat dibatalkan.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                      <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteVehicle(vehicle.id)}>
+                                        Ya, Hapus
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-12">
+                      <p>Belum ada data kendaraan. Gunakan formulir di halaman utama untuk menambahkan.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end pt-4 no-print">
+                  <Button onClick={() => printElement('armada-list-print-area')}>
+                    <Printer className="mr-2 h-4 w-4" /> Cetak
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddVehicle} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
@@ -150,72 +231,6 @@ export default function ManajemenPeralatanPage() {
               <Button type="submit">Tambah Kendaraan</Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-6 w-6" />
-            Daftar Kendaraan
-          </CardTitle>
-          <CardDescription>
-            Daftar semua kendaraan yang terdaftar dalam sistem.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {vehicles.length > 0 ? (
-            <div className="border rounded-lg overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nomor Polisi</TableHead>
-                    <TableHead>Nomor Lambung</TableHead>
-                    <TableHead>Jenis Kendaraan</TableHead>
-                    <TableHead>Operator/Sopir</TableHead>
-                    <TableHead className="text-center">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vehicles.map((vehicle) => (
-                    <TableRow key={vehicle.id}>
-                      <TableCell className="font-medium">{vehicle.nomorPolisi}</TableCell>
-                      <TableCell>{vehicle.nomorLambung || '-'}</TableCell>
-                      <TableCell>{vehicle.jenisKendaraan}</TableCell>
-                      <TableCell>{vehicle.namaOperatorSopir}</TableCell>
-                      <TableCell className="text-center">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus kendaraan dengan Nopol {vehicle.nomorPolisi}? Tindakan ini tidak dapat dibatalkan.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteVehicle(vehicle.id)}>
-                                Ya, Hapus
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center text-muted-foreground py-12">
-              <p>Belum ada data kendaraan. Gunakan formulir di atas untuk menambahkan.</p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
