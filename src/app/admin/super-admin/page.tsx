@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
-import { type User, type UserRole, type UserLocation } from '@/lib/types';
+import { type User, type UserRole, type UserLocation, type UserJabatan } from '@/lib/types';
 import { getUsers, addUser, updateUser, deleteUser } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,6 +26,7 @@ export default function SuperAdminPage() {
         role: data.role as UserRole,
         location: data.location as UserLocation,
         nik: isKaryawan ? data.nik : undefined,
+        jabatan: data.role !== 'super_admin' ? (data.jabatan as UserJabatan) || undefined : undefined,
       };
       if (data.password) {
         userDataToUpdate.password = data.password;
@@ -47,6 +48,7 @@ export default function SuperAdminPage() {
         role: data.role as UserRole,
         location: data.location as UserLocation,
         nik: isKaryawan ? data.nik : undefined,
+        jabatan: data.role !== 'super_admin' ? (data.jabatan as UserJabatan) || undefined : undefined,
       };
       addUser(newUser);
       setUsers(getUsers()); // Re-fetch from storage

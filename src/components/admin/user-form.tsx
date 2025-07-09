@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -9,13 +10,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { userRoles, type User, userLocations } from '@/lib/types';
+import { userRoles, type User, userLocations, jabatanOptions } from '@/lib/types';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: 'Username must be at least 3 characters long.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }).optional().or(z.literal('')),
   nik: z.string().optional().or(z.literal('')),
   role: z.enum(userRoles),
+  jabatan: z.enum(jabatanOptions).optional().or(z.literal('')),
   location: z.enum(userLocations),
 });
 
@@ -38,6 +40,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
       password: '',
       nik: '',
       role: 'operator',
+      jabatan: '',
       location: 'BP PEKANBARU',
     },
   });
@@ -52,6 +55,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
         role: userToEdit.role,
         location: userToEdit.location || 'BP PEKANBARU',
         nik: userToEdit.nik || '',
+        jabatan: userToEdit.jabatan || '',
       });
     } else {
       form.reset({
@@ -59,6 +63,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
         password: '',
         nik: '',
         role: 'operator',
+        jabatan: '',
         location: 'BP PEKANBARU',
       });
     }
@@ -135,6 +140,34 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
             </FormItem>
           )}
         />
+
+        {role !== 'super_admin' && (
+          <FormField
+            control={form.control}
+            name="jabatan"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Jabatan</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih jabatan" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {jabatanOptions.map((jabatan) => (
+                      <SelectItem key={jabatan} value={jabatan}>
+                        {jabatan}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
         {role === 'karyawan' && (
           <FormField
             control={form.control}

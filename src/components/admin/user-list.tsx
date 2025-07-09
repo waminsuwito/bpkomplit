@@ -1,3 +1,4 @@
+
 'use client';
 
 import { type User, type UserRole } from '@/lib/types';
@@ -42,7 +43,6 @@ const roleVariantMap: Record<UserRole, 'default' | 'secondary' | 'destructive' |
     tukang_las: 'outline',
     hse_hrd_lokasi: 'secondary',
     karyawan: 'outline',
-    jabatan: 'default',
 };
 
 export function UserList({ users, onEdit, onDelete }: UserListProps) {
@@ -68,6 +68,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
             <TableHead>Username</TableHead>
             <TableHead>NIK</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Jabatan</TableHead>
             <TableHead>Location</TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
@@ -80,6 +81,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
               <TableCell>
                 <Badge variant={roleVariantMap[user.role] || 'default'}>{formatRoleName(user.role)}</Badge>
               </TableCell>
+              <TableCell>{user.jabatan || 'N/A'}</TableCell>
               <TableCell>{user.location || 'N/A'}</TableCell>
               <TableCell className="flex justify-center items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => onEdit(user.id)} disabled={user.id === 'superadmin-main'}>

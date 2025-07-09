@@ -33,7 +33,6 @@ export const userRoles = [
   "super_admin",
   "admin_lokasi",
   "operator",
-  "jabatan",
   "logistik_spareparts",
   "mekanik",
   "supervisor",
@@ -45,6 +44,21 @@ export const userRoles = [
 ] as const;
 
 export type UserRole = (typeof userRoles)[number];
+
+export const jabatanOptions = [
+  "KEPALA BP",
+  "KEPALA QC",
+  "QC",
+  "HELPER",
+  "KEPALA MEKANIK",
+  "KEPALA WORKSHOP",
+  "KEPALA GUDANG",
+  "ADMIN BP",
+  "HRD",
+  "ADMIN QC",
+] as const;
+
+export type UserJabatan = (typeof jabatanOptions)[number];
 
 export const userLocations = [
   "BP PEKANBARU",
@@ -62,6 +76,7 @@ export interface User {
   role: UserRole;
   location?: UserLocation;
   nik?: string;
+  jabatan?: UserJabatan;
 }
 
 export interface JobMixFormula {
