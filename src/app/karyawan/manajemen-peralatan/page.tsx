@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,6 +24,9 @@ interface Vehicle {
 
 // A row can be a Vehicle or an empty object for placeholder rows
 type TableRowData = Partial<Vehicle>;
+
+const fields: (keyof Omit<Vehicle, 'id'>)[] = ['nomorLambung', 'nomorPolisi', 'jenisKendaraan', 'namaOperatorSopir'];
+const headers = ['NOMOR LAMBUNG', 'NOMOR POLISI', 'JENIS KENDARAAN', 'NAMA SOPIR/OPRATOR'];
 
 export default function ManajemenPeralatanPage() {
   const [tableData, setTableData] = useState<TableRowData[]>(
@@ -70,7 +72,7 @@ export default function ManajemenPeralatanPage() {
     try {
       // Filter out empty rows, assign IDs to new rows
       const vehiclesToSave = tableData
-        .filter(row => row.nomorPolisi && row.nomorPolisi.trim() !== '')
+        .filter(row => (row.nomorPolisi && row.nomorPolisi.trim() !== '') || (row.nomorLambung && row.nomorLambung.trim() !== ''))
         .map((vehicleData) => ({
           nomorLambung: vehicleData.nomorLambung || '',
           nomorPolisi: vehicleData.nomorPolisi || '',
@@ -96,9 +98,54 @@ export default function ManajemenPeralatanPage() {
       toast({ variant: 'destructive', title: 'Gagal', description: 'Tidak dapat menyimpan data.' });
     }
   };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
+    const { key } = e;
+    let nextRowIndex = rowIndex;
+    let nextColIndex = colIndex;
 
-  const fields: (keyof Omit<Vehicle, 'id'>)[] = ['nomorLambung', 'nomorPolisi', 'jenisKendaraan', 'namaOperatorSopir'];
-  const headers = ['NOMOR LAMBUNG', 'NOMOR POLISI', 'JENIS KENDARAAN', 'NAMA SOPIR/OPRATOR'];
+    if (key === 'Enter' || key === 'ArrowDown') {
+        e.preventDefault();
+        nextRowIndex = rowIndex + 1;
+    } else if (key === 'ArrowUp') {
+        e.preventDefault();
+        nextRowIndex = rowIndex - 1;
+    } else if (key === 'ArrowRight') {
+        // Only prevent default if not at the end of the input
+        if (e.currentTarget.selectionStart === e.currentTarget.value.length) {
+            e.preventDefault();
+            nextColIndex = colIndex + 1;
+        }
+    } else if (key === 'ArrowLeft') {
+        // Only prevent default if at the start of the input
+        if (e.currentTarget.selectionStart === 0) {
+            e.preventDefault();
+            nextColIndex = colIndex - 1;
+        }
+    } else {
+        return; // Other keys do default behavior
+    }
+
+    // Handle wrapping around columns
+    if (nextColIndex >= fields.length) {
+        nextColIndex = 0;
+        nextRowIndex = rowIndex + 1;
+    }
+    if (nextColIndex < 0) {
+        nextColIndex = fields.length - 1;
+        nextRowIndex = rowIndex - 1;
+    }
+
+    // Check bounds for rows
+    if (nextRowIndex >= 0 && nextRowIndex < TOTAL_ROWS) {
+        const nextField = fields[nextColIndex];
+        const nextInputId = `${nextField}-${nextRowIndex}`;
+        const nextInput = document.getElementById(nextInputId);
+        if (nextInput) {
+            nextInput.focus();
+        }
+    }
+  };
 
   return (
     <Card id="manajemen-alat-content">
@@ -138,19 +185,22 @@ export default function ManajemenPeralatanPage() {
               <TableBody>
                 {tableData.map((row, index) => (
                   <TableRow key={row.id || `row-${index}`} className="[&_td]:p-0 [&_td]:border-gray-400">
-                    {fields.map(field => (
+                    {fields.map((field, colIndex) => (
                         <TableCell key={field} className="border">
                             <Input
+                                id={`${field}-${index}`}
                                 value={row[field] || ''}
                                 onChange={(e) => handleInputChange(index, field, e.target.value)}
+                                onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
                                 className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
+                                style={{ textTransform: 'uppercase' }}
                             />
                         </TableCell>
                     ))}
                     <TableCell className="border text-center no-print">
                        <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!row.nomorPolisi}>
+                            <Button variant="ghost" size="icon" disabled={!row.nomorPolisi && !row.nomorLambung}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
