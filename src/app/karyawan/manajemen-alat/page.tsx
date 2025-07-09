@@ -47,7 +47,7 @@ const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, c
 );
 
 export default function ManajemenAlatPage() {
-  const [selectedLocation, setSelectedLocation] = useState('Semua Lokasi BP');
+  const [selectedLocation, setSelectedLocation] = useState('Semua Lokasi');
   const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
   
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
@@ -108,7 +108,7 @@ export default function ManajemenAlatPage() {
 
 
   const filteredData = useMemo(() => {
-    if (selectedLocation === 'Semua Lokasi BP') {
+    if (selectedLocation === 'Semua Lokasi') {
       return {
         totalAlat: submittedReports.length + notSubmittedReports.length,
         sudahChecklistReports: submittedReports,
@@ -180,8 +180,7 @@ export default function ManajemenAlatPage() {
 
   return (
     <div className="space-y-6" id="manajemen-alat-content">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard Admin</h2>
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
         <div className="flex items-center gap-2">
           <Button onClick={() => printElement('manajemen-alat-content')}>
             <Printer className="mr-2 h-4 w-4" /> Print Laporan
@@ -191,7 +190,7 @@ export default function ManajemenAlatPage() {
               <SelectValue placeholder="Pilih Lokasi" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Semua Lokasi BP">Semua Lokasi BP</SelectItem>
+              <SelectItem value="Semua Lokasi">Semua Lokasi</SelectItem>
               {userLocations.map(loc => (
                 <SelectItem key={loc} value={loc}>{loc}</SelectItem>
               ))}
