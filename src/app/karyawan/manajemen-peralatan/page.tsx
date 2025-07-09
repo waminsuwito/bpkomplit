@@ -1,19 +1,29 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Wrench, Save, Trash2, Printer } from 'lucide-react';
+import { Wrench, PlusCircle, Trash2, Sheet as SheetIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { printElement } from '@/lib/utils';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { EditableVehicleList } from '@/components/karyawan/editable-vehicle-list';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 const VEHICLES_STORAGE_KEY = 'app-vehicles';
-const TOTAL_ROWS = 300;
 
-// Simplified interface, operatorId is removed
 interface Vehicle {
   id: string;
   nomorPolisi: string;
@@ -22,210 +32,199 @@ interface Vehicle {
   namaOperatorSopir: string;
 }
 
-// A row can be a Vehicle or an empty object for placeholder rows
-type TableRowData = Partial<Vehicle>;
-
-const fields: (keyof Omit<Vehicle, 'id'>)[] = ['nomorLambung', 'nomorPolisi', 'jenisKendaraan', 'namaOperatorSopir'];
-const headers = ['NOMOR LAMBUNG', 'NOMOR POLISI', 'JENIS KENDARAAN', 'NAMA SOPIR/OPRATOR'];
+const initialFormState = {
+  nomorPolisi: '',
+  nomorLambung: '',
+  jenisKendaraan: '',
+  namaOperatorSopir: '',
+};
 
 export default function ManajemenPeralatanPage() {
-  const [tableData, setTableData] = useState<TableRowData[]>(
-    Array(TOTAL_ROWS).fill({})
-  );
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [formState, setFormState] = useState(initialFormState);
+  const [isListOpen, setIsListOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    try {
+    loadVehicles();
+  }, []);
+  
+  // Also reload vehicles when the dialog is closed, in case changes were made
+  useEffect(() => {
+    if (!isListOpen) {
+      loadVehicles();
+    }
+  }, [isListOpen]);
+
+  const loadVehicles = () => {
+     try {
       const storedVehicles: Vehicle[] = JSON.parse(localStorage.getItem(VEHICLES_STORAGE_KEY) || '[]');
-      const initialData = Array(TOTAL_ROWS).fill({});
-      storedVehicles.forEach((vehicle, index) => {
-        if (index < TOTAL_ROWS) {
-          initialData[index] = vehicle;
-        }
-      });
-      setTableData(initialData);
+      setVehicles(storedVehicles);
     } catch (error) {
       console.error("Failed to load vehicles:", error);
     }
-  }, []);
+  }
 
-  const handleInputChange = (index: number, field: keyof Vehicle, value: string) => {
-    const updatedData = [...tableData];
-    // Create a new object for the row to ensure re-render
-    updatedData[index] = { ...updatedData[index], [field]: value.toUpperCase() };
-    setTableData(updatedData);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormState(prev => ({ ...prev, [name]: value.toUpperCase() }));
   };
 
-  const handleDeleteRow = (index: number) => {
-    const updatedData = [...tableData];
-    updatedData.splice(index, 1); // Remove the item
-    updatedData.push({}); // Add an empty row at the end to maintain total row count
-    setTableData(updatedData);
-     toast({
-      variant: 'destructive',
-      title: 'Baris Dihapus',
-      description: 'Data baris telah dihapus dari tampilan. Klik "Simpan" untuk menyimpan perubahan.',
-    });
-  };
-
-  const handleSaveData = () => {
-    try {
-      // Filter out empty rows, assign IDs to new rows
-      const vehiclesToSave = tableData
-        .filter(row => (row.nomorPolisi && row.nomorPolisi.trim() !== '') || (row.nomorLambung && row.nomorLambung.trim() !== ''))
-        .map((vehicleData) => ({
-          nomorLambung: vehicleData.nomorLambung || '',
-          nomorPolisi: vehicleData.nomorPolisi || '',
-          jenisKendaraan: vehicleData.jenisKendaraan || '',
-          namaOperatorSopir: vehicleData.namaOperatorSopir || '',
-          id: vehicleData.id || new Date().toISOString() + Math.random(), // Assign ID if new
-        }));
-
-      localStorage.setItem(VEHICLES_STORAGE_KEY, JSON.stringify(vehiclesToSave));
-      
-      // Pad again to ensure UI has 30 rows and re-sync state
-      const rePaddedData = Array(TOTAL_ROWS).fill({});
-      vehiclesToSave.forEach((vehicle, index) => {
-         if (index < TOTAL_ROWS) {
-          rePaddedData[index] = vehicle;
-        }
-      });
-      setTableData(rePaddedData);
-
-      toast({ title: 'Berhasil', description: 'Semua perubahan telah disimpan.' });
-    } catch (error) {
-      console.error("Failed to save vehicles:", error);
-      toast({ variant: 'destructive', title: 'Gagal', description: 'Tidak dapat menyimpan data.' });
+  const handleAddVehicle = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formState.nomorPolisi.trim() && !formState.nomorLambung.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal',
+            description: 'Nomor Polisi atau Nomor Lambung harus diisi.',
+        });
+        return;
     }
+    
+    const newVehicle: Vehicle = {
+        ...formState,
+        id: new Date().toISOString() + Math.random(),
+    };
+
+    const updatedVehicles = [...vehicles, newVehicle];
+    localStorage.setItem(VEHICLES_STORAGE_KEY, JSON.stringify(updatedVehicles));
+    setVehicles(updatedVehicles);
+    setFormState(initialFormState);
+    toast({ title: 'Berhasil', description: 'Kendaraan baru telah ditambahkan.' });
   };
   
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
-    const { key } = e;
-    let nextRowIndex = rowIndex;
-    let nextColIndex = colIndex;
-
-    if (key === 'Enter' || key === 'ArrowDown') {
-        e.preventDefault();
-        nextRowIndex = rowIndex + 1;
-    } else if (key === 'ArrowUp') {
-        e.preventDefault();
-        nextRowIndex = rowIndex - 1;
-    } else if (key === 'ArrowRight') {
-        // Only prevent default if not at the end of the input
-        if (e.currentTarget.selectionStart === e.currentTarget.value.length) {
-            e.preventDefault();
-            nextColIndex = colIndex + 1;
-        }
-    } else if (key === 'ArrowLeft') {
-        // Only prevent default if at the start of the input
-        if (e.currentTarget.selectionStart === 0) {
-            e.preventDefault();
-            nextColIndex = colIndex - 1;
-        }
-    } else {
-        return; // Other keys do default behavior
-    }
-
-    // Handle wrapping around columns
-    if (nextColIndex >= fields.length) {
-        nextColIndex = 0;
-        nextRowIndex = rowIndex + 1;
-    }
-    if (nextColIndex < 0) {
-        nextColIndex = fields.length - 1;
-        nextRowIndex = rowIndex - 1;
-    }
-
-    // Check bounds for rows
-    if (nextRowIndex >= 0 && nextRowIndex < TOTAL_ROWS) {
-        const nextField = fields[nextColIndex];
-        const nextInputId = `${nextField}-${nextRowIndex}`;
-        const nextInput = document.getElementById(nextInputId);
-        if (nextInput) {
-            nextInput.focus();
-        }
-    }
-  };
-
+  const handleDeleteVehicle = (id: string) => {
+    const updatedVehicles = vehicles.filter(v => v.id !== id);
+    localStorage.setItem(VEHICLES_STORAGE_KEY, JSON.stringify(updatedVehicles));
+    setVehicles(updatedVehicles);
+     toast({
+      variant: 'destructive',
+      title: 'Dihapus',
+      description: 'Data kendaraan telah dihapus.',
+    });
+  }
+  
   return (
-    <Card id="manajemen-alat-content">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Wrench className="h-6 w-6 text-primary" />
-                Manajemen Alat
-              </CardTitle>
-              <CardDescription>
-                Tambah, edit, atau hapus data kendaraan langsung dari tabel di bawah ini. Klik "Simpan Semua Perubahan" untuk menyimpan.
-              </CardDescription>
-            </div>
-            <div className="flex gap-2 no-print">
-                <Button onClick={() => printElement('manajemen-alat-content')}>
-                    <Printer className="mr-2 h-4 w-4" /> Cetak
-                </Button>
-                 <Button onClick={handleSaveData}>
-                    <Save className="mr-2 h-4 w-4" /> Simpan Semua Perubahan
-                </Button>
-            </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="border rounded-lg overflow-x-auto bg-white text-black p-1">
-            <h2 className="text-2xl font-bold text-center mb-4 text-black print-only">LIST ARMADA</h2>
-            <Table className="w-full border-collapse">
-              <TableHeader>
-                <TableRow className="bg-gray-200">
-                   {headers.map(header => (
-                     <TableHead key={header} className="border border-gray-400 p-2 text-center font-bold text-black">{header}</TableHead>
-                   ))}
-                  <TableHead className="border border-gray-400 p-2 text-center font-bold text-black no-print">AKSI</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tableData.map((row, index) => (
-                  <TableRow key={row.id || `row-${index}`} className="[&_td]:p-0 [&_td]:border-gray-400">
-                    {fields.map((field, colIndex) => (
-                        <TableCell key={field} className="border">
-                            <Input
-                                id={`${field}-${index}`}
-                                value={row[field] || ''}
-                                onChange={(e) => handleInputChange(index, field, e.target.value)}
-                                onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
-                                className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
-                                style={{ textTransform: 'uppercase' }}
-                            />
-                        </TableCell>
-                    ))}
-                    <TableCell className="border text-center no-print">
-                       <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={!row.nomorPolisi && !row.nomorLambung}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
+    <div className="space-y-6">
+        <Dialog open={isListOpen} onOpenChange={setIsListOpen}>
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div>
+                        <CardTitle className="flex items-center gap-2">
+                            <Wrench className="h-6 w-6 text-primary" />
+                            Tambah Kendaraan Baru
+                        </CardTitle>
+                        <CardDescription>
+                            Gunakan formulir ini untuk menambah satu kendaraan atau gunakan "List Armada" untuk edit massal.
+                        </CardDescription>
+                        </div>
+                        <DialogTrigger asChild>
+                            <Button variant="outline">
+                                <SheetIcon className="mr-2 h-4 w-4" />
+                                List Armada
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  Apakah Anda yakin ingin menghapus baris ini? Perubahan akan permanen setelah Anda menekan tombol 'Simpan'.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteRow(index)}>
-                                  Ya, Hapus
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-        </div>
-      </CardContent>
-    </Card>
+                        </DialogTrigger>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleAddVehicle} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        <div className="space-y-2">
+                            <Label htmlFor="nomorLambung">Nomor Lambung</Label>
+                            <Input id="nomorLambung" name="nomorLambung" value={formState.nomorLambung} onChange={handleInputChange} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="nomorPolisi">Nomor Polisi</Label>
+                            <Input id="nomorPolisi" name="nomorPolisi" value={formState.nomorPolisi} onChange={handleInputChange} />
+                        </div>
+                         <div className="space-y-2 md:col-span-1">
+                            <Label htmlFor="jenisKendaraan">Jenis Kendaraan</Label>
+                            <Input id="jenisKendaraan" name="jenisKendaraan" value={formState.jenisKendaraan} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2 md:col-span-1">
+                            <Label htmlFor="namaOperatorSopir">Nama Sopir/Operator</Label>
+                            <Input id="namaOperatorSopir" name="namaOperatorSopir" value={formState.namaOperatorSopir} onChange={handleInputChange} />
+                        </div>
+                        <div className="md:col-span-1">
+                            <Button type="submit" className="w-full">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Tambah
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
+
+            <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col p-0">
+               <EditableVehicleList />
+            </DialogContent>
+        </Dialog>
+
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Daftar Kendaraan Saat Ini</CardTitle>
+                <CardDescription>Menampilkan daftar semua kendaraan yang terdaftar.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>No.</TableHead>
+                                <TableHead>Nomor Lambung</TableHead>
+                                <TableHead>Nomor Polisi</TableHead>
+                                <TableHead>Jenis Kendaraan</TableHead>
+                                <TableHead>Nama Sopir/Operator</TableHead>
+                                <TableHead className="text-center">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {vehicles.length > 0 ? (
+                                vehicles.map((v, index) => (
+                                <TableRow key={v.id}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{v.nomorLambung}</TableCell>
+                                    <TableCell>{v.nomorPolisi}</TableCell>
+                                    <TableCell>{v.jenisKendaraan}</TableCell>
+                                    <TableCell>{v.namaOperatorSopir}</TableCell>
+                                    <TableCell className="text-center">
+                                       <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                              <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                  Apakah Anda yakin ingin menghapus kendaraan dengan Nopol {v.nomorPolisi || v.nomorLambung}?
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteVehicle(v.id)}>
+                                                  Ya, Hapus
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                    </TableCell>
+                                </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-24 text-center">
+                                        Belum ada kendaraan yang ditambahkan.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    </div>
   );
 }
