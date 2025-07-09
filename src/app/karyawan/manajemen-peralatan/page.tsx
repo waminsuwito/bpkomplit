@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Wrench, PlusCircle, Trash2, Sheet as SheetIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { EditableVehicleList } from '@/components/karyawan/editable-vehicle-list';
 import {
   AlertDialog,
@@ -84,6 +84,15 @@ export default function ManajemenPeralatanPage() {
         return;
     }
     
+    if (!formState.nik.trim()) {
+      toast({
+            variant: 'destructive',
+            title: 'Gagal',
+            description: 'NIK harus diisi.',
+        });
+        return;
+    }
+
     const newVehicle: Vehicle = {
         ...formState,
         id: new Date().toISOString() + Math.random(),
@@ -163,6 +172,12 @@ export default function ManajemenPeralatanPage() {
             </Card>
 
             <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col p-0">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>List Armada</DialogTitle>
+                    <DialogDescription>
+                        Tabel untuk mengedit semua kendaraan dalam mode massal.
+                    </DialogDescription>
+                </DialogHeader>
                <EditableVehicleList />
             </DialogContent>
         </Dialog>
