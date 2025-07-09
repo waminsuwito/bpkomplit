@@ -48,14 +48,18 @@ export type UserRole = (typeof userRoles)[number];
 
 export const jabatanOptions = [
   "ADMIN BP",
+  "ADMIN LOGISTIK",
+  "ADMIN PRECAST",
   "ADMIN QC",
   "HELPER",
   "HELPER BP",
   "HELPER CP",
   "HELPER LABORAT",
+  "HELPER LAS",
   "HELPER PRECAST",
   "HELPER TAMBAL BAN",
   "HRD",
+  "HSE/K3",
   "KEP KOOR BP",
   "KEP KOOR QC",
   "KEP KOOR TEKNIK",
@@ -64,7 +68,6 @@ export const jabatanOptions = [
   "KEPALA MEKANIK",
   "KEPALA OPRATOR",
   "KEPALA PRECAST",
-  "KEPALA QC",
   "KEPALA SOPIR",
   "KEPALA WORKSHOP",
   "OPRATOR BATA RINGAN",
@@ -76,6 +79,7 @@ export const jabatanOptions = [
   "SOPIR DT",
   "SOPIR TM",
   "TUKANG BOBOK",
+  "TUKANG LAS",
 ] as const;
 
 export type UserJabatan = (typeof jabatanOptions)[number];
