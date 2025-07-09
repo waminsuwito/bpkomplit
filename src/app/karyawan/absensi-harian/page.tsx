@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -24,7 +25,6 @@ const getPersonalAttendanceKey = (userId: string) => {
     return `attendance-${userId}-${year}-${month}-${day}`;
 };
 
-
 type PersonalAttendanceRecord = {
   clockIn?: string;
   isLate?: boolean;
@@ -35,6 +35,8 @@ type AttendanceAction = 'clockIn' | 'clockOut' | 'none';
 
 export default function AbsensiHarianKaryawanPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
+
   const [locations, setLocations] = useState<AttendanceLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<AttendanceLocation | null>(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -44,7 +46,6 @@ export default function AbsensiHarianKaryawanPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { toast } = useToast();
   
   const [personalAttendanceRecord, setPersonalAttendanceRecord] = useState<PersonalAttendanceRecord | null>(null);
   const [currentAction, setCurrentAction] = useState<AttendanceAction>('none');
@@ -55,6 +56,7 @@ export default function AbsensiHarianKaryawanPage() {
     icon: <Info className="h-5 w-5" />,
   });
 
+  // Effect to load initial data
   useEffect(() => {
     try {
       const storedData = localStorage.getItem(ATTENDANCE_LOCATIONS_KEY);
@@ -78,32 +80,38 @@ export default function AbsensiHarianKaryawanPage() {
     }
   }, [user]);
 
+  // Effect to determine the currently available action based on time and record
   useEffect(() => {
-    const updateAction = () => {
+    const determineAction = () => {
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const currentTime = hours * 100 + minutes;
 
+      // Priority 1: Already clocked out for the day.
       if (personalAttendanceRecord?.clockOut) {
         setCurrentAction('none');
         return;
       }
-
+      
+      // Priority 2: Clocked in, check if it's time to clock out.
       if (personalAttendanceRecord?.clockIn) {
+        // Clock out window: 17:06 - 23:55
         if (currentTime >= 1706 && currentTime <= 2355) {
           setCurrentAction('clockOut');
         } else {
-          setCurrentAction('none');
+          setCurrentAction('none'); // Not yet time to clock out
         }
         return;
       }
-      
+
+      // Priority 3: Not clocked in at all, check if it's time to clock in.
       if (!personalAttendanceRecord?.clockIn) {
+         // Clock in window: 00:30 - 17:05
         if (currentTime >= 30 && currentTime <= 1705) {
           setCurrentAction('clockIn');
         } else {
-          setCurrentAction('none');
+          setCurrentAction('none'); // Outside clock-in window
         }
         return;
       }
@@ -111,20 +119,17 @@ export default function AbsensiHarianKaryawanPage() {
       setCurrentAction('none');
     };
 
-    updateAction();
-    const timerId = setInterval(updateAction, 30000); 
+    determineAction();
+    const timerId = setInterval(determineAction, 30000); 
 
     return () => clearInterval(timerId);
   }, [personalAttendanceRecord]);
 
+  // Effect to update the dynamic description message
   useEffect(() => {
     const getDynamicDescription = () => {
       if (!user) {
-        return {
-          message: 'Memuat data pengguna...',
-          variant: 'default' as const,
-          icon: <Loader2 className="h-5 w-5 animate-spin" />,
-        };
+        return { message: 'Memuat data pengguna...', variant: 'default' as const, icon: <Loader2 className="h-5 w-5 animate-spin" /> };
       }
 
       const now = new Date();
@@ -132,51 +137,27 @@ export default function AbsensiHarianKaryawanPage() {
       const minutes = now.getMinutes();
       const userName = user.username;
       const currentTime = hours * 100 + minutes;
-
-      if (currentAction === 'clockOut') {
-        return {
-          message: `Selamat sore/malam Sdr. ${userName}, terimakasih sudah melakukan pekerjaan anda hari ini, tetap semangat dan berusaha besok lebih baik lagi. Selamat istirahat, terimakasih.`,
-          variant: 'default' as const,
-          icon: <PartyPopper className="h-5 w-5 text-green-500" />,
-        };
+      
+      if (personalAttendanceRecord?.clockOut) {
+          return { message: `Absensi hari ini sudah selesai, ${userName}. Sampai jumpa besok!`, variant: 'default' as const, icon: <PartyPopper className="h-5 w-5 text-green-500" /> };
+      }
+      
+      if (personalAttendanceRecord?.clockIn) {
+          if (currentAction === 'clockOut') {
+            return { message: `Selamat sore/malam Sdr. ${userName}, terimakasih sudah melakukan pekerjaan anda hari ini, tetap semangat dan berusaha besok lebih baik lagi. Selamat istirahat, terimakasih.`, variant: 'default' as const, icon: <ThumbsUp className="h-5 w-5 text-green-500" /> };
+          } else {
+            return { message: `Anda sudah absen masuk hari ini, ${userName}. Silakan kembali lagi nanti untuk absen pulang.`, variant: 'default' as const, icon: <Timer className="h-5 w-5" /> };
+          }
       }
 
       if (currentAction === 'clockIn') {
-        if (currentTime >= 30 && currentTime <= 300) { 
-          return {
-            message: `Selamat pagi Sdr. ${userName}, kenapa absen masuk masih tengah malam begini? Baru selesai lemburkah? Atau habis begadang? Mohon dapat lebih disiplin waktu absen masuk. Terimakasih.`,
-            variant: 'destructive' as const,
-            icon: <Bed className="h-5 w-5" />,
-          };
-        }
-        if (currentTime >= 301 && currentTime <= 600) { 
-          return {
-            message: `Selamat pagi Sdr. ${userName}, cepat sekali absen masuknya, habis lembur atau habis begadang? Semoga memang habis lembur ya. Ingat, begadang yang tidak perlu itu merusak badan. Jaga kesehatan, terimakasih.`,
-            variant: 'default' as const,
-            icon: <Coffee className="h-5 w-5 text-amber-600" />,
-          };
-        }
-        if (currentTime >= 601 && currentTime <= 730) {
-          return {
-            message: `Selamat pagi Sdr. ${userName}, terimakasih sudah absen tepat waktu. Selamat bekerja, jangan lupa berdo'a. Terimakasih.`,
-            variant: 'default' as const,
-            icon: <ThumbsUp className="h-5 w-5 text-green-500" />,
-          };
-        }
-        if (currentTime >= 731 && currentTime <= 1705) { 
-          return {
-            message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat Waktu dan jangan terlambat. terimakasih.`,
-            variant: 'destructive' as const,
-            icon: <AlertTriangle className="h-5 w-5" />,
-          };
-        }
+        if (currentTime >= 30 && currentTime <= 300) { return { message: `Selamat pagi Sdr. ${userName}, kenapa absen masuk masih tengah malam begini? Baru selesai lemburkah? Atau habis begadang? Mohon dapat lebih disiplin waktu absen masuk. Terimakasih.`, variant: 'destructive' as const, icon: <Bed className="h-5 w-5" /> };}
+        if (currentTime >= 301 && currentTime <= 600) { return { message: `Selamat pagi Sdr. ${userName}, cepat sekali absen masuknya, habis lembur atau habis begadang? Semoga memang habis lembur ya. Ingat, begadang yang tidak perlu itu merusak badan. Jaga kesehatan, terimakasih.`, variant: 'default' as const, icon: <Coffee className="h-5 w-5 text-amber-600" /> };}
+        if (currentTime >= 601 && currentTime <= 730) { return { message: `Selamat pagi Sdr. ${userName}, terimakasih sudah absen tepat waktu. Selamat bekerja, jangan lupa berdo'a. Terimakasih.`, variant: 'default' as const, icon: <ThumbsUp className="h-5 w-5 text-green-500" /> };}
+        if (currentTime >= 731 && currentTime <= 1705) { return { message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat Waktu dan jangan terlambat. terimakasih.`, variant: 'destructive' as const, icon: <AlertTriangle className="h-5 w-5" /> };}
       }
 
-      return {
-        message: `Saat ini di luar jam absensi. Silakan kembali lagi nanti, ${userName}.`,
-        variant: 'default' as const,
-        icon: <Timer className="h-5 w-5" />,
-      };
+      return { message: `Saat ini di luar jam absensi. Silakan kembali lagi nanti, ${userName}.`, variant: 'default' as const, icon: <Timer className="h-5 w-5" /> };
     };
 
     const newDescription = getDynamicDescription();
@@ -188,16 +169,11 @@ export default function AbsensiHarianKaryawanPage() {
     }, 60000);
 
     return () => clearInterval(intervalId);
-  }, [user, currentAction]);
-
+  }, [user, currentAction, personalAttendanceRecord]);
 
   const activateCamera = async () => {
     if (typeof navigator.mediaDevices?.getUserMedia !== 'function') {
-      toast({
-        variant: 'destructive',
-        title: 'Kamera Tidak Didukung',
-        description: 'Browser Anda tidak mendukung akses kamera.',
-      });
+      toast({ variant: 'destructive', title: 'Kamera Tidak Didukung', description: 'Browser Anda tidak mendukung akses kamera.' });
       setHasCameraPermission(false);
       return;
     }
@@ -210,11 +186,7 @@ export default function AbsensiHarianKaryawanPage() {
     } catch (error) {
       console.error('Error accessing camera:', error);
       setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Akses Kamera Ditolak',
-        description: 'Mohon izinkan akses kamera di pengaturan browser Anda untuk melanjutkan.',
-      });
+      toast({ variant: 'destructive', title: 'Akses Kamera Ditolak', description: 'Mohon izinkan akses kamera di pengaturan browser Anda untuk melanjutkan.' });
     }
   };
 
@@ -227,13 +199,10 @@ export default function AbsensiHarianKaryawanPage() {
       if (context) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
         context.translate(canvas.width, 0);
         context.scale(-1, 1);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
         context.setTransform(1, 0, 0, 1, 0, 0);
-
         return canvas.toDataURL('image/jpeg', 0.8);
       }
     }
@@ -268,9 +237,7 @@ export default function AbsensiHarianKaryawanPage() {
         };
         allRecords.push(newRecord);
       }
-
       localStorage.setItem(GLOBAL_ATTENDANCE_KEY, JSON.stringify(allRecords));
-
     } catch (error) {
         console.error("Failed to update global attendance", error);
         toast({ variant: 'destructive', title: 'Error', description: 'Gagal menyimpan data absensi global.' });
@@ -321,11 +288,12 @@ export default function AbsensiHarianKaryawanPage() {
             const now = new Date();
             
             if (currentAction === 'clockIn') {
-                const isLate = now.getHours() > 7 || (now.getHours() === 7 && now.getMinutes() > 30);
+                const batasMasuk = new Date();
+                batasMasuk.setHours(7, 30, 0, 0); // Batas masuk jam 7:30
+                const isLate = now.getTime() > batasMasuk.getTime();
                 let terlambatDuration = null;
+                
                 if (isLate) {
-                    const batasMasuk = new Date(now);
-                    batasMasuk.setHours(7, 30, 0, 0);
                     const selisihMs = now.getTime() - batasMasuk.getTime();
                     terlambatDuration = `${Math.floor(selisihMs / 60000)}m`;
                 }
@@ -385,11 +353,11 @@ export default function AbsensiHarianKaryawanPage() {
       case 'clockIn': return 'Absen Masuk Sekarang';
       case 'clockOut': return 'Absen Pulang Sekarang';
       default:
-        if (personalAttendanceRecord?.clockIn && !personalAttendanceRecord.clockOut) {
-          return 'Belum Waktunya Absen Pulang';
-        }
         if (personalAttendanceRecord?.clockOut) {
           return 'Absensi Hari Ini Selesai';
+        }
+        if (personalAttendanceRecord?.clockIn && !personalAttendanceRecord.clockOut) {
+          return 'Belum Waktunya Absen Pulang';
         }
         return 'Di Luar Jam Absensi';
     }
