@@ -25,6 +25,11 @@ import type { GlobalAttendanceRecord } from '@/lib/types';
 import { format } from 'date-fns';
 import { printElement } from '@/lib/utils';
 import Image from 'next/image';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
 
@@ -106,13 +111,28 @@ export default function AbsensiKaryawanHariIniPage() {
                     <TableCell>{item.nama}</TableCell>
                     <TableCell>
                       {item.photoMasuk ? (
-                        <Image
-                          src={item.photoMasuk}
-                          alt={`Foto Masuk ${item.nama}`}
-                          width={64}
-                          height={64}
-                          className="rounded-md object-cover w-16 h-16"
-                        />
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <button className="p-0 border-0 bg-transparent h-auto w-auto rounded-md overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                              <Image
+                                src={item.photoMasuk}
+                                alt={`Foto Masuk ${item.nama}`}
+                                width={64}
+                                height={64}
+                                className="object-cover w-16 h-16 cursor-pointer hover:opacity-80 transition-opacity"
+                              />
+                            </button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl p-0 border-0">
+                            <Image
+                              src={item.photoMasuk}
+                              alt={`Foto Masuk ${item.nama}`}
+                              width={800}
+                              height={600}
+                              className="rounded-lg object-contain w-full h-auto"
+                            />
+                          </DialogContent>
+                        </Dialog>
                       ) : (
                         '-'
                       )}
@@ -133,13 +153,28 @@ export default function AbsensiKaryawanHariIniPage() {
                     </TableCell>
                     <TableCell>
                       {item.photoPulang ? (
-                        <Image
-                          src={item.photoPulang}
-                          alt={`Foto Pulang ${item.nama}`}
-                          width={64}
-                          height={64}
-                          className="rounded-md object-cover w-16 h-16"
-                        />
+                        <Dialog>
+                          <DialogTrigger asChild>
+                             <button className="p-0 border-0 bg-transparent h-auto w-auto rounded-md overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                                <Image
+                                  src={item.photoPulang}
+                                  alt={`Foto Pulang ${item.nama}`}
+                                  width={64}
+                                  height={64}
+                                  className="object-cover w-16 h-16 cursor-pointer hover:opacity-80 transition-opacity"
+                                />
+                             </button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl p-0 border-0">
+                            <Image
+                              src={item.photoPulang}
+                              alt={`Foto Pulang ${item.nama}`}
+                              width={800}
+                              height={600}
+                              className="rounded-lg object-contain w-full h-auto"
+                            />
+                          </DialogContent>
+                        </Dialog>
                       ) : (
                         '-'
                       )}
