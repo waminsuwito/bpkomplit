@@ -365,7 +365,7 @@ export default function AbsensiHarianKaryawanPage() {
   const isButtonDisabled = isCheckingIn || hasCameraPermission !== true || locations.length === 0 || !selectedLocation || currentAction === 'none';
 
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="max-w-2xl mx-auto" data-testid="attendance-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Camera className="h-6 w-6 text-primary" />
