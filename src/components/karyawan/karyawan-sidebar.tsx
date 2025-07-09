@@ -38,7 +38,7 @@ export function KaryawanSidebar() {
   if (user?.jabatan === 'KEPALA MEKANIK' || user?.jabatan === 'KEPALA WORKSHOP') {
       navItems.splice(1, 0, {
           href: '/karyawan/manajemen-alat',
-          label: 'Manajemen Alat',
+          label: 'Daftar Armada',
           icon: Construction,
       });
   }
