@@ -14,6 +14,7 @@ import { ClipboardList, User, Image as ImageIcon, Inbox, Clock, Printer, Search 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { printElement } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const GLOBAL_ACTIVITIES_KEY = 'app-daily-activities';
 
@@ -160,44 +161,64 @@ export default function KegiatanKaryawanHariIniPage() {
               ))}
             </Accordion>
             
-            <div className="print-only space-y-6">
-                {filteredReports.map((report) => (
-                    <div key={report.userId} className="p-4 border rounded-lg break-inside-avoid">
-                        <div className="border-b pb-2 mb-2">
-                            <h3 className="text-lg font-bold">{report.username}</h3>
-                            <p className="text-sm text-muted-foreground">NIK: {report.nik}</p>
-                        </div>
-                        <div className="space-y-3 text-sm">
-                            <div>
-                                <h4 className="font-semibold">Sesi Pagi</h4>
-                                {report.pagi?.timestamp ? (
-                                    <div className="pl-2">
-                                        <p className="text-xs text-muted-foreground">Dilaporkan pada: {format(new Date(report.pagi.timestamp), "HH:mm 'WIB'", { locale: id })}</p>
-                                        <p className="whitespace-pre-wrap">{report.pagi.text}</p>
-                                    </div>
-                                ) : <p className="text-sm text-muted-foreground italic pl-2">Belum ada laporan.</p>}
-                            </div>
-                             <div>
-                                <h4 className="font-semibold">Sesi Siang</h4>
-                                {report.siang?.timestamp ? (
-                                    <div className="pl-2">
-                                        <p className="text-xs text-muted-foreground">Dilaporkan pada: {format(new Date(report.siang.timestamp), "HH:mm 'WIB'", { locale: id })}</p>
-                                        <p className="whitespace-pre-wrap">{report.siang.text}</p>
-                                    </div>
-                                ) : <p className="text-sm text-muted-foreground italic pl-2">Belum ada laporan.</p>}
-                            </div>
-                             <div>
-                                <h4 className="font-semibold">Sesi Lembur</h4>
-                                {report.lembur?.timestamp ? (
-                                    <div className="pl-2">
-                                        <p className="text-xs text-muted-foreground">Dilaporkan pada: {format(new Date(report.lembur.timestamp), "HH:mm 'WIB'", { locale: id })}</p>
-                                        <p className="whitespace-pre-wrap">{report.lembur.text}</p>
-                                    </div>
-                                ) : <p className="text-sm text-muted-foreground italic pl-2">Belum ada laporan.</p>}
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            <div className="print-only">
+              <Table className="text-xs border">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40px] px-2 py-1 border font-bold text-black">No.</TableHead>
+                    <TableHead className="px-2 py-1 border font-bold text-black">Nama Karyawan</TableHead>
+                    <TableHead className="px-2 py-1 border font-bold text-black">NIK</TableHead>
+                    <TableHead className="w-[25%] px-2 py-1 border font-bold text-black">Kegiatan Pagi</TableHead>
+                    <TableHead className="w-[25%] px-2 py-1 border font-bold text-black">Kegiatan Siang</TableHead>
+                    <TableHead className="w-[25%] px-2 py-1 border font-bold text-black">Kegiatan Lembur</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredReports.map((report, index) => (
+                    <TableRow key={report.userId}>
+                      <TableCell className="text-center px-2 py-1 border">{index + 1}</TableCell>
+                      <TableCell className="px-2 py-1 border">{report.username}</TableCell>
+                      <TableCell className="px-2 py-1 border">{report.nik}</TableCell>
+                      <TableCell className="align-top px-2 py-1 border">
+                        {report.pagi?.timestamp ? (
+                          <>
+                            <p className="text-gray-600">
+                              {format(new Date(report.pagi.timestamp), "HH:mm", { locale: id })}
+                            </p>
+                            <p className="whitespace-pre-wrap">{report.pagi.text}</p>
+                          </>
+                        ) : (
+                          <span className="text-gray-500 italic">Belum ada laporan.</span>
+                        )}
+                      </TableCell>
+                       <TableCell className="align-top px-2 py-1 border">
+                        {report.siang?.timestamp ? (
+                          <>
+                            <p className="text-gray-600">
+                              {format(new Date(report.siang.timestamp), "HH:mm", { locale: id })}
+                            </p>
+                            <p className="whitespace-pre-wrap">{report.siang.text}</p>
+                          </>
+                        ) : (
+                          <span className="text-gray-500 italic">Belum ada laporan.</span>
+                        )}
+                      </TableCell>
+                       <TableCell className="align-top px-2 py-1 border">
+                        {report.lembur?.timestamp ? (
+                          <>
+                            <p className="text-gray-600">
+                              {format(new Date(report.lembur.timestamp), "HH:mm", { locale: id })}
+                            </p>
+                            <p className="whitespace-pre-wrap">{report.lembur.text}</p>
+                          </>
+                        ) : (
+                          <span className="text-gray-500 italic">Belum ada laporan.</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </>
         ) : (
