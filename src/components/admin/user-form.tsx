@@ -14,6 +14,7 @@ import { userRoles, type User, userLocations } from '@/lib/types';
 const formSchema = z.object({
   username: z.string().min(3, { message: 'Username must be at least 3 characters long.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }).optional().or(z.literal('')),
+  nik: z.string().optional().or(z.literal('')),
   role: z.enum(userRoles),
   location: z.enum(userLocations),
 });
@@ -35,10 +36,13 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
     defaultValues: {
       username: '',
       password: '',
+      nik: '',
       role: 'operator',
       location: 'BP PEKANBARU',
     },
   });
+
+  const role = form.watch('role');
 
   useEffect(() => {
     if (userToEdit) {
@@ -47,11 +51,13 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
         password: '', // Don't pre-fill password
         role: userToEdit.role,
         location: userToEdit.location || 'BP PEKANBARU',
+        nik: userToEdit.nik || '',
       });
     } else {
       form.reset({
         username: '',
         password: '',
+        nik: '',
         role: 'operator',
         location: 'BP PEKANBARU',
       });
@@ -129,6 +135,21 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
             </FormItem>
           )}
         />
+        {role === 'karyawan' && (
+          <FormField
+            control={form.control}
+            name="nik"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>NIK Karyawan</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., K00123" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="location"

@@ -60,6 +60,7 @@ export interface User {
   password?: string;
   role: UserRole;
   location?: UserLocation;
+  nik?: string;
 }
 
 export interface JobMixFormula {

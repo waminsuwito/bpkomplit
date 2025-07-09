@@ -18,11 +18,14 @@ export default function SuperAdminPage() {
   const { toast } = useToast();
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
+    const isKaryawan = data.role === 'karyawan';
+    
     if (userId) { // Update existing user
       const userDataToUpdate: Partial<User> = {
         username: data.username,
         role: data.role as UserRole,
         location: data.location as UserLocation,
+        nik: isKaryawan ? data.nik : undefined,
       };
       if (data.password) {
         userDataToUpdate.password = data.password;
@@ -43,6 +46,7 @@ export default function SuperAdminPage() {
         password: data.password,
         role: data.role as UserRole,
         location: data.location as UserLocation,
+        nik: isKaryawan ? data.nik : undefined,
       };
       addUser(newUser);
       setUsers(getUsers()); // Re-fetch from storage

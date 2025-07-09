@@ -65,6 +65,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
         <TableHeader>
           <TableRow>
             <TableHead>Username</TableHead>
+            <TableHead>NIK</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Location</TableHead>
             <TableHead className="text-center">Actions</TableHead>
@@ -74,6 +75,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.username}</TableCell>
+              <TableCell>{user.nik || 'N/A'}</TableCell>
               <TableCell>
                 <Badge variant={roleVariantMap[user.role] || 'default'}>{formatRoleName(user.role)}</Badge>
               </TableCell>
