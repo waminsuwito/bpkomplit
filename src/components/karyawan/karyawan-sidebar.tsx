@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck } from 'lucide-react';
+import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck, Construction } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
@@ -31,6 +31,15 @@ export function KaryawanSidebar() {
           href: '/karyawan/checklist-harian-tm',
           label: 'Checklist Harian TM',
           icon: ClipboardCheck,
+      });
+  }
+
+  // Conditionally insert the management item for the correct user role
+  if (user?.jabatan === 'KEPALA MEKANIK') {
+      navItems.splice(1, 0, {
+          href: '/karyawan/manajemen-alat',
+          label: 'Manajemen Alat',
+          icon: Construction,
       });
   }
 
