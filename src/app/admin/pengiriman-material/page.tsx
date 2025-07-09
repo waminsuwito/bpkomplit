@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Truck, Trash2 } from 'lucide-react';
+import { Truck, Trash2, Printer } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -27,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { printElement } from '@/lib/utils';
 
 const MATERIAL_KELUAR_STORAGE_KEY = 'app-material-keluar';
 const materialOptions = ["Batu", "Pasir", "Semen", "Obat Beton"];
@@ -130,7 +132,7 @@ export default function PengirimanMaterialPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="no-print">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Truck className="h-6 w-6 text-primary" />
@@ -216,12 +218,22 @@ export default function PengirimanMaterialPage() {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card id="print-content">
         <CardHeader>
-          <CardTitle>Riwayat Pengiriman Material</CardTitle>
-          <CardDescription>
-            Daftar material yang telah dikirim.
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Riwayat Pengiriman Material</CardTitle>
+              <CardDescription>
+                Daftar material yang telah dikirim.
+              </CardDescription>
+            </div>
+            <Button onClick={() => printElement('print-content')} className="no-print">
+              <Printer className="mr-2 h-4 w-4" /> Cetak
+            </Button>
+          </div>
+          <div className="print-only mb-6 text-center">
+            <h1 className="text-xl font-bold">Riwayat Pengiriman Material</h1>
+          </div>
         </CardHeader>
         <CardContent>
           {daftarMaterialKeluar.length > 0 ? (
@@ -236,7 +248,7 @@ export default function PengirimanMaterialPage() {
                             <TableHead>Volume</TableHead>
                             <TableHead>Alamat</TableHead>
                             <TableHead>Keterangan</TableHead>
-                            <TableHead className="text-center">Aksi</TableHead>
+                            <TableHead className="text-center no-print">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -249,7 +261,7 @@ export default function PengirimanMaterialPage() {
                                 <TableCell>{item.volume}</TableCell>
                                 <TableCell>{item.alamatPengiriman}</TableCell>
                                 <TableCell>{item.keterangan}</TableCell>
-                                <TableCell className="text-center">
+                                <TableCell className="text-center no-print">
                                     <Button variant="destructive" size="icon" onClick={() => handleDeleteItem(item.id)}>
                                         <Trash2 className="h-4 w-4" />
                                         <span className="sr-only">Hapus</span>

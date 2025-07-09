@@ -44,6 +44,9 @@ export function printElement(elementId: string) {
         .print-only {
           display: block !important;
         }
+        .break-inside-avoid {
+          break-inside: avoid;
+        }
         body::after {
           content: "PT FARIKA RIAU PERKASA";
           position: fixed;

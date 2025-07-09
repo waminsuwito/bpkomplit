@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Anchor, Trash2, CheckCircle, Coffee, Play } from 'lucide-react';
+import { Anchor, Trash2, CheckCircle, Coffee, Play, Printer } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, printElement } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -273,7 +273,7 @@ export default function BongkarMaterialPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="no-print">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Anchor className="h-6 w-6 text-primary" />
@@ -317,12 +317,22 @@ export default function BongkarMaterialPage() {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card id="print-content">
         <CardHeader>
-          <CardTitle>Riwayat Bongkar Material</CardTitle>
-          <CardDescription>
-            Daftar aktivitas bongkar material yang sedang berjalan dan yang sudah selesai.
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Riwayat Bongkar Material</CardTitle>
+              <CardDescription>
+                Daftar aktivitas bongkar material yang sedang berjalan dan yang sudah selesai.
+              </CardDescription>
+            </div>
+            <Button onClick={() => printElement('print-content')} className="no-print">
+              <Printer className="mr-2 h-4 w-4" /> Cetak
+            </Button>
+          </div>
+          <div className="print-only mb-6 text-center">
+            <h1 className="text-xl font-bold">Riwayat Bongkar Material</h1>
+          </div>
         </CardHeader>
         <CardContent>
           {daftarBongkar.length > 0 ? (
@@ -341,7 +351,7 @@ export default function BongkarMaterialPage() {
                             <TableHead>Lama Bongkar</TableHead>
                             <TableHead>Rata-rata /jam</TableHead>
                             <TableHead>Keterangan</TableHead>
-                            <TableHead className="text-center">Aksi</TableHead>
+                            <TableHead className="text-center no-print">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -373,7 +383,7 @@ export default function BongkarMaterialPage() {
                                     <TableCell>{lamaBongkar}</TableCell>
                                     <TableCell>{rataRata}</TableCell>
                                     <TableCell>{item.keterangan}</TableCell>
-                                    <TableCell className="text-center space-x-2">
+                                    <TableCell className="text-center space-x-2 no-print">
                                         {item.status === 'Belum Dimulai' && (
                                         <Button variant="default" size="sm" onClick={() => handleMulaiProses(item.id)}>
                                             <Play className="h-4 w-4 mr-2" />

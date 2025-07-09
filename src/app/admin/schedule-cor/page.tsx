@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CalendarCheck, PlusCircle, Trash2, Calendar as CalendarIcon } from 'lucide-react';
+import { CalendarCheck, PlusCircle, Trash2, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -32,7 +33,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import type { Schedule } from '@/lib/types';
 import { getSchedules, saveSchedules } from '@/lib/schedule';
-import { cn } from '@/lib/utils';
+import { cn, printElement } from '@/lib/utils';
 
 
 const initialFormState = {
@@ -97,7 +98,7 @@ export default function ScheduleCorPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="no-print">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PlusCircle className="h-6 w-6 text-primary" />
@@ -210,15 +211,26 @@ export default function ScheduleCorPage() {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card id="print-content">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarCheck className="h-6 w-6 text-primary" />
-            Daftar Schedule Cor untuk {date ? format(date, 'd MMMM yyyy') : '...' }
-          </CardTitle>
-          <CardDescription>
-            Lihat dan kelola semua jadwal pengecoran untuk tanggal yang dipilih.
-          </CardDescription>
+          <div className="flex justify-between items-center no-print">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarCheck className="h-6 w-6 text-primary" />
+                Daftar Schedule Cor untuk {date ? format(date, 'd MMMM yyyy') : '...' }
+              </CardTitle>
+              <CardDescription>
+                Lihat dan kelola semua jadwal pengecoran untuk tanggal yang dipilih.
+              </CardDescription>
+            </div>
+            <Button onClick={() => printElement('print-content')}>
+              <Printer className="mr-2 h-4 w-4" /> Cetak
+            </Button>
+          </div>
+          <div className="print-only mb-6 text-center">
+            <h1 className="text-xl font-bold">Daftar Schedule Cor</h1>
+            <p className="text-sm">Tanggal: {date ? format(date, 'd MMMM yyyy') : '...'}</p>
+          </div>
         </CardHeader>
         <CardContent>
           {todaysSchedules.length > 0 ? (
@@ -232,7 +244,7 @@ export default function ScheduleCorPage() {
                             <TableHead>Slump (cm)</TableHead>
                             <TableHead>Volume (M³)</TableHead>
                             <TableHead>Media Cor</TableHead>
-                            <TableHead className="text-center">Aksi</TableHead>
+                            <TableHead className="text-center no-print">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -244,7 +256,7 @@ export default function ScheduleCorPage() {
                                 <TableCell>{schedule.slump}</TableCell>
                                 <TableCell>{schedule.volume}</TableCell>
                                 <TableCell>{schedule.mediaCor}</TableCell>
-                                <TableCell className="text-center">
+                                <TableCell className="text-center no-print">
                                     <Button variant="destructive" size="icon" onClick={() => handleDeleteSchedule(schedule.id)}>
                                         <Trash2 className="h-4 w-4" />
                                         <span className="sr-only">Hapus</span>
