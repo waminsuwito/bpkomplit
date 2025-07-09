@@ -76,9 +76,12 @@ export default function AbsensiHarianKaryawanPage() {
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
-      
-      const isClockInTime = (hours === 0 && minutes >= 30) || (hours > 0 && hours < 17) || (hours === 17 && minutes < 5);
-      const isClockOutTime = (hours === 17 && minutes >= 5) || (hours > 17 && hours <= 23 && (hours !== 23 || minutes <= 55));
+      const currentTime = hours * 100 + minutes;
+
+      // Clock in from 00:30 to 17:04
+      const isClockInTime = currentTime >= 30 && currentTime <= 1704;
+      // Clock out from 17:05 to 23:55
+      const isClockOutTime = currentTime >= 1705 && currentTime <= 2355;
       
       setPersonalAttendanceRecord(prevRecord => {
         if (prevRecord?.clockOut) {
