@@ -11,6 +11,7 @@ import { MessageSquareWarning, Trash2, Inbox, User, MapPin } from 'lucide-react'
 import type { Complaint } from '@/lib/types';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useAuth } from '@/context/auth-provider';
 
 const COMPLAINTS_KEY = 'app-complaints';
 const complaintsUpdatedEvent = new Event('complaintsUpdated');
@@ -18,13 +19,20 @@ const complaintsUpdatedEvent = new Event('complaintsUpdated');
 export default function KomplainKaryawanPage() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadComplaints = () => {
+        if (!user) return;
         try {
           const storedData = localStorage.getItem(COMPLAINTS_KEY);
           if (storedData) {
-            const parsed: Complaint[] = JSON.parse(storedData);
+            let parsed: Complaint[] = JSON.parse(storedData);
+
+            if (user.role !== 'super_admin') {
+                parsed = parsed.filter(item => item.location === user.location);
+            }
+
             parsed.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setComplaints(parsed);
           }
@@ -35,33 +43,45 @@ export default function KomplainKaryawanPage() {
     };
     loadComplaints();
 
-    window.addEventListener('storage', (e) => {
-        if (e.key === COMPLAINTS_KEY) loadComplaints();
-    });
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === COMPLAINTS_KEY) loadComplaints();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('complaintsUpdated', loadComplaints);
     
     return () => {
-        window.removeEventListener('storage', (e) => {
-            if (e.key === COMPLAINTS_KEY) loadComplaints();
-        });
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('complaintsUpdated', loadComplaints);
     }
 
-  }, [toast]);
-
-  const updateComplaints = (updated: Complaint[]) => {
-    setComplaints(updated);
-    localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(updated));
-    window.dispatchEvent(complaintsUpdatedEvent);
-  };
+  }, [toast, user]);
 
   const handleMarkAsRead = (id: string) => {
-    const updated = complaints.map(r => r.id === id ? { ...r, status: 'read' as const } : r);
-    updateComplaints(updated);
+    try {
+        const storedData = localStorage.getItem(COMPLAINTS_KEY);
+        const allItems: Complaint[] = storedData ? JSON.parse(storedData) : [];
+        const updated = allItems.map(r => r.id === id ? { ...r, status: 'read' as const } : r);
+        localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(updated));
+        window.dispatchEvent(complaintsUpdatedEvent);
+    } catch (error) {
+        console.error("Failed to update complaint status", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal memperbarui status komplain.' });
+    }
   };
 
   const handleDelete = (id: string) => {
-    const updated = complaints.filter(r => r.id !== id);
-    updateComplaints(updated);
-    toast({ variant: 'destructive', title: 'Dihapus', description: 'Komplain telah dihapus.' });
+    try {
+        const storedData = localStorage.getItem(COMPLAINTS_KEY);
+        const allItems: Complaint[] = storedData ? JSON.parse(storedData) : [];
+        const updated = allItems.filter(r => r.id !== id);
+        localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(updated));
+        window.dispatchEvent(complaintsUpdatedEvent);
+        toast({ variant: 'destructive', title: 'Dihapus', description: 'Komplain telah dihapus.' });
+    } catch (error) {
+        console.error("Failed to delete complaint", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal menghapus komplain.' });
+    }
   };
 
   return (
@@ -130,7 +150,7 @@ export default function KomplainKaryawanPage() {
           <div className="text-center text-muted-foreground py-16">
             <Inbox className="mx-auto h-12 w-12" />
             <h3 className="mt-4 text-lg font-semibold">Tidak Ada Komplain</h3>
-            <p className="mt-1 text-sm">Belum ada komplain yang diterima dari karyawan.</p>
+            <p className="mt-1 text-sm">Belum ada komplain yang diterima dari karyawan di lokasi Anda.</p>
           </div>
         )}
       </CardContent>

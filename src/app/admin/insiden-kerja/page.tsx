@@ -12,6 +12,7 @@ import type { AccidentReport } from '@/lib/types';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import Image from 'next/image';
+import { useAuth } from '@/context/auth-provider';
 
 const ACCIDENT_REPORTS_KEY = 'app-accident-reports';
 const reportsUpdatedEvent = new Event('accidentReportsUpdated'); // Can be used for notifications
@@ -19,13 +20,20 @@ const reportsUpdatedEvent = new Event('accidentReportsUpdated'); // Can be used 
 export default function InsidenKerjaPage() {
   const [reports, setReports] = useState<AccidentReport[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadReports = () => {
+        if (!user) return;
         try {
           const storedData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
           if (storedData) {
-            const parsedReports: AccidentReport[] = JSON.parse(storedData);
+            let parsedReports: AccidentReport[] = JSON.parse(storedData);
+            
+            if (user.role !== 'super_admin') {
+                parsedReports = parsedReports.filter(report => report.location === user.location);
+            }
+            
             parsedReports.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setReports(parsedReports);
           }
@@ -36,39 +44,48 @@ export default function InsidenKerjaPage() {
     };
     loadReports();
 
-    // Listen for changes from other tabs
-    window.addEventListener('storage', (e) => {
+    const handleStorageChange = (e: StorageEvent) => {
         if (e.key === ACCIDENT_REPORTS_KEY) {
             loadReports();
         }
-    });
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('accidentReportsUpdated', loadReports);
     
     return () => {
-        window.removeEventListener('storage', (e) => {
-            if (e.key === ACCIDENT_REPORTS_KEY) {
-                loadReports();
-            }
-        });
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('accidentReportsUpdated', loadReports);
     }
 
-  }, [toast]);
-
-  const updateReports = (updatedReports: AccidentReport[]) => {
-    setReports(updatedReports);
-    localStorage.setItem(ACCIDENT_REPORTS_KEY, JSON.stringify(updatedReports));
-    window.dispatchEvent(reportsUpdatedEvent);
-  };
+  }, [toast, user]);
 
   const handleMarkAsReviewed = (id: string) => {
-    const updatedReports = reports.map(r => r.id === id ? { ...r, status: 'reviewed' as const } : r);
-    updateReports(updatedReports);
-    toast({ title: 'Ditandai', description: 'Laporan telah ditandai sebagai sudah ditinjau.' });
+    try {
+        const storedData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
+        const allReports: AccidentReport[] = storedData ? JSON.parse(storedData) : [];
+        const updatedReports = allReports.map(r => r.id === id ? { ...r, status: 'reviewed' as const } : r);
+        localStorage.setItem(ACCIDENT_REPORTS_KEY, JSON.stringify(updatedReports));
+        window.dispatchEvent(reportsUpdatedEvent);
+        toast({ title: 'Ditandai', description: 'Laporan telah ditandai sebagai sudah ditinjau.' });
+    } catch (error) {
+        console.error("Failed to mark report as reviewed", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal memperbarui status laporan.' });
+    }
   };
 
   const handleDelete = (id: string) => {
-    const updatedReports = reports.filter(r => r.id !== id);
-    updateReports(updatedReports);
-    toast({ variant: 'destructive', title: 'Dihapus', description: 'Laporan insiden telah dihapus.' });
+    try {
+        const storedData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
+        const allReports: AccidentReport[] = storedData ? JSON.parse(storedData) : [];
+        const updatedReports = allReports.filter(r => r.id !== id);
+        localStorage.setItem(ACCIDENT_REPORTS_KEY, JSON.stringify(updatedReports));
+        window.dispatchEvent(reportsUpdatedEvent);
+        toast({ variant: 'destructive', title: 'Dihapus', description: 'Laporan insiden telah dihapus.' });
+    } catch (error) {
+        console.error("Failed to delete report", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal menghapus laporan.' });
+    }
   };
 
   return (
@@ -161,7 +178,7 @@ export default function InsidenKerjaPage() {
           <div className="text-center text-muted-foreground py-16">
             <Inbox className="mx-auto h-12 w-12" />
             <h3 className="mt-4 text-lg font-semibold">Tidak Ada Laporan</h3>
-            <p className="mt-1 text-sm">Belum ada laporan insiden kerja yang diterima.</p>
+            <p className="mt-1 text-sm">Belum ada laporan insiden kerja yang diterima di lokasi Anda.</p>
           </div>
         )}
       </CardContent>

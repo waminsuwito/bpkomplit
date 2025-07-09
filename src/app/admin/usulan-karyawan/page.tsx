@@ -11,6 +11,7 @@ import { Lightbulb, Trash2, Inbox, User, MapPin, Clock } from 'lucide-react';
 import type { Suggestion } from '@/lib/types';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useAuth } from '@/context/auth-provider';
 
 const SUGGESTIONS_KEY = 'app-suggestions';
 const suggestionsUpdatedEvent = new Event('suggestionsUpdated');
@@ -18,13 +19,20 @@ const suggestionsUpdatedEvent = new Event('suggestionsUpdated');
 export default function UsulanKaryawanPage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadSuggestions = () => {
+        if (!user) return;
         try {
           const storedData = localStorage.getItem(SUGGESTIONS_KEY);
           if (storedData) {
-            const parsed: Suggestion[] = JSON.parse(storedData);
+            let parsed: Suggestion[] = JSON.parse(storedData);
+
+            if (user.role !== 'super_admin') {
+                parsed = parsed.filter(item => item.location === user.location);
+            }
+
             parsed.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setSuggestions(parsed);
           }
@@ -35,33 +43,45 @@ export default function UsulanKaryawanPage() {
     };
     loadSuggestions();
 
-    window.addEventListener('storage', (e) => {
-        if (e.key === SUGGESTIONS_KEY) loadSuggestions();
-    });
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === SUGGESTIONS_KEY) loadSuggestions();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('suggestionsUpdated', loadSuggestions);
     
     return () => {
-        window.removeEventListener('storage', (e) => {
-            if (e.key === SUGGESTIONS_KEY) loadSuggestions();
-        });
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('suggestionsUpdated', loadSuggestions);
     }
 
-  }, [toast]);
-
-  const updateSuggestions = (updated: Suggestion[]) => {
-    setSuggestions(updated);
-    localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(updated));
-    window.dispatchEvent(suggestionsUpdatedEvent);
-  };
+  }, [toast, user]);
 
   const handleMarkAsRead = (id: string) => {
-    const updated = suggestions.map(r => r.id === id ? { ...r, status: 'read' as const } : r);
-    updateSuggestions(updated);
+    try {
+        const storedData = localStorage.getItem(SUGGESTIONS_KEY);
+        const allItems: Suggestion[] = storedData ? JSON.parse(storedData) : [];
+        const updated = allItems.map(r => r.id === id ? { ...r, status: 'read' as const } : r);
+        localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(updated));
+        window.dispatchEvent(suggestionsUpdatedEvent);
+    } catch (error) {
+        console.error("Failed to update suggestion status", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal memperbarui status usulan.' });
+    }
   };
 
   const handleDelete = (id: string) => {
-    const updated = suggestions.filter(r => r.id !== id);
-    updateSuggestions(updated);
-    toast({ variant: 'destructive', title: 'Dihapus', description: 'Usulan telah dihapus.' });
+    try {
+        const storedData = localStorage.getItem(SUGGESTIONS_KEY);
+        const allItems: Suggestion[] = storedData ? JSON.parse(storedData) : [];
+        const updated = allItems.filter(r => r.id !== id);
+        localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(updated));
+        window.dispatchEvent(suggestionsUpdatedEvent);
+        toast({ variant: 'destructive', title: 'Dihapus', description: 'Usulan telah dihapus.' });
+    } catch (error) {
+        console.error("Failed to delete suggestion", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Gagal menghapus usulan.' });
+    }
   };
 
   return (
@@ -130,7 +150,7 @@ export default function UsulanKaryawanPage() {
           <div className="text-center text-muted-foreground py-16">
             <Inbox className="mx-auto h-12 w-12" />
             <h3 className="mt-4 text-lg font-semibold">Tidak Ada Usulan</h3>
-            <p className="mt-1 text-sm">Belum ada usulan yang diterima dari karyawan.</p>
+            <p className="mt-1 text-sm">Belum ada usulan yang diterima dari karyawan di lokasi Anda.</p>
           </div>
         )}
       </CardContent>
