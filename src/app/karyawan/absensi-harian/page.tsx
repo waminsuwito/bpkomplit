@@ -78,21 +78,21 @@ export default function AbsensiHarianKaryawanPage() {
       const minutes = now.getMinutes();
       const currentTime = hours * 100 + minutes;
 
-      // Clock in from 00:30 to 17:04
-      const isClockInTime = currentTime >= 30 && currentTime <= 1704;
-      // Clock out from 17:05 to 23:55
+      // Clock in is allowed from 00:30 until clock out time begins (17:05).
+      const isClockInTime = currentTime >= 30 && currentTime < 1705;
+      // Clock out is from 17:05 to 23:55.
       const isClockOutTime = currentTime >= 1705 && currentTime <= 2355;
       
-      setPersonalAttendanceRecord(prevRecord => {
-        if (prevRecord?.clockOut) {
-          setCurrentAction('none');
-        } else if (prevRecord?.clockIn) {
-          setCurrentAction(isClockOutTime ? 'clockOut' : 'none');
-        } else {
-          setCurrentAction(isClockInTime ? 'clockIn' : 'none');
-        }
-        return prevRecord;
-      });
+      if (personalAttendanceRecord?.clockOut) {
+        // Already clocked out for the day, no further actions.
+        setCurrentAction('none');
+      } else if (personalAttendanceRecord?.clockIn) {
+        // Has clocked in, check if it's time to clock out.
+        setCurrentAction(isClockOutTime ? 'clockOut' : 'none');
+      } else {
+        // Has not clocked in, check if it's time to clock in.
+        setCurrentAction(isClockInTime ? 'clockIn' : 'none');
+      }
     };
 
     updateAction();
