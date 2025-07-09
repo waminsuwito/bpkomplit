@@ -29,11 +29,12 @@ export default function LoginPage() {
         toast({ title: 'Login Successful', description: `Welcome, ${user.username}!` });
         login(user);
       } else {
-        setError('Invalid username or password.');
+        const errorMessage = 'Username, NIK, atau password salah.';
+        setError(errorMessage);
         toast({
           variant: 'destructive',
-          title: 'Login Failed',
-          description: 'Invalid username or password.',
+          title: 'Login Gagal',
+          description: errorMessage,
         });
         setIsVerifying(false);
       }
@@ -69,11 +70,11 @@ export default function LoginPage() {
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Username atau NIK</Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="Enter your username"
+                placeholder="Masukkan username atau NIK"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required

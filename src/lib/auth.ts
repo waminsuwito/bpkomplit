@@ -6,13 +6,13 @@ const USERS_STORAGE_KEY = 'app-users';
 
 // The default users to seed localStorage with if it's empty.
 const initialUsers: User[] = [
-  { id: 'superadmin-main', username: 'admin', password: 'admin', role: 'super_admin', location: 'BP PEKANBARU' },
-  { id: 'op-1', username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU' },
-  { id: 'op-2', username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI' },
-  { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG' },
-  { id: 'head-1', username: 'supervisor', password: 'password', role: 'supervisor', location: 'BP IKN' },
-  { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU' },
-  { id: 'hse-1', username: 'hse', password: 'hse', role: 'hse_hrd_lokasi', location: 'BP PEKANBARU' },
+  { id: 'superadmin-main', username: 'admin', password: 'admin', role: 'super_admin', location: 'BP PEKANBARU', nik: 'SUPER-001' },
+  { id: 'op-1', username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU', nik: 'OP-001' },
+  { id: 'op-2', username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI', nik: 'OP-002' },
+  { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG', nik: 'MECH-001' },
+  { id: 'head-1', username: 'supervisor', password: 'password', role: 'supervisor', location: 'BP IKN', nik: 'SUP-001' },
+  { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU', nik: 'LAB-001' },
+  { id: 'hse-1', username: 'hse', password: 'hse', role: 'hse_hrd_lokasi', location: 'BP PEKANBARU', nik: 'HSE-001' },
   { id: 'karyawan-1', username: 'karyawan', password: 'karyawan', role: 'karyawan', location: 'BP PEKANBARU', nik: 'K001' },
 ];
 
@@ -50,11 +50,13 @@ export function saveUsers(users: User[]): void {
   }
 }
 
-export function verifyLogin(username: string, password: string): Promise<Omit<User, 'password'> | null> {
+export function verifyLogin(usernameOrNik: string, password: string): Promise<Omit<User, 'password'> | null> {
   return new Promise((resolve) => {
-    const users = getUsers(); // Ensures seeding happens if needed
+    const users = getUsers();
     const user = users.find(
-      (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+      (u) =>
+        (u.username.toLowerCase() === usernameOrNik.toLowerCase() || (u.nik && u.nik.toLowerCase() === usernameOrNik.toLowerCase())) &&
+        u.password === password
     );
 
     if (user) {
