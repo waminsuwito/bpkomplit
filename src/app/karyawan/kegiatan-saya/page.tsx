@@ -93,7 +93,7 @@ export default function KegiatanSayaPage() {
 
       if (currentTime >= 730 && currentTime < 1200) {
         setCurrentSession('pagi');
-      } else if (currentTime >= 1300 && currentTime < 1700) {
+      } else if (currentTime >= 1300 && currentTime < 2200) {
         setCurrentSession('siang');
       } else if (currentTime >= 2200 || currentTime < 400) {
         setCurrentSession('lembur');
@@ -333,7 +333,7 @@ export default function KegiatanSayaPage() {
             <Info className="h-4 w-4" />
             <AlertTitle>Petunjuk</AlertTitle>
             <AlertDescription>
-              Isi laporan kegiatan pagi antara pukul 07:30 - 12:00, kegiatan siang antara pukul 13:00 - 17:00, dan kegiatan lembur antara pukul 22:00 - 04:00.
+              Isi laporan kegiatan pagi antara pukul 07:30 - 12:00, kegiatan siang antara pukul 13:00 - 21:59, dan kegiatan lembur antara pukul 22:00 - 04:00.
             </AlertDescription>
           </Alert>
         </CardHeader>
