@@ -33,6 +33,7 @@ export const userRoles = [
   "super_admin",
   "admin_lokasi",
   "operator",
+  "jabatan",
   "logistik_spareparts",
   "mekanik",
   "supervisor",
