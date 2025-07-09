@@ -24,6 +24,9 @@ import {
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
+import { useState, useEffect } from 'react';
+import type { AnonymousReport } from '@/lib/types';
+
 
 const superAdminNav = [
   { href: '/admin/super-admin', label: 'User Management', icon: Shield },
@@ -54,9 +57,53 @@ const hseHrdNav = [
   { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 
+const ANONYMOUS_REPORTS_KEY = 'app-anonymous-reports';
+
 export function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [hasUnreadReports, setHasUnreadReports] = useState(false);
+
+  useEffect(() => {
+    if (user?.role !== 'super_admin') return;
+
+    const checkUnread = () => {
+      try {
+        const storedData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
+        if (storedData) {
+          const reports: AnonymousReport[] = JSON.parse(storedData);
+          const unread = reports.some(r => r.status === 'new');
+          setHasUnreadReports(unread);
+        } else {
+          setHasUnreadReports(false);
+        }
+      } catch (error) {
+        console.error("Failed to check for unread reports", error);
+        setHasUnreadReports(false);
+      }
+    };
+
+    checkUnread();
+    
+    // Check for changes in local storage. This is more efficient than polling.
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === ANONYMOUS_REPORTS_KEY) {
+        checkUnread();
+      }
+    };
+
+    // Also listen for custom events for when a report is marked as read
+    const handleReportsUpdated = () => checkUnread();
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('reportsUpdated', handleReportsUpdated);
+
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('reportsUpdated', handleReportsUpdated);
+    };
+  }, [user]);
 
   let navItems = [];
   if (user?.role === 'super_admin') {
@@ -81,11 +128,17 @@ export function AdminSidebar() {
               buttonVariants({
                 variant: pathname.startsWith(item.href) ? 'default' : 'ghost',
               }),
-              'justify-start'
+              'justify-start relative'
             )}
           >
             <item.icon className="mr-2 h-4 w-4" />
-            {item.label}
+            <span>{item.label}</span>
+            {item.href === '/admin/pesan-anonim' && hasUnreadReports && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
           </Link>
         ))}
       </nav>

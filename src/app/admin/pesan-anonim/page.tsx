@@ -15,6 +15,9 @@ import Image from 'next/image';
 
 const ANONYMOUS_REPORTS_KEY = 'app-anonymous-reports';
 
+// Custom event to notify other components (like the sidebar) of changes
+const reportsUpdatedEvent = new Event('reportsUpdated');
+
 export default function PesanAnonimPage() {
   const [reports, setReports] = useState<AnonymousReport[]>([]);
   const { toast } = useToast();
@@ -37,6 +40,7 @@ export default function PesanAnonimPage() {
   const updateReports = (updatedReports: AnonymousReport[]) => {
     setReports(updatedReports);
     localStorage.setItem(ANONYMOUS_REPORTS_KEY, JSON.stringify(updatedReports));
+    window.dispatchEvent(reportsUpdatedEvent);
   };
 
   const handleMarkAsRead = (id: string) => {
@@ -67,7 +71,13 @@ export default function PesanAnonimPage() {
           <Accordion type="multiple" className="w-full">
             {reports.map((report) => (
               <AccordionItem key={report.id} value={report.id}>
-                <AccordionTrigger>
+                <AccordionTrigger
+                  onClick={() => {
+                    if (report.status === 'new') {
+                      handleMarkAsRead(report.id);
+                    }
+                  }}
+                >
                   <div className="flex items-center justify-between w-full pr-4">
                     <div className="flex items-center gap-2">
                       <Badge variant={report.status === 'new' ? 'destructive' : 'secondary'}>
@@ -99,12 +109,6 @@ export default function PesanAnonimPage() {
                     </div>
                   )}
                   <div className="flex justify-end gap-2 pt-2">
-                    {report.status === 'new' && (
-                       <Button variant="outline" size="sm" onClick={() => handleMarkAsRead(report.id)}>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Tandai Sudah Dibaca
-                      </Button>
-                    )}
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(report.id)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Hapus Laporan
