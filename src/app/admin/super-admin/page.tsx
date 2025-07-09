@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -18,6 +17,20 @@ export default function SuperAdminPage() {
   const { toast } = useToast();
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
+    const allUsers = getUsers();
+    const nikExists = allUsers.some(
+      (user) => user.nik === data.nik && user.id !== userId
+    );
+
+    if (nikExists) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan',
+        description: `NIK "${data.nik}" sudah digunakan oleh pengguna lain.`,
+      });
+      return;
+    }
+    
     if (userId) { // Update existing user
       const userDataToUpdate: Partial<User> = {
         username: data.username,
@@ -31,6 +44,7 @@ export default function SuperAdminPage() {
       }
       updateUser(userId, userDataToUpdate);
       setUsers(getUsers()); // Re-fetch from storage to reflect changes
+      toast({ title: 'User Updated', description: `User "${data.username}" has been updated.` });
     } else { // Add new user
        if (!data.password) {
         toast({
@@ -50,6 +64,7 @@ export default function SuperAdminPage() {
       };
       addUser(newUser);
       setUsers(getUsers()); // Re-fetch from storage
+      toast({ title: 'User Created', description: `User "${data.username}" has been created.` });
     }
     setUserToEdit(null);
   };

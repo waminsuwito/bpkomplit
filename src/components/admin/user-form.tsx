@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { userRoles, type User, userLocations, jabatanOptions } from '@/lib/types';
 
 const formSchema = z.object({
@@ -30,7 +29,6 @@ interface UserFormProps {
 }
 
 export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
-  const { toast } = useToast();
   const isEditing = !!userToEdit;
 
   const form = useForm<UserFormValues>({
@@ -76,11 +74,6 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
     }
     
     onSave(values, userToEdit?.id || null);
-    
-    toast({
-      title: isEditing ? 'User Updated' : 'User Created',
-      description: `User "${values.username}" has been ${isEditing ? 'updated' : 'created'} successfully.`,
-    });
     
     if (!isEditing) {
       form.reset();
