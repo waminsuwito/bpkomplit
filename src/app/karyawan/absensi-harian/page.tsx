@@ -2,13 +2,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance } from '@/lib/utils';
-import { MapPin, Camera, Loader2, CheckCircle, XCircle, LogIn, LogOut } from 'lucide-react';
+import { MapPin, Camera, Loader2, CheckCircle, XCircle, LogIn, LogOut, Info, Bed, Coffee, ThumbsUp, AlertTriangle, PartyPopper, Timer } from 'lucide-react';
 import type { AttendanceLocation, GlobalAttendanceRecord, UserLocation } from '@/lib/types';
 import { useAuth } from '@/context/auth-provider';
 import { format } from 'date-fns';
@@ -41,6 +41,12 @@ export default function AbsensiHarianKaryawanPage() {
   
   const [personalAttendanceRecord, setPersonalAttendanceRecord] = useState<PersonalAttendanceRecord | null>(null);
   const [currentAction, setCurrentAction] = useState<AttendanceAction>('none');
+
+  const [descriptionContent, setDescriptionContent] = useState({
+    message: 'Pilih lokasi, aktifkan kamera, lalu lakukan absensi.',
+    variant: 'default' as 'default' | 'destructive',
+    icon: <Info className="h-5 w-5" />,
+  });
 
 
   useEffect(() => {
@@ -92,6 +98,79 @@ export default function AbsensiHarianKaryawanPage() {
     return () => clearInterval(timerId);
   }, [personalAttendanceRecord]);
 
+  useEffect(() => {
+    const getDynamicDescription = () => {
+      if (!user) {
+        return {
+          message: 'Pilih lokasi, aktifkan kamera, lalu lakukan absensi. Pastikan Anda berada dalam radius 50000 meter.',
+          variant: 'default' as const,
+          icon: <Info className="h-5 w-5" />,
+        };
+      }
+
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const userName = user.username;
+      const currentTime = hours * 100 + minutes;
+
+      if (currentAction === 'clockOut') {
+        return {
+          message: `Selamat sore/malam Sdr. ${userName}, terimakasih sudah melakukan pekerjaan anda hari ini, tetap semangat dan berusaha besok lebih baik lagi. Selamat istirahat, terimakasih.`,
+          variant: 'default' as const,
+          icon: <PartyPopper className="h-5 w-5 text-green-500" />,
+        };
+      }
+
+      if (currentAction === 'clockIn') {
+        if (currentTime >= 30 && currentTime <= 300) { // 00:30 - 03:00
+          return {
+            message: `Selamat pagi Sdr. ${userName}, kenapa absen masuk masih tengah malam begini? Baru selesai lemburkah? Atau habis begadang? Mohon dapat lebih disiplin waktu absen masuk. Terimakasih.`,
+            variant: 'destructive' as const,
+            icon: <Bed className="h-5 w-5" />,
+          };
+        }
+        if (currentTime > 300 && currentTime <= 600) { // 03:01 - 06:00
+          return {
+            message: `Selamat pagi Sdr. ${userName}, cepat sekali absen masuknya, habis lembur atau habis begadang? Semoga memang habis lembur ya. Ingat, begadang yang tidak perlu itu merusak badan. Jaga kesehatan, terimakasih.`,
+            variant: 'default' as const,
+            icon: <Coffee className="h-5 w-5 text-amber-600" />,
+          };
+        }
+        if (currentTime > 600 && currentTime <= 730) { // 06:01 - 07:30
+          return {
+            message: `Selamat pagi Sdr. ${userName}, terimakasih sudah absen tepat waktu. Selamat bekerja, jangan lupa berdo'a. Terimakasih.`,
+            variant: 'default' as const,
+            icon: <ThumbsUp className="h-5 w-5 text-green-500" />,
+          };
+        }
+        if (currentTime > 730 && currentTime < 1705) { // 07:31 - 17:04
+          return {
+            message: `Selamat pagi, siang, sore, Sdr. ${userName}, kedisiplinan Anda dalam absensi perlu diperbaiki. Tolong lain kali absen tepat waktu dan jangan terlambat. Terimakasih.`,
+            variant: 'destructive' as const,
+            icon: <AlertTriangle className="h-5 w-5" />,
+          };
+        }
+      }
+
+      return {
+        message: `Saat ini di luar jam absensi. Silakan kembali lagi nanti, ${userName}.`,
+        variant: 'default' as const,
+        icon: <Timer className="h-5 w-5" />,
+      };
+    };
+
+    const newDescription = getDynamicDescription();
+    setDescriptionContent(newDescription);
+    
+    const intervalId = setInterval(() => {
+        const updatedDescription = getDynamicDescription();
+        setDescriptionContent(updatedDescription);
+    }, 60000); // update every minute
+
+    return () => clearInterval(intervalId);
+  }, [user, currentAction]);
+
 
   const activateCamera = async () => {
     if (typeof navigator.mediaDevices?.getUserMedia !== 'function') {
@@ -130,15 +209,13 @@ export default function AbsensiHarianKaryawanPage() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
-        // Flip the image horizontally like a mirror to match the video preview
         context.translate(canvas.width, 0);
         context.scale(-1, 1);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Reset transform for next draw
         context.setTransform(1, 0, 0, 1, 0, 0);
 
-        return canvas.toDataURL('image/jpeg', 0.8); // 80% quality JPEG
+        return canvas.toDataURL('image/jpeg', 0.8);
       }
     }
     return null;
@@ -155,10 +232,8 @@ export default function AbsensiHarianKaryawanPage() {
       const userRecordIndex = allRecords.findIndex(r => r.nik === user.nik && r.date === today);
 
       if (userRecordIndex > -1) {
-        // Update existing record
         allRecords[userRecordIndex] = { ...allRecords[userRecordIndex], ...updateData };
       } else {
-        // Add new record
         const newRecord: GlobalAttendanceRecord = {
           nik: user.nik,
           nama: user.username,
@@ -308,11 +383,18 @@ export default function AbsensiHarianKaryawanPage() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Camera className="h-6 w-6 text-primary" />
-          Absensi Harian (Selfie)
+          Absensi
         </CardTitle>
-        <CardDescription>
-          Pilih lokasi, aktifkan kamera, lalu lakukan absensi. Pastikan Anda berada dalam radius 50000 meter.
-        </CardDescription>
+        <Alert variant={descriptionContent.variant} className="text-left [&>svg]:hidden">
+          <div className="flex items-start gap-3">
+              <div className="pt-0.5">{descriptionContent.icon}</div>
+              <div className="flex-1">
+                  <AlertDescription className="text-foreground/90">
+                      {descriptionContent.message}
+                  </AlertDescription>
+              </div>
+          </div>
+        </Alert>
       </CardHeader>
       <CardContent className="space-y-6">
         <canvas ref={canvasRef} className="hidden" />
