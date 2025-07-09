@@ -63,7 +63,7 @@ export default function LoginPage() {
           />
           <CardTitle className="text-2xl text-primary">PT. FARIKA RIAU PERKASA</CardTitle>
           <CardDescription>
-            Sistem Kontrol Otomatisasi Produksi Batching Plant
+            One Stop Concrete Solution
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>

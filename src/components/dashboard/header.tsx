@@ -62,7 +62,7 @@ export function Header() {
           />
           <div>
             <h1 className="text-2xl font-bold text-primary">PT. FARIKA RIAU PERKASA</h1>
-            <p className="text-sm text-muted-foreground">Sistem Kontrol Otomatisasi Produksi Batching Plant</p>
+            <p className="text-sm text-muted-foreground">One Stop Concrete Solution</p>
           </div>
         </div>
         {user && (

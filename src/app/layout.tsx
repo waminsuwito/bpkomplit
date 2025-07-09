@@ -5,11 +5,11 @@ import { AuthProvider } from '@/context/auth-provider';
 
 export const metadata: Metadata = {
   title: 'PT. FARIKA RIAU PERKASA',
-  description: 'Sistem Kontrol Otomatisasi Produksi Batching Plant',
+  description: 'One Stop Concrete Solution',
   authors: [{ name: 'Lovable' }],
   openGraph: {
     title: 'PT. FARIKA RIAU PERKASA',
-    description: 'Sistem Kontrol Otomatisasi Produksi Batching Plant',
+    description: 'One Stop Concrete Solution',
     type: 'website',
     images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
   },
