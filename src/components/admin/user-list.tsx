@@ -41,6 +41,7 @@ const roleVariantMap: Record<UserRole, 'default' | 'secondary' | 'destructive' |
     mekanik: 'outline',
     tukang_las: 'outline',
     hse_hrd_lokasi: 'secondary',
+    karyawan: 'outline',
 };
 
 export function UserList({ users, onEdit, onDelete }: UserListProps) {

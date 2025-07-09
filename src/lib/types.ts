@@ -39,6 +39,7 @@ export const userRoles = [
   "tukang_las",
   "logistik_material",
   "hse_hrd_lokasi",
+  "karyawan",
 ] as const;
 
 export type UserRole = (typeof userRoles)[number];

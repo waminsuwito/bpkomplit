@@ -24,7 +24,16 @@ export function AuthGuard({ children, requiredRoles }: { children: React.ReactNo
     // Check if the route requires specific roles
     if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
       // User is logged in but doesn't have the required role. Redirect them.
-      router.replace('/dashboard');
+      // Check if they are an admin type trying to access non-admin pages or vice versa
+      const isAdminType = user.role === 'super_admin' || user.role === 'admin_lokasi' || user.role === 'logistik_material' || user.role === 'hse_hrd_lokasi';
+      if (isAdminType) {
+        router.replace('/admin');
+      } else if (user.role === 'karyawan') {
+        router.replace('/karyawan');
+      }
+      else {
+        router.replace('/dashboard');
+      }
     }
   }, [user, isLoading, router, requiredRoles]);
 
