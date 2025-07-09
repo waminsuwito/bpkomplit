@@ -15,7 +15,7 @@ import { userRoles, type User, userLocations, jabatanOptions } from '@/lib/types
 const formSchema = z.object({
   username: z.string().min(3, { message: 'Username must be at least 3 characters long.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }).optional().or(z.literal('')),
-  nik: z.string().optional().or(z.literal('')),
+  nik: z.string().min(1, { message: 'NIK is required.' }),
   role: z.enum(userRoles),
   jabatan: z.enum(jabatanOptions).optional().or(z.literal('')),
   location: z.enum(userLocations),
@@ -117,6 +117,19 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
           )}
         />
         <FormField
+            control={form.control}
+            name="nik"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>NIK</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., K00123" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        <FormField
           control={form.control}
           name="role"
           render={({ field }) => (
@@ -168,21 +181,6 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
           />
         )}
 
-        {role === 'karyawan' && (
-          <FormField
-            control={form.control}
-            name="nik"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>NIK Karyawan</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., K00123" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
         <FormField
           control={form.control}
           name="location"

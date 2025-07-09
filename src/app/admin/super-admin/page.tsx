@@ -18,14 +18,12 @@ export default function SuperAdminPage() {
   const { toast } = useToast();
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
-    const isKaryawan = data.role === 'karyawan';
-    
     if (userId) { // Update existing user
       const userDataToUpdate: Partial<User> = {
         username: data.username,
         role: data.role as UserRole,
         location: data.location as UserLocation,
-        nik: isKaryawan ? data.nik : undefined,
+        nik: data.nik,
         jabatan: data.role !== 'super_admin' ? (data.jabatan as UserJabatan) || undefined : undefined,
       };
       if (data.password) {
@@ -47,7 +45,7 @@ export default function SuperAdminPage() {
         password: data.password,
         role: data.role as UserRole,
         location: data.location as UserLocation,
-        nik: isKaryawan ? data.nik : undefined,
+        nik: data.nik,
         jabatan: data.role !== 'super_admin' ? (data.jabatan as UserJabatan) || undefined : undefined,
       };
       addUser(newUser);
