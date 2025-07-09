@@ -42,7 +42,7 @@ export function KaryawanSidebar() {
       navItems.splice(insertionIndex, 0, 
         {
             href: '/karyawan/manajemen-alat',
-            label: 'Daftar Armada',
+            label: 'Status Armada Hari Ini',
             icon: Construction,
         },
         {
