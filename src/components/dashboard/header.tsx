@@ -129,6 +129,10 @@ export function Header() {
                       </Button>
                   </DialogTrigger>
                   <DialogContent className="w-screen h-screen max-w-full sm:rounded-none border-0 p-0 flex items-center justify-center">
+                      <DialogHeader className="sr-only">
+                          <DialogTitle>Absensi Harian</DialogTitle>
+                          <DialogDescription>Formulir untuk melakukan absensi masuk dan pulang.</DialogDescription>
+                      </DialogHeader>
                       <AttendanceForm />
                   </DialogContent>
               </Dialog>

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/context/auth-provider';
 import type { DailyActivityReport, DailyActivity } from '@/lib/types';
 import { format } from 'date-fns';
@@ -83,6 +83,12 @@ export default function KegiatanKaryawanHariIniPage() {
                     </button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl p-0">
+                        <DialogHeader className="sr-only">
+                          <DialogTitle>Foto Kegiatan: {sessionName}</DialogTitle>
+                          <DialogDescription>
+                            Lampiran foto untuk laporan kegiatan sesi {sessionName}.
+                          </DialogDescription>
+                        </DialogHeader>
                         <Image src={activity.photo} alt={`Foto ${sessionName}`} width={1200} height={900} className="rounded-lg object-contain w-full h-auto" />
                     </DialogContent>
                 </Dialog>
