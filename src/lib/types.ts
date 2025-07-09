@@ -126,3 +126,19 @@ export interface AnonymousReport {
   timestamp: string; // ISO String
   status: 'new' | 'read';
 }
+
+export interface DailyActivity {
+  text: string | null;
+  photo: string | null; // Data URI
+  timestamp: string | null; // ISO String
+}
+
+export interface DailyActivityReport {
+  userId: string;
+  nik: string;
+  username: string;
+  location: UserLocation;
+  date: string; // YYYY-MM-DD
+  pagi: DailyActivity;
+  siang: DailyActivity;
+}
