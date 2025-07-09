@@ -138,7 +138,8 @@ export default function LaporkanAccidentPage() {
                 <Input
                   id="accidentLocation"
                   value={accidentLocation}
-                  onChange={(e) => setAccidentLocation(e.target.value)}
+                  onChange={(e) => setAccidentLocation(e.target.value.toUpperCase())}
+                  style={{ textTransform: 'uppercase' }}
                   placeholder="Contoh: Area dekat mixer, gudang semen"
                   required
                   disabled={isLoading}
@@ -161,7 +162,8 @@ export default function LaporkanAccidentPage() {
             <Textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value.toUpperCase())}
+              style={{ textTransform: 'uppercase' }}
               placeholder="Jelaskan kronologi kejadian secara rinci..."
               rows={8}
               required

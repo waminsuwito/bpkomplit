@@ -65,7 +65,7 @@ export default function ManajemenPeralatanPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormState(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormState(prev => ({ ...prev, [e.target.name]: e.target.value.toUpperCase() }));
   };
 
   const handleSelectChange = (value: string) => {
@@ -121,15 +121,15 @@ export default function ManajemenPeralatanPage() {
           <form onSubmit={handleAddVehicle} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
               <Label htmlFor="nomorPolisi">Nomor Polisi</Label>
-              <Input id="nomorPolisi" name="nomorPolisi" value={formState.nomorPolisi} onChange={handleInputChange} placeholder="Contoh: BM 1234 AB" />
+              <Input id="nomorPolisi" name="nomorPolisi" value={formState.nomorPolisi} onChange={handleInputChange} placeholder="Contoh: BM 1234 AB" style={{ textTransform: 'uppercase' }} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="nomorLambung">Nomor Lambung</Label>
-              <Input id="nomorLambung" name="nomorLambung" value={formState.nomorLambung} onChange={handleInputChange} placeholder="Contoh: TM-01" />
+              <Input id="nomorLambung" name="nomorLambung" value={formState.nomorLambung} onChange={handleInputChange} placeholder="Contoh: TM-01" style={{ textTransform: 'uppercase' }} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="jenisKendaraan">Jenis Kendaraan</Label>
-              <Input id="jenisKendaraan" name="jenisKendaraan" value={formState.jenisKendaraan} onChange={handleInputChange} placeholder="Contoh: Truck Mixer" />
+              <Input id="jenisKendaraan" name="jenisKendaraan" value={formState.jenisKendaraan} onChange={handleInputChange} placeholder="Contoh: Truck Mixer" style={{ textTransform: 'uppercase' }} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="operatorId">Operator/Sopir</Label>

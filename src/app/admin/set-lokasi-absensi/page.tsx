@@ -94,7 +94,11 @@ export default function SetLokasiAbsensiPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
+    if (name === 'name') {
+      setFormState(prev => ({ ...prev, [name]: value.toUpperCase() }));
+    } else {
+      setFormState(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSaveLocation = (e: React.FormEvent) => {
@@ -192,6 +196,7 @@ export default function SetLokasiAbsensiPage() {
                   <Input 
                     id="name" name="name" value={formState.name} onChange={handleInputChange} 
                     placeholder="Contoh: BP PEKANBARU" 
+                    style={{ textTransform: 'uppercase' }}
                     disabled={editingId && user?.role === 'hse_hrd_lokasi'} 
                   />
                 </div>

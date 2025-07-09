@@ -121,7 +121,8 @@ export default function LaporanAnonimPage() {
             <Textarea
               id="reportText"
               value={reportText}
-              onChange={(e) => setReportText(e.target.value)}
+              onChange={(e) => setReportText(e.target.value.toUpperCase())}
+              style={{ textTransform: 'uppercase' }}
               placeholder="Tuliskan laporan Anda secara detail di sini..."
               rows={10}
               required

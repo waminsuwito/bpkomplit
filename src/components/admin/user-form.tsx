@@ -90,7 +90,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., john.doe" {...field} />
+                <Input placeholder="e.g., john.doe" {...field} style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -116,7 +116,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
               <FormItem>
                 <FormLabel>NIK</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., K00123" {...field} />
+                  <Input placeholder="e.g., K00123" {...field} style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

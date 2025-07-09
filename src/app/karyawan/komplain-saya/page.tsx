@@ -99,7 +99,8 @@ export default function KomplainSayaPage() {
               <Textarea
                 id="complaintText"
                 value={complaintText}
-                onChange={(e) => setComplaintText(e.target.value)}
+                onChange={(e) => setComplaintText(e.target.value.toUpperCase())}
+                style={{ textTransform: 'uppercase' }}
                 placeholder="Tuliskan keluhan atau komplain Anda secara detail..."
                 rows={8}
                 required

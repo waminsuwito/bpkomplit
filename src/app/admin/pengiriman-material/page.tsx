@@ -78,7 +78,7 @@ export default function PengirimanMaterialPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
+    setFormState(prev => ({ ...prev, [name]: value.toUpperCase() }));
   };
   
   const handleSelectChange = (name: string, value: string) => {
@@ -167,6 +167,7 @@ export default function PengirimanMaterialPage() {
                 value={formState.nomorKendaraan}
                 onChange={handleInputChange}
                 placeholder="Contoh: BM 1234 XY"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
              <div className="space-y-2">
@@ -177,6 +178,7 @@ export default function PengirimanMaterialPage() {
                 value={formState.namaSopir}
                 onChange={handleInputChange}
                 placeholder="Contoh: Budi"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
             <div className="space-y-2">
@@ -199,6 +201,7 @@ export default function PengirimanMaterialPage() {
                 value={formState.alamatPengiriman}
                 onChange={handleInputChange}
                 placeholder="Contoh: Jl. Sudirman No. 1"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
              <div className="space-y-2">
@@ -209,6 +212,7 @@ export default function PengirimanMaterialPage() {
                 value={formState.keterangan}
                 onChange={handleInputChange}
                 placeholder="Opsional"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
             <div className="md:col-span-2 lg:col-span-3 flex justify-end">

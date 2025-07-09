@@ -60,7 +60,7 @@ export default function ScheduleCorPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
+    setFormState(prev => ({ ...prev, [name]: value.toUpperCase() }));
   };
 
   const handleMediaCorChange = (value: 'CP' | 'Manual') => {
@@ -143,6 +143,7 @@ export default function ScheduleCorPage() {
                 value={formState.customerName}
                 onChange={handleInputChange}
                 placeholder="Contoh: PT. Abadi Jaya"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
             <div className="space-y-2">
@@ -153,6 +154,7 @@ export default function ScheduleCorPage() {
                 value={formState.projectLocation}
                 onChange={handleInputChange}
                 placeholder="Contoh: Jl. Sudirman No. 123"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
             <div className="space-y-2">
@@ -163,6 +165,7 @@ export default function ScheduleCorPage() {
                 value={formState.concreteQuality}
                 onChange={handleInputChange}
                 placeholder="Contoh: K-225"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
             <div className="space-y-2">

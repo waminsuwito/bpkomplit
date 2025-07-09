@@ -278,7 +278,8 @@ export default function KegiatanSayaPage() {
             <Textarea
               id={`kegiatan-${session}`}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => setText(e.target.value.toUpperCase())}
+              style={{ textTransform: 'uppercase' }}
               placeholder={`Tuliskan kegiatan Anda di sesi ${session.toLowerCase()} di sini...`}
               rows={5}
               disabled={!isSessionActive || isLoading || isSaved}

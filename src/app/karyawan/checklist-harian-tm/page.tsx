@@ -127,7 +127,7 @@ export default function ChecklistHarianTmPage() {
     const handleNotesChange = (itemId: string, notes: string) => {
         setChecklistItems(prevItems =>
             prevItems.map(item =>
-                item.id === itemId ? { ...item, notes } : item
+                item.id === itemId ? { ...item, notes: notes.toUpperCase() } : item
             )
         );
     };
@@ -237,6 +237,7 @@ export default function ChecklistHarianTmPage() {
                                                 placeholder="Contoh: Oli rembes sedikit, alarm mundur mati..."
                                                 value={item.notes || ''}
                                                 onChange={(e) => handleNotesChange(item.id, e.target.value)}
+                                                style={{ textTransform: 'uppercase' }}
                                                 disabled={isSubmittedToday || isLoading}
                                                 rows={3}
                                             />

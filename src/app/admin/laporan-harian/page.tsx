@@ -84,7 +84,7 @@ export default function LaporanHarianPage() {
     value: string
   ) => {
     const newData = [...tableData];
-    newData[rowIndex][columnId] = value;
+    newData[rowIndex][columnId] = value.toUpperCase();
     setTableData(newData);
   };
   
@@ -193,6 +193,7 @@ export default function LaporanHarianPage() {
                               handleInputChange(rowIndex, key, e.target.value)
                             }
                             className="w-full h-full border-none rounded-none text-center"
+                            style={{ textTransform: 'uppercase' }}
                             readOnly={['lokasi', 'mutu', 'slump', 'volume'].includes(key) && !!row[key]}
                           />
                         </TableCell>

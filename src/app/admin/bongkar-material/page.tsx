@@ -80,7 +80,7 @@ export default function BongkarMaterialPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
+    setFormState(prev => ({ ...prev, [name]: value.toUpperCase() }));
   };
   
   const handleSelectChange = (name: string, value: string) => {
@@ -296,11 +296,11 @@ export default function BongkarMaterialPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="kapalKendaraan">Kapal/Kendaraan</Label>
-              <Input id="kapalKendaraan" name="kapalKendaraan" value={formState.kapalKendaraan} onChange={handleInputChange} placeholder="Contoh: KM. Bahari / BM 1234 XY" />
+              <Input id="kapalKendaraan" name="kapalKendaraan" value={formState.kapalKendaraan} onChange={handleInputChange} placeholder="Contoh: KM. Bahari / BM 1234 XY" style={{ textTransform: 'uppercase' }} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="namaKaptenSopir">Nama Kapten/Sopir</Label>
-              <Input id="namaKaptenSopir" name="namaKaptenSopir" value={formState.namaKaptenSopir} onChange={handleInputChange} placeholder="Contoh: Budi" />
+              <Input id="namaKaptenSopir" name="namaKaptenSopir" value={formState.namaKaptenSopir} onChange={handleInputChange} placeholder="Contoh: Budi" style={{ textTransform: 'uppercase' }} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="volume">Volume / Jumlah {unit && `(${unit})`}</Label>
@@ -308,7 +308,7 @@ export default function BongkarMaterialPage() {
             </div>
             <div className="space-y-2 md:col-span-2 lg:col-span-1">
               <Label htmlFor="keterangan">Keterangan</Label>
-              <Input id="keterangan" name="keterangan" value={formState.keterangan} onChange={handleInputChange} placeholder="Opsional" />
+              <Input id="keterangan" name="keterangan" value={formState.keterangan} onChange={handleInputChange} placeholder="Opsional" style={{ textTransform: 'uppercase' }} />
             </div>
             <div className="md:col-span-2 lg:col-span-3 flex justify-end">
               <Button type="submit" className="w-full md:w-auto">Tambah ke Daftar</Button>

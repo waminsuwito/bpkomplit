@@ -115,7 +115,8 @@ export default function BroadcastKaryawanPage() {
                 id="message"
                 rows={6}
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => setMessage(e.target.value.toUpperCase())}
+                style={{ textTransform: 'uppercase' }}
                 disabled={isLoading}
               />
             </div>

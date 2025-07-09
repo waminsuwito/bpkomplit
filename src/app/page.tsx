@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -76,7 +77,8 @@ export default function LoginPage() {
                 type="text"
                 placeholder="Masukkan username atau NIK"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value.toUpperCase())}
+                style={{ textTransform: 'uppercase' }}
                 required
                 disabled={isLoading}
               />

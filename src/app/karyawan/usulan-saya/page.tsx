@@ -99,7 +99,8 @@ export default function UsulanSayaPage() {
               <Textarea
                 id="suggestionText"
                 value={suggestionText}
-                onChange={(e) => setSuggestionText(e.target.value)}
+                onChange={(e) => setSuggestionText(e.target.value.toUpperCase())}
+                style={{ textTransform: 'uppercase' }}
                 placeholder="Tuliskan ide atau usulan Anda secara detail..."
                 rows={8}
                 required

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -90,7 +91,8 @@ export function ControlPanel({
                 id="nama-pelanggan" 
                 placeholder="Masukkan nama pelanggan" 
                 value={jobInfo.namaPelanggan} 
-                onChange={e => handleJobInfoChange('namaPelanggan', e.target.value)} 
+                onChange={e => handleJobInfoChange('namaPelanggan', e.target.value.toUpperCase())} 
+                style={{ textTransform: 'uppercase' }}
                 disabled={!powerOn} 
             />
           </div>
@@ -100,7 +102,8 @@ export function ControlPanel({
                 id="lokasi-proyek" 
                 placeholder="Masukkan lokasi proyek" 
                 value={jobInfo.lokasiProyek} 
-                onChange={e => handleJobInfoChange('lokasiProyek', e.target.value)} 
+                onChange={e => handleJobInfoChange('lokasiProyek', e.target.value.toUpperCase())} 
+                style={{ textTransform: 'uppercase' }}
                 disabled={!powerOn}
             />
           </div>

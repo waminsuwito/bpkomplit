@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -93,7 +94,7 @@ export function FormulaManager({ formulas, onAdd, onUpdate, onDelete }: FormulaM
             <FormField name="mutuBeton" control={form.control} render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel>Mutu Beton (e.g., K225)</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
+                <FormControl><Input {...field} style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
