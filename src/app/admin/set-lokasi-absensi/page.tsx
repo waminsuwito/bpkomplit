@@ -34,10 +34,11 @@ import {
 import { MapPin, Trash2, Edit, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { AttendanceLocation } from '@/lib/types';
+import { useAuth } from '@/context/auth-provider';
 
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 
-const initialLocations: AttendanceLocation[] = [
+const initialLocationsSeed: AttendanceLocation[] = [
   { id: '1', name: 'BP PEKANBARU', latitude: 0.507067, longitude: 101.447779 },
   { id: '2', name: 'BP DUMAI', latitude: 1.6242, longitude: 101.4449 },
   { id: '3', name: 'BP BAUNG', latitude: 0.6358, longitude: 101.6917 },
@@ -50,35 +51,46 @@ const initialFormState = {
   longitude: '',
 };
 
+const getAllLocations = (): AttendanceLocation[] => {
+  try {
+    const storedData = localStorage.getItem(ATTENDANCE_LOCATIONS_KEY);
+    if (storedData) {
+      return JSON.parse(storedData);
+    }
+    // Seed if empty
+    localStorage.setItem(ATTENDANCE_LOCATIONS_KEY, JSON.stringify(initialLocationsSeed));
+    return initialLocationsSeed;
+  } catch (error) {
+    console.error("Failed to read locations from localStorage", error);
+    return [];
+  }
+};
+
+const saveAllLocations = (data: AttendanceLocation[]) => {
+  try {
+    localStorage.setItem(ATTENDANCE_LOCATIONS_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.error("Failed to save locations to localStorage", error);
+  }
+};
+
 export default function SetLokasiAbsensiPage() {
+  const { user } = useAuth();
   const [locations, setLocations] = useState<AttendanceLocation[]>([]);
   const [formState, setFormState] = useState(initialFormState);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem(ATTENDANCE_LOCATIONS_KEY);
-      if (storedData) {
-        setLocations(JSON.parse(storedData));
-      } else {
-        // Seed with initial data if localStorage is empty
-        setLocations(initialLocations);
-        saveToLocalStorage(initialLocations);
-      }
-    } catch (error) {
-      console.error("Failed to load data from localStorage", error);
-      setLocations(initialLocations);
-    }
-  }, []);
+    if (!user) return;
 
-  const saveToLocalStorage = (data: AttendanceLocation[]) => {
-    try {
-      localStorage.setItem(ATTENDANCE_LOCATIONS_KEY, JSON.stringify(data));
-    } catch (error) {
-      console.error("Failed to save data to localStorage", error);
+    const allLocations = getAllLocations();
+    if (user.role === 'hse_hrd_lokasi') {
+      setLocations(allLocations.filter(loc => loc.name === user.location));
+    } else {
+      setLocations(allLocations);
     }
-  };
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -92,37 +104,40 @@ export default function SetLokasiAbsensiPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'All fields must be filled.' });
       return;
     }
-
     const lat = parseFloat(formState.latitude);
     const lon = parseFloat(formState.longitude);
-
     if (isNaN(lat) || isNaN(lon)) {
       toast({ variant: 'destructive', title: 'Error', description: 'Latitude and Longitude must be valid numbers.' });
       return;
     }
 
-    let updatedLocations;
+    const allLocations = getAllLocations();
+    let updatedAllLocations;
 
     if (editingId) {
-      // Update existing location
-      updatedLocations = locations.map(loc => 
+      updatedAllLocations = allLocations.map(loc => 
         loc.id === editingId ? { ...loc, name: formState.name, latitude: lat, longitude: lon } : loc
       );
       toast({ title: 'Location Updated', description: `Location "${formState.name}" has been updated.` });
     } else {
-      // Add new location
+      if (user?.role !== 'super_admin') return;
       const newLocation: AttendanceLocation = {
         id: new Date().toISOString(),
-        name: formState.name,
-        latitude: lat,
-        longitude: lon,
+        name: formState.name, latitude: lat, longitude: lon,
       };
-      updatedLocations = [...locations, newLocation];
+      updatedAllLocations = [...allLocations, newLocation];
       toast({ title: 'Location Added', description: `Location "${formState.name}" has been added.` });
     }
 
-    setLocations(updatedLocations);
-    saveToLocalStorage(updatedLocations);
+    saveAllLocations(updatedAllLocations);
+
+    // Refresh the view
+    if (user?.role === 'hse_hrd_lokasi') {
+      setLocations(updatedAllLocations.filter(loc => loc.name === user.location));
+    } else {
+      setLocations(updatedAllLocations);
+    }
+
     setFormState(initialFormState);
     setEditingId(null);
   };
@@ -143,56 +158,71 @@ export default function SetLokasiAbsensiPage() {
   };
 
   const handleDelete = (id: string) => {
-    const updatedLocations = locations.filter(loc => loc.id !== id);
-    setLocations(updatedLocations);
-    saveToLocalStorage(updatedLocations);
+    if (user?.role !== 'super_admin') {
+      toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Anda tidak memiliki izin untuk menghapus lokasi.' });
+      return;
+    }
+    const allLocations = getAllLocations();
+    const updatedAllLocations = allLocations.filter(loc => loc.id !== id);
+    saveAllLocations(updatedAllLocations);
+    setLocations(updatedAllLocations); // Refresh view for super_admin
     toast({ variant: 'destructive', title: 'Location Deleted', description: 'The location has been removed.' });
   };
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-6 w-6 text-primary" />
-            {editingId ? 'Edit Lokasi Absensi' : 'Tambah Lokasi Absensi Baru'}
-          </CardTitle>
-          <CardDescription>
-            {editingId ? 'Ubah detail lokasi yang sudah ada.' : 'Tambahkan lokasi baru untuk absensi karyawan.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSaveLocation} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nama Lokasi</Label>
-                <Input id="name" name="name" value={formState.name} onChange={handleInputChange} placeholder="Contoh: BP PEKANBARU" />
+      {(user?.role === 'super_admin' || editingId) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-6 w-6 text-primary" />
+              {editingId ? 'Edit Lokasi Absensi' : 'Tambah Lokasi Absensi Baru'}
+            </CardTitle>
+            <CardDescription>
+              {editingId 
+                ? `Ubah detail untuk lokasi "${formState.name}". ${user?.role === 'hse_hrd_lokasi' ? 'Anda hanya bisa mengubah koordinat.' : ''}` 
+                : 'Tambahkan lokasi baru untuk absensi karyawan.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveLocation} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nama Lokasi</Label>
+                  <Input 
+                    id="name" name="name" value={formState.name} onChange={handleInputChange} 
+                    placeholder="Contoh: BP PEKANBARU" 
+                    disabled={editingId && user?.role === 'hse_hrd_lokasi'} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="latitude">Latitude</Label>
+                  <Input id="latitude" name="latitude" type="number" step="any" value={formState.latitude} onChange={handleInputChange} placeholder="Contoh: 0.507067" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="longitude">Longitude</Label>
+                  <Input id="longitude" name="longitude" type="number" step="any" value={formState.longitude} onChange={handleInputChange} placeholder="Contoh: 101.447779" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="latitude">Latitude</Label>
-                <Input id="latitude" name="latitude" type="number" step="any" value={formState.latitude} onChange={handleInputChange} placeholder="Contoh: 0.507067" />
+              <div className="flex justify-end gap-2">
+                {editingId && <Button type="button" variant="outline" onClick={handleCancelEdit}>Batal</Button>}
+                <Button type="submit">
+                  <Save className="mr-2 h-4 w-4" />
+                  {editingId ? 'Simpan Perubahan' : 'Tambah Lokasi'}
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="longitude">Longitude</Label>
-                <Input id="longitude" name="longitude" type="number" step="any" value={formState.longitude} onChange={handleInputChange} placeholder="Contoh: 101.447779" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              {editingId && <Button type="button" variant="outline" onClick={handleCancelEdit}>Batal</Button>}
-              <Button type="submit">
-                <Save className="mr-2 h-4 w-4" />
-                {editingId ? 'Simpan Perubahan' : 'Tambah Lokasi'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      )}
       
       <Card>
         <CardHeader>
           <CardTitle>Daftar Lokasi Absensi</CardTitle>
           <CardDescription>
-            Daftar semua lokasi yang telah dikonfigurasi untuk absensi.
+            {user?.role === 'hse_hrd_lokasi' 
+              ? `Menampilkan lokasi yang dikonfigurasi untuk ${user.location}.`
+              : 'Daftar semua lokasi yang telah dikonfigurasi untuk absensi.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -218,28 +248,30 @@ export default function SetLokasiAbsensiPage() {
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Hapus</span>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus lokasi "{loc.name}"?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDelete(loc.id)}>
-                                Ya, Hapus
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        {user?.role === 'super_admin' && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Hapus</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Apakah Anda yakin ingin menghapus lokasi "{loc.name}"?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDelete(loc.id)}>
+                                  Ya, Hapus
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -248,7 +280,11 @@ export default function SetLokasiAbsensiPage() {
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-12">
-              <p>Belum ada lokasi yang ditambahkan.</p>
+              <p>
+                {user?.role === 'hse_hrd_lokasi' 
+                  ? 'Tidak ada lokasi yang terkonfigurasi untuk Anda.'
+                  : 'Belum ada lokasi yang ditambahkan.'}
+              </p>
             </div>
           )}
         </CardContent>
