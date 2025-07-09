@@ -31,11 +31,13 @@ import type { AnonymousReport } from '@/lib/types';
 const superAdminNav = [
   { href: '/admin/super-admin', label: 'User Management', icon: Shield },
   { href: '/admin/pesan-anonim', label: 'Pesan dari Anonim', icon: MailQuestion },
+  { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
 ];
 
 const adminLokasiNav = [
   { href: '/admin/laporan-harian', label: 'Laporan Harian', icon: FileText },
   { href: '/admin/schedule-cor', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
+  { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
   { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 
@@ -43,6 +45,7 @@ const logistikMaterialNav = [
   { href: '/admin/pemasukan-material', label: 'Pemasukan Material', icon: PackagePlus },
   { href: '/admin/pengiriman-material', label: 'Pengiriman Material', icon: Truck },
   { href: '/admin/bongkar-material', label: 'Bongkar Material', icon: Anchor },
+  { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
   { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
 ];
 
