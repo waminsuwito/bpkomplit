@@ -36,6 +36,7 @@ export default function AbsensiHarianKaryawanPage() {
   
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   
   const [personalAttendanceRecord, setPersonalAttendanceRecord] = useState<PersonalAttendanceRecord | null>(null);
@@ -119,6 +120,30 @@ export default function AbsensiHarianKaryawanPage() {
     }
   };
 
+  const capturePhoto = (): string | null => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video && canvas) {
+      const context = canvas.getContext('2d');
+      if (context) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Flip the image horizontally like a mirror to match the video preview
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Reset transform for next draw
+        context.setTransform(1, 0, 0, 1, 0, 0);
+
+        return canvas.toDataURL('image/jpeg', 0.8); // 80% quality JPEG
+      }
+    }
+    return null;
+  };
+
   const updateGlobalAttendance = (updateData: Partial<GlobalAttendanceRecord>) => {
     if (!user || !user.nik) return;
     
@@ -143,6 +168,8 @@ export default function AbsensiHarianKaryawanPage() {
           terlambat: null,
           absenPulang: null,
           lembur: null,
+          photoMasuk: null,
+          photoPulang: null,
           ...updateData,
         };
         allRecords.push(newRecord);
@@ -167,6 +194,12 @@ export default function AbsensiHarianKaryawanPage() {
       return;
     }
     
+    const photoDataUri = capturePhoto();
+    if (!photoDataUri) {
+        toast({ variant: 'destructive', title: 'Gagal Mengambil Foto', description: 'Tidak dapat mengambil gambar dari kamera.' });
+        return;
+    }
+
     setIsCheckingIn(true);
     setAttendanceStatus('idle');
     setStatusMessage('Mendapatkan lokasi Anda...');
@@ -210,6 +243,7 @@ export default function AbsensiHarianKaryawanPage() {
                 updateGlobalAttendance({
                   absenMasuk: now.toISOString(),
                   terlambat: terlambatDuration,
+                  photoMasuk: photoDataUri,
                 });
 
                 const toastDescription = isLate ? 'Anda tercatat terlambat hari ini.' : 'Absensi masuk berhasil dicatat.';
@@ -223,7 +257,7 @@ export default function AbsensiHarianKaryawanPage() {
                 setPersonalAttendanceRecord(updatedPersonalRecord as PersonalAttendanceRecord);
                 localStorage.setItem(getPersonalAttendanceKey(user.id), JSON.stringify(updatedPersonalRecord));
                 
-                updateGlobalAttendance({ absenPulang: now.toISOString() });
+                updateGlobalAttendance({ absenPulang: now.toISOString(), photoPulang: photoDataUri });
 
                 toast({ title: 'Absensi Pulang Berhasil', description: 'Absensi pulang berhasil dicatat.' });
                 setAttendanceStatus('success');
@@ -281,6 +315,7 @@ export default function AbsensiHarianKaryawanPage() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <canvas ref={canvasRef} className="hidden" />
         <div className="space-y-2">
           <label className="text-sm font-medium">Pilih Lokasi Batching Plant</label>
            <Select onValueChange={(value) => setSelectedLocation(locations.find(l => l.name === value) || null)} disabled={locations.length === 0}>

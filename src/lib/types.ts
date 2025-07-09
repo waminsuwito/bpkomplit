@@ -115,4 +115,6 @@ export interface GlobalAttendanceRecord {
   terlambat: string | null; // e.g., "15m" or null
   absenPulang: string | null; // ISO String
   lembur: string | null; // e.g., "1h 30m" or null
+  photoMasuk: string | null; // Data URI
+  photoPulang: string | null; // Data URI
 }

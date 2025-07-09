@@ -18,10 +18,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ClipboardCheck, Printer } from 'lucide-react';
 import { useAuth } from '@/context/auth-provider';
 import type { GlobalAttendanceRecord } from '@/lib/types';
 import { format } from 'date-fns';
+import { printElement } from '@/lib/utils';
+import Image from 'next/image';
 
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
 
@@ -58,15 +61,23 @@ export default function AbsensiKaryawanHariIniPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ClipboardCheck className="h-6 w-6 text-primary" />
-          Absensi Karyawan Hari Ini
-        </CardTitle>
-        <CardDescription>
-          Laporan absensi karyawan untuk lokasi {user?.location || '...'} pada tanggal: {tanggalHariIni}
-        </CardDescription>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-6 w-6 text-primary" />
+              Absensi Karyawan Hari Ini
+            </CardTitle>
+            <CardDescription>
+              Laporan absensi karyawan untuk lokasi {user?.location || '...'} pada tanggal: {tanggalHariIni}
+            </CardDescription>
+          </div>
+          <Button onClick={() => printElement('print-content')} className="no-print">
+            <Printer className="mr-2 h-4 w-4" />
+            Cetak Laporan
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent id="print-content">
         {daftarAbsensi.length > 0 ? (
           <div className="border rounded-lg overflow-x-auto">
             <Table>
@@ -74,8 +85,10 @@ export default function AbsensiKaryawanHariIniPage() {
                 <TableRow>
                   <TableHead>NIK Karyawan</TableHead>
                   <TableHead>Nama Karyawan</TableHead>
+                  <TableHead>Foto Masuk</TableHead>
                   <TableHead className="text-center">Absen Masuk</TableHead>
                   <TableHead className="text-center">Terlambat</TableHead>
+                  <TableHead>Foto Pulang</TableHead>
                   <TableHead className="text-center">Absen Pulang</TableHead>
                   <TableHead className="text-center">Lembur</TableHead>
                 </TableRow>
@@ -85,6 +98,19 @@ export default function AbsensiKaryawanHariIniPage() {
                   <TableRow key={item.nik}>
                     <TableCell className="font-medium">{item.nik}</TableCell>
                     <TableCell>{item.nama}</TableCell>
+                    <TableCell>
+                      {item.photoMasuk ? (
+                        <Image
+                          src={item.photoMasuk}
+                          alt={`Foto Masuk ${item.nama}`}
+                          width={64}
+                          height={64}
+                          className="rounded-md object-cover w-16 h-16"
+                        />
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
                     <TableCell className="text-center">
                       {item.absenMasuk ? (
                         new Date(item.absenMasuk).toLocaleTimeString('id-ID')
@@ -97,6 +123,19 @@ export default function AbsensiKaryawanHariIniPage() {
                         <Badge variant="destructive">{item.terlambat}</Badge>
                       ) : (
                         item.absenMasuk ? '-' : <Badge variant="outline">-</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {item.photoPulang ? (
+                        <Image
+                          src={item.photoPulang}
+                          alt={`Foto Pulang ${item.nama}`}
+                          width={64}
+                          height={64}
+                          className="rounded-md object-cover w-16 h-16"
+                        />
+                      ) : (
+                        '-'
                       )}
                     </TableCell>
                     <TableCell className="text-center">
