@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 
 const ATTENDANCE_LOCATIONS_KEY = 'app-attendance-locations';
 const GLOBAL_ATTENDANCE_KEY = 'app-global-attendance-records';
-const ATTENDANCE_RADIUS_METERS = 1000;
+const ATTENDANCE_RADIUS_METERS = 50000;
 const getPersonalAttendanceKey = (userId: string) => `attendance-${userId}-${new Date().toISOString().split('T')[0]}`;
 
 type PersonalAttendanceRecord = {
@@ -277,7 +277,7 @@ export default function AbsensiHarianKaryawanPage() {
           Absensi Harian (Selfie)
         </CardTitle>
         <CardDescription>
-          Pilih lokasi, aktifkan kamera, lalu lakukan absensi. Pastikan Anda berada dalam radius 1000 meter.
+          Pilih lokasi, aktifkan kamera, lalu lakukan absensi. Pastikan Anda berada dalam radius 50000 meter.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
