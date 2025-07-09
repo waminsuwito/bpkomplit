@@ -4,11 +4,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package } from 'lucide-react';
+import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { userLocations, type TruckChecklistReport, type TruckChecklistItem, type UserLocation } from '@/lib/types';
+import { type TruckChecklistReport, type TruckChecklistItem, type UserLocation } from '@/lib/types';
 import { printElement } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import {
@@ -20,6 +19,8 @@ import {
 } from '@/components/ui/dialog';
 import { getUsers } from '@/lib/auth';
 import { format } from 'date-fns';
+import { useAuth } from '@/context/auth-provider';
+
 
 const CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
 
@@ -47,7 +48,7 @@ const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, c
 );
 
 export default function ManajemenAlatPage() {
-  const [selectedLocation, setSelectedLocation] = useState('Semua Lokasi');
+  const { user } = useAuth();
   const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
   
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
@@ -108,19 +109,12 @@ export default function ManajemenAlatPage() {
 
 
   const filteredData = useMemo(() => {
-    if (selectedLocation === 'Semua Lokasi') {
-      return {
-        totalAlat: submittedReports.length + notSubmittedReports.length,
-        sudahChecklistReports: submittedReports,
-        belumChecklistReports: notSubmittedReports,
-        alatBaik: submittedReports.filter(r => r.status === 'Baik'),
-        perluPerhatian: submittedReports.filter(r => r.status === 'Perlu Perhatian'),
-        alatRusak: submittedReports.filter(r => r.status === 'Rusak'),
-      };
+    if (!user?.location) {
+      return { totalAlat: 0, sudahChecklistReports: [], belumChecklistReports: [], alatBaik: [], perluPerhatian: [], alatRusak: [] };
     }
-    
-    const sudah = submittedReports.filter(r => r.lokasi === selectedLocation);
-    const belum = notSubmittedReports.filter(r => r.lokasi === selectedLocation);
+
+    const sudah = submittedReports.filter(r => r.lokasi === user.location);
+    const belum = notSubmittedReports.filter(r => r.lokasi === user.location);
 
     return {
       totalAlat: sudah.length + belum.length,
@@ -130,7 +124,7 @@ export default function ManajemenAlatPage() {
       perluPerhatian: sudah.filter(r => r.status === 'Perlu Perhatian'),
       alatRusak: sudah.filter(r => r.status === 'Rusak'),
     };
-  }, [selectedLocation, submittedReports, notSubmittedReports]);
+  }, [user, submittedReports, notSubmittedReports]);
   
   const getBadgeVariant = (status: string) => {
     switch (status) {
@@ -180,23 +174,14 @@ export default function ManajemenAlatPage() {
 
   return (
     <div className="space-y-6" id="manajemen-alat-content">
-      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Button onClick={() => printElement('manajemen-alat-content')}>
-            <Printer className="mr-2 h-4 w-4" /> Print Laporan
-          </Button>
-          <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Pilih Lokasi" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Semua Lokasi">Semua Lokasi</SelectItem>
-              {userLocations.map(loc => (
-                <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-2 text-lg">
+          <Building className="h-6 w-6 text-muted-foreground" />
+          <span className="font-semibold">{user?.location || 'Memuat lokasi...'}</span>
         </div>
+        <Button onClick={() => printElement('manajemen-alat-content')}>
+          <Printer className="mr-2 h-4 w-4" /> Print Laporan
+        </Button>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -212,7 +197,7 @@ export default function ManajemenAlatPage() {
         <CardHeader>
           <CardTitle>Laporan Terbaru Hari Ini</CardTitle>
           <CardDescription>
-            Checklist yang baru saja dikirim oleh operator di lokasi yang dipilih hari ini.
+            Checklist yang baru saja dikirim oleh operator di lokasi Anda hari ini.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -250,7 +235,7 @@ export default function ManajemenAlatPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                      Tidak ada laporan untuk lokasi ini hari ini.
+                      Tidak ada laporan untuk lokasi Anda hari ini.
                     </TableCell>
                   </TableRow>
                 )}
@@ -265,7 +250,7 @@ export default function ManajemenAlatPage() {
           <DialogHeader>
             <DialogTitle>{dialogContent?.title}</DialogTitle>
             <DialogDescription>
-              Menampilkan daftar rinci alat berdasarkan status yang dipilih untuk lokasi: {selectedLocation}.
+              Menampilkan daftar rinci alat berdasarkan status yang dipilih untuk lokasi Anda: {user?.location}.
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto mt-4">
