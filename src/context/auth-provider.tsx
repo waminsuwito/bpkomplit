@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginDashboardAdmin = async (password: string): Promise<boolean> => {
     if (!user) return false;
     
-    const canAccess = user.role === 'kepala_BP' || user.role === 'super_admin';
+    const canAccess = user.role === 'supervisor' || user.role === 'super_admin';
     if (!canAccess) return false;
 
     // Verify password against the source of truth (localStorage via verifyLogin)

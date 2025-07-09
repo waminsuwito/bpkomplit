@@ -76,7 +76,7 @@ export function Header() {
             </div>
 
             {/* In-Dashboard Admin for Formulas */}
-            {(user.role === 'kepala_BP' || user.role === 'super_admin') && !isAdminPage && (
+            {(user.role === 'supervisor' || user.role === 'super_admin') && !isAdminPage && (
               <>
                 {isDashboardAdmin ? (
                   <Button variant="destructive" size="sm" onClick={logoutDashboardAdmin}>

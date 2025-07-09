@@ -34,7 +34,7 @@ export const userRoles = [
   "operator",
   "logistik_spareparts",
   "mekanik",
-  "kepala_BP",
+  "supervisor",
   "laborat",
   "tukang_las",
   "logistik_material",

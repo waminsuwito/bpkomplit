@@ -34,7 +34,7 @@ const roleVariantMap: Record<UserRole, 'default' | 'secondary' | 'destructive' |
     super_admin: 'destructive',
     admin_lokasi: 'secondary',
     operator: 'default',
-    kepala_BP: 'secondary',
+    supervisor: 'secondary',
     laborat: 'secondary',
     logistik_material: 'outline',
     logistik_spareparts: 'outline',

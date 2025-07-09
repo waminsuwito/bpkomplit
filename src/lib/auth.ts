@@ -10,7 +10,7 @@ const initialUsers: User[] = [
   { id: 'op-1', username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU' },
   { id: 'op-2', username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI' },
   { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG' },
-  { id: 'head-1', username: 'kepala_bp', password: 'password', role: 'kepala_BP', location: 'BP IKN' },
+  { id: 'head-1', username: 'supervisor', password: 'password', role: 'supervisor', location: 'BP IKN' },
   { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU' },
 ];
 
