@@ -11,12 +11,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Edit, Trash2, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
+import { Edit, Trash2, ShieldCheck, ArrowLeft, KeyRound, Save } from 'lucide-react';
 import type { JobMixFormula } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getFormulas, addFormula, updateFormula, deleteFormula } from '@/lib/formula';
 import { useRouter } from 'next/navigation';
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
 const formulaSchema = z.object({
@@ -31,7 +31,19 @@ const formulaSchema = z.object({
 
 type FormulaFormValues = z.infer<typeof formulaSchema>;
 
-const ACCESS_PASSWORD = 'admin'; // Hardcoded password
+const ACCESS_PASSWORD = 'admin';
+const MATERIAL_LABELS_KEY = 'app-material-labels';
+
+const defaultMaterialLabels = {
+  pasir1: 'Pasir 1',
+  pasir2: 'Pasir 2',
+  batu1: 'Batu 1',
+  batu2: 'Batu 2',
+  semen: 'Semen',
+  air: 'Air',
+};
+
+type MaterialKeys = keyof typeof defaultMaterialLabels;
 
 function FormulaManagerPage() {
   const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
@@ -39,8 +51,18 @@ function FormulaManagerPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [materialLabels, setMaterialLabels] = useState(defaultMaterialLabels);
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    try {
+        const storedLabels = localStorage.getItem(MATERIAL_LABELS_KEY);
+        if (storedLabels) {
+            setMaterialLabels(JSON.parse(storedLabels));
+        }
+    } catch (e) { console.error(e); }
+  }, []);
 
   useEffect(() => {
     if (isAuthorized) {
@@ -77,6 +99,19 @@ function FormulaManagerPage() {
     } else {
         setPasswordError('Password salah. Silakan coba lagi.');
     }
+  };
+
+  const handleLabelChange = (key: MaterialKeys, value: string) => {
+      setMaterialLabels(prev => ({...prev, [key]: value}));
+  };
+
+  const saveMaterialLabels = () => {
+      try {
+          localStorage.setItem(MATERIAL_LABELS_KEY, JSON.stringify(materialLabels));
+          toast({ title: 'Label Disimpan', description: 'Nama material telah berhasil diperbarui.' });
+      } catch (e) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Gagal menyimpan label.' });
+      }
   };
 
   const onSubmit = (data: FormulaFormValues) => {
@@ -146,17 +181,35 @@ function FormulaManagerPage() {
         </Dialog>
     );
   }
+  
+  const EditableLabel = ({ materialKey }: { materialKey: MaterialKeys }) => (
+    <div className="space-y-2">
+        <div className="flex items-center">
+            <Input 
+                value={materialLabels[materialKey]}
+                onChange={(e) => handleLabelChange(materialKey, e.target.value)}
+                className="font-medium text-sm border-0 border-b rounded-none px-1 h-8 focus-visible:ring-0 focus-visible:border-primary"
+            />
+            <span className="text-sm text-muted-foreground ml-1">(Kg)</span>
+        </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
         <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Job Mix Formula Management</h1>
-            <Button asChild variant="outline">
-                <button onClick={() => router.push('/dashboard')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Kembali ke Dashboard
-                </button>
-            </Button>
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={saveMaterialLabels}>
+                    <Save className="mr-2 h-4 w-4" /> Simpan Nama Material
+                </Button>
+                <Button asChild variant="outline">
+                    <button onClick={() => router.push('/dashboard')}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Kembali ke Dashboard
+                    </button>
+                </Button>
+            </div>
         </div>
         <Card>
         <CardHeader>
@@ -171,7 +224,7 @@ function FormulaManagerPage() {
         <CardContent>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-6 items-end">
                   <FormField name="mutuBeton" control={form.control} render={({ field }) => (
                   <FormItem className="md:col-span-4">
                       <FormLabel>Mutu Beton (e.g., K225)</FormLabel>
@@ -181,49 +234,49 @@ function FormulaManagerPage() {
                   )} />
                   <FormField name="pasir1" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Pasir 1 (Kg)</FormLabel>
+                      <EditableLabel materialKey="pasir1" />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                    <FormField name="pasir2" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Pasir 2 (Kg)</FormLabel>
+                      <EditableLabel materialKey="pasir2" />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="batu1" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Batu 1 (Kg)</FormLabel>
+                      <EditableLabel materialKey="batu1" />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="batu2" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Batu 2 (Kg)</FormLabel>
+                      <EditableLabel materialKey="batu2" />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="semen" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Semen (Kg)</FormLabel>
+                      <EditableLabel materialKey="semen" />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="air" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Air (Kg)</FormLabel>
+                      <EditableLabel materialKey="air" />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                 </div>
 
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 mt-6">
                   {editingFormula && <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>}
                   <Button type="submit">
                       {editingFormula ? 'Update Formula' : 'Add Formula'}
@@ -237,12 +290,12 @@ function FormulaManagerPage() {
                 <TableHeader>
                 <TableRow>
                     <TableHead>Mutu Beton</TableHead>
-                    <TableHead>Pasir 1 (Kg)</TableHead>
-                    <TableHead>Pasir 2 (Kg)</TableHead>
-                    <TableHead>Batu 1 (Kg)</TableHead>
-                    <TableHead>Batu 2 (Kg)</TableHead>
-                    <TableHead>Semen (Kg)</TableHead>
-                    <TableHead>Air (Kg)</TableHead>
+                    <TableHead>{materialLabels.pasir1} (Kg)</TableHead>
+                    <TableHead>{materialLabels.pasir2} (Kg)</TableHead>
+                    <TableHead>{materialLabels.batu1} (Kg)</TableHead>
+                    <TableHead>{materialLabels.batu2} (Kg)</TableHead>
+                    <TableHead>{materialLabels.semen} (Kg)</TableHead>
+                    <TableHead>{materialLabels.air} (Kg)</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
