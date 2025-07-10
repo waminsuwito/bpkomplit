@@ -150,14 +150,12 @@ export function Header() {
                         <span>Timer Pintu Mixer</span>
                       </Link>
                     </DropdownMenuItem>
-                    {showAdvancedSettings && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/mixing-settings">
-                          <Cog className="mr-2 h-4 w-4" />
-                          <span>Pengaturan Lanjutan</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/mixing-settings">
+                        <Cog className="mr-2 h-4 w-4" />
+                        <span>Pengaturan Lanjutan</span>
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                         <Link href="/dashboard/job-mix-formula">
                         <FileText className="mr-2 h-4 w-4" />
