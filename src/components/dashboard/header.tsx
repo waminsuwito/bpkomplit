@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/context/auth-provider';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft } from 'lucide-react';
+import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft, Settings, SlidersHorizontal, Cog } from 'lucide-react';
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -17,6 +18,13 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -189,12 +197,29 @@ export function Header() {
             )}
             
             <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <KeyRound className="mr-2 h-4 w-4" />
-                  Ubah Password
-                </Button>
-              </DialogTrigger>
+               <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Setting
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => setIsPasswordDialogOpen(true)}>
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      <span>Ubah Password</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                       <SlidersHorizontal className="mr-2 h-4 w-4" />
+                       <span>Setting Relay</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Cog className="mr-2 h-4 w-4" />
+                      <span>Pengaturan Lanjutan</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Ubah Password</DialogTitle>
