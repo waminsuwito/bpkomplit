@@ -1,6 +1,7 @@
 
 
 
+
 import type { LucideIcon } from 'lucide-react';
 
 export interface Material {
@@ -43,6 +44,7 @@ export const userRoles = [
   "logistik_material",
   "hse_hrd_lokasi",
   "karyawan",
+  "screen_view",
 ] as const;
 
 export type UserRole = (typeof userRoles)[number];
@@ -71,6 +73,7 @@ export const jabatanOptions = [
   "KEPALA PRECAST",
   "KEPALA SOPIR",
   "KEPALA WORKSHOP",
+  "LAYAR MONITOR",
   "OPRATOR BATA RINGAN",
   "OPRATOR BP",
   "OPRATOR CP",
