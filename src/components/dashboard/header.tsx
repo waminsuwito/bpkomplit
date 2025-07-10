@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft, Settings, SlidersHorizontal, Cog, FileText } from 'lucide-react';
+import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft, Settings, SlidersHorizontal, Cog, FileText, Timer } from 'lucide-react';
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -83,6 +83,8 @@ export function Header() {
     return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const showAdvancedSettings = user?.role === 'supervisor' || user?.role === 'super_admin';
+
   return (
     <>
       <header className="sticky top-0 flex h-20 items-center justify-between gap-4 border-b border-primary/20 bg-background px-6 z-10 no-print">
@@ -142,12 +144,22 @@ export function Header() {
                          <span>Setting Relay</span>
                        </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                       <Link href="/dashboard/mixing-settings">
-                        <Cog className="mr-2 h-4 w-4" />
-                        <span>Pengaturan Lanjutan</span>
-                       </Link>
-                    </DropdownMenuItem>
+                    {showAdvancedSettings && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/dashboard/mixing-settings">
+                            <Cog className="mr-2 h-4 w-4" />
+                            <span>Pengaturan Lanjutan</span>
+                          </Link>
+                        </DropdownMenuItem>
+                         <DropdownMenuItem asChild>
+                          <Link href="/dashboard/mixer-timer-settings">
+                            <Timer className="mr-2 h-4 w-4" />
+                            <span>Timer Pintu Mixer</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuItem asChild>
                         <Link href="/dashboard/job-mix-formula">
                         <FileText className="mr-2 h-4 w-4" />

@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiAdvisor } from './ai-advisor';
 import { PrintPreview } from './print-preview';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess } from '@/lib/config';
-import type { MixingProcessConfig, MixingProcessStep } from '@/components/admin/mixing-process-form';
+import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess, MIXER_TIMER_CONFIG_KEY, defaultMixerTimerConfig } from '@/lib/config';
+import type { MixingProcessConfig, MixingProcessStep, MixerTimerConfig } from '@/lib/config';
 import { useAuth } from '@/context/auth-provider';
 import type { JobMixFormula } from '@/lib/types';
 import { getFormulas } from '@/lib/formula';
@@ -44,6 +44,8 @@ type AutoProcessStep =
   | 'unloading_pause_1'
   | 'unloading_door_open_2'
   | 'unloading_pause_2'
+  | 'unloading_door_open_3'
+  | 'unloading_pause_3'
   | 'unloading_to_closing_transition'
   | 'unloading_door_close'
   | 'unloading_door_close_final'
@@ -98,6 +100,7 @@ export function Dashboard() {
   }, [formulas, jobInfo.selectedFormulaId]);
 
   const [mixingProcessConfig, setMixingProcessConfig] = useState<MixingProcessConfig>(defaultMixingProcess);
+  const [mixerTimerConfig, setMixerTimerConfig] = useState<MixerTimerConfig>(defaultMixerTimerConfig);
   
   // Effect to update target weights when formula or volume changes
   useEffect(() => {
@@ -178,15 +181,19 @@ export function Dashboard() {
   const prevControlsRef = useRef<ManualControlsState>();
   const prevAutoStepRef = useRef<AutoProcessStep>();
 
-  // Load config from localStorage on mount
+  // Load configs from localStorage on mount
   useEffect(() => {
     try {
       const savedProcess = window.localStorage.getItem(MIXING_PROCESS_STORAGE_KEY);
       if (savedProcess) {
         setMixingProcessConfig(JSON.parse(savedProcess));
       }
+      const savedTimers = window.localStorage.getItem(MIXER_TIMER_CONFIG_KEY);
+      if (savedTimers) {
+        setMixerTimerConfig(JSON.parse(savedTimers));
+      }
     } catch (error) {
-      console.error("Failed to load mixing process config from localStorage", error);
+      console.error("Failed to load configs from localStorage", error);
     }
   }, []);
   
@@ -376,7 +383,9 @@ export function Dashboard() {
         unloading_door_open_1: (n, t) => `Membuka pintu mixer (Mix ${n}/${t}, tahap 1)...`,
         unloading_pause_1: 'Jeda pengosongan...',
         unloading_door_open_2: (n, t) => `Membuka pintu mixer (Mix ${n}/${t}, tahap 2)...`,
-        unloading_pause_2: 'Jeda pengosongan akhir...',
+        unloading_pause_2: 'Jeda pengosongan...',
+        unloading_door_open_3: (n, t) => `Membuka pintu mixer (Mix ${n}/${t}, tahap 3)...`,
+        unloading_pause_3: 'Jeda pengosongan akhir...',
         unloading_to_closing_transition: 'Menyiapkan penutupan pintu...',
         unloading_door_close: (n, t) => `Menutup pintu mixer (setelah Mix ${n}/${t})...`,
         unloading_door_close_final: 'Menutup pintu mixer (Final)...',
@@ -524,6 +533,8 @@ export function Dashboard() {
       }
       return;
     };
+    
+    const totalUnloadTime = mixerTimerConfig.open1_s + mixerTimerConfig.pause1_s + mixerTimerConfig.open2_s + mixerTimerConfig.pause2_s + mixerTimerConfig.open3_s + mixerTimerConfig.pause3_s;
 
     switch (autoProcessStep) {
       case 'mixing':
@@ -533,7 +544,6 @@ export function Dashboard() {
       case 'unloading_door_open_1':
         if (timerMode !== 'unloading') {
           setTimerMode('unloading');
-          const totalUnloadTime = 2 + 5 + 2 + 10; // open1 + pause1 + open2 + pause2
           setTimerDisplay({ value: 0, total: totalUnloadTime, label: 'Pintu Mixer Buka', colorClass: 'text-destructive' });
         }
         break;
@@ -551,8 +561,7 @@ export function Dashboard() {
       case 'unloading_door_close_final':
         if (timerMode !== 'closing') {
           setTimerMode('closing');
-          const totalCloseTime = 5;
-          setTimerDisplay({ value: totalCloseTime, total: totalCloseTime, label: 'Pintu Mixer Tutup', colorClass: 'text-success' });
+          setTimerDisplay({ value: mixerTimerConfig.close_s, total: mixerTimerConfig.close_s, label: 'Pintu Mixer Tutup', colorClass: 'text-success' });
         }
         break;
       case 'complete':
@@ -561,7 +570,7 @@ export function Dashboard() {
         setTimerDisplay({ value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
         break;
     }
-  }, [autoProcessStep, powerOn, operasiMode, mixingTime, timerMode]);
+  }, [autoProcessStep, powerOn, operasiMode, mixingTime, timerMode, mixerTimerConfig]);
   
   // Effect for running the timer every second
   useEffect(() => {
@@ -595,30 +604,42 @@ export function Dashboard() {
     let timer: NodeJS.Timeout | undefined;
 
     const schedule = (callback: () => void, delay: number) => {
-        timer = setTimeout(callback, delay);
+        if (delay > 0) { // Only schedule if there's a delay
+            timer = setTimeout(callback, delay);
+        } else {
+            callback(); // Execute immediately if delay is 0
+        }
     };
+    
+    const { open1_s, pause1_s, open2_s, pause2_s, open3_s, pause3_s, close_s } = mixerTimerConfig;
 
     switch (autoProcessStep) {
         case 'weighing-complete':
             schedule(() => setAutoProcessStep('discharging'), 1000); // Wait 1s before starting discharge
             break;
         case 'unloading_door_open_1':
-            schedule(() => setAutoProcessStep('unloading_pause_1'), 2000);
+            schedule(() => setAutoProcessStep('unloading_pause_1'), open1_s * 1000);
             break;
         case 'unloading_pause_1':
-            schedule(() => setAutoProcessStep('unloading_door_open_2'), 5000);
+            schedule(() => setAutoProcessStep('unloading_door_open_2'), pause1_s * 1000);
             break;
         case 'unloading_door_open_2':
-            schedule(() => setAutoProcessStep('unloading_pause_2'), 2000);
+            schedule(() => setAutoProcessStep('unloading_pause_2'), open2_s * 1000);
             break;
         case 'unloading_pause_2':
+             schedule(() => setAutoProcessStep('unloading_door_open_3'), pause2_s * 1000);
+            break;
+        case 'unloading_door_open_3':
+             schedule(() => setAutoProcessStep('unloading_pause_3'), open3_s * 1000);
+            break;
+        case 'unloading_pause_3':
             schedule(() => {
                 if (currentMixNumber < jobInfo.jumlahMixing) {
                     setAutoProcessStep('unloading_door_close');
                 } else {
                     setAutoProcessStep('unloading_to_closing_transition');
                 }
-            }, 10000);
+            }, pause3_s * 1000);
             break;
         case 'unloading_to_closing_transition':
             schedule(() => setAutoProcessStep('unloading_door_close_final'), 1000);
@@ -633,10 +654,10 @@ export function Dashboard() {
                 } else {
                     setAutoProcessStep('wait_for_weighing');
                 }
-            }, 5000);
+            }, close_s * 1000);
             break;
         case 'unloading_door_close_final':
-            schedule(() => setAutoProcessStep('unloading_klakson'), 5000);
+            schedule(() => setAutoProcessStep('unloading_klakson'), close_s * 1000);
             break;
         case 'unloading_klakson':
             schedule(() => {
@@ -663,7 +684,7 @@ export function Dashboard() {
     return () => {
         if (timer) clearTimeout(timer);
     };
-}, [autoProcessStep, powerOn, operasiMode, formulas, currentMixNumber, totalActualWeights, totalTargetWeights, jobInfo.jumlahMixing]);
+}, [autoProcessStep, powerOn, operasiMode, formulas, currentMixNumber, totalActualWeights, totalTargetWeights, jobInfo.jumlahMixing, mixerTimerConfig]);
 
   // Effect to manage actuators during auto mode post-mixing sequence
   useEffect(() => {
@@ -678,7 +699,7 @@ export function Dashboard() {
       if (isUnloadingStep) {
           setActiveControls(prev => ({
               ...prev,
-              pintuBuka: autoProcessStep === 'unloading_door_open_1' || autoProcessStep === 'unloading_door_open_2',
+              pintuBuka: autoProcessStep === 'unloading_door_open_1' || autoProcessStep === 'unloading_door_open_2' || autoProcessStep === 'unloading_door_open_3',
               pintuTutup: autoProcessStep === 'unloading_door_close' || autoProcessStep === 'unloading_door_close_final',
               klakson: autoProcessStep === 'unloading_klakson' && isFinalMix,
           }));
@@ -945,11 +966,11 @@ export function Dashboard() {
                 timerDisplay={timerDisplay}
                 mixingTime={mixingTime}
                 setMixingTime={setMixingTime}
+                disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
                 currentMixInfo={ operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete' ? {
                   current: currentMixNumber,
                   total: jobInfo.jumlahMixing
                 } : undefined}
-                disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
               />
             </div>
           </div>
