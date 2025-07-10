@@ -108,7 +108,7 @@ export function Dashboard() {
 
   useEffect(() => {
     const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-    if (selectedFormula && jobInfo.jumlahMixing > 0) {
+    if (selectedFormula && jobInfo.jumlahMixing > 0 && jobInfo.targetVolume > 0) {
       const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
       setTargetWeights({
         pasir1: selectedFormula.pasir1 * volumePerMix,
@@ -126,6 +126,8 @@ export function Dashboard() {
         air: selectedFormula.air * jobInfo.targetVolume,
         semen: selectedFormula.semen * jobInfo.targetVolume,
       });
+    } else {
+       setTargetWeights({ pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 });
     }
   }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
 
@@ -169,13 +171,44 @@ export function Dashboard() {
             return;
         }
 
+        if (!(jobInfo.targetVolume > 0) || !(jobInfo.jumlahMixing > 0)) {
+            toast({
+                variant: 'destructive',
+                title: 'Gagal Memulai',
+                description: 'Target Volume dan Jumlah Mixing harus lebih besar dari 0.',
+            });
+            return;
+        }
+
+        // Re-calculate and validate target weights just before sending
+        const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
+        const calculatedTargetWeights = {
+            pasir1: selectedFormula.pasir1 * volumePerMix,
+            pasir2: selectedFormula.pasir2 * volumePerMix,
+            batu1: selectedFormula.batu1 * volumePerMix,
+            batu2: selectedFormula.batu2 * volumePerMix,
+            air: selectedFormula.air * volumePerMix,
+            semen: selectedFormula.semen * volumePerMix,
+        };
+        
+        for (const [key, value] of Object.entries(calculatedTargetWeights)) {
+            if (isNaN(value)) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Error Perhitungan',
+                    description: `Nilai target untuk ${key} tidak valid. Periksa kembali input Anda.`
+                });
+                return;
+            }
+        }
+
         resetStateForNewJob();
         set(commandRef, {
             action: 'START',
             timestamp: Date.now(),
             jobDetails: {
                 ...jobInfo,
-                targetWeights, // Send target for one mix
+                targetWeights: calculatedTargetWeights, // Send validated weights
                 mixingTime,
                 mixingProcessConfig,
                 mixerTimerConfig,
