@@ -1,6 +1,17 @@
-import type { MixingProcessConfig } from '@/components/admin/mixing-process-form';
+
 
 export const MIXING_PROCESS_STORAGE_KEY = 'mixingProcessConfig';
+
+export interface MixingProcessStep {
+  id: 'aggregates' | 'water' | 'semen';
+  name: string;
+  order: number;
+  delay: number;
+}
+export interface MixingProcessConfig {
+  steps: MixingProcessStep[];
+}
+
 
 export const defaultMixingProcess: MixingProcessConfig = {
   steps: [
