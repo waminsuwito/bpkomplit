@@ -15,6 +15,7 @@ import { useAuth } from '@/context/auth-provider';
 import type { JobMixFormula } from '@/lib/types';
 import { getFormulas } from '@/lib/formula';
 import { app } from '@/lib/firebase'; // Import Firebase app instance
+import { useToast } from '@/hooks/use-toast';
 
 type AutoProcessStep =
   | 'idle'
@@ -23,6 +24,7 @@ type AutoProcessStep =
 
 export function Dashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // Real-time weights from Firebase
   const [aggregateWeight, setAggregateWeight] = useState(0);
@@ -57,7 +59,6 @@ export function Dashboard() {
   const [mixerTimerConfig, setMixerTimerConfig] = useState<MixerTimerConfig>(defaultMixerTimerConfig);
   
   const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('AUTO');
-  const [autoProcessStep, setAutoProcessStep] = useState<AutoProcessStep>('idle');
   const [isManualProcessRunning, setIsManualProcessRunning] = useState(false);
   const [activityLog, setActivityLog] = useState<{ message: string; id: number; color: string; timestamp: string }[]>([]);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -156,8 +157,18 @@ export function Dashboard() {
     const commandRef = ref(db, 'realtime/command');
 
     if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
-        resetStateForNewJob();
         const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+        
+        if (!selectedFormula) {
+            toast({
+                variant: 'destructive',
+                title: 'Gagal Memulai',
+                description: 'Formula mutu beton belum dipilih. Mohon pilih formula terlebih dahulu.',
+            });
+            return;
+        }
+
+        resetStateForNewJob();
         set(commandRef, {
             action: 'START',
             timestamp: Date.now(),
@@ -167,7 +178,7 @@ export function Dashboard() {
                 mixingTime,
                 mixingProcessConfig,
                 mixerTimerConfig,
-                mutuBeton: selectedFormula?.mutuBeton
+                mutuBeton: selectedFormula.mutuBeton
             }
         });
         setBatchStartTime(new Date());
