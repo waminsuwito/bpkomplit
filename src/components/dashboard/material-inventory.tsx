@@ -15,7 +15,7 @@ interface WeightDisplayProps {
 
 function WeightDisplay({ title, value, unit, target, joggingValue, onJoggingChange, disabled }: WeightDisplayProps) {
   const percentage = target > 0 ? (value / target) * 100 : 0;
-  const formattedValue = value.toFixed(1);
+  const formattedValue = Math.round(value).toString();
 
   return (
     <Card>
@@ -30,7 +30,7 @@ function WeightDisplay({ title, value, unit, target, joggingValue, onJoggingChan
         <div className="mt-3 space-y-2">
           <Progress value={percentage} className="h-3" />
           <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
-            <span>Target: {target.toFixed(1)} {unit}</span>
+            <span>Target: {Math.round(target)} {unit}</span>
             <div className="flex items-center gap-2">
               <Label htmlFor={`jog-${title}`} className="text-xs">Jog (Kg):</Label>
               <Input

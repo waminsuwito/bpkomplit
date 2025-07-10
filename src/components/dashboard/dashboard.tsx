@@ -289,17 +289,17 @@ export function Dashboard() {
                 return;
             }
             
-            const applyRandomVariation = (value: number) => {
-              // Generates a random number between -0.01 and +0.01 for a +/- 1% variation
-              const variation = (Math.random() - 0.5) * 2 * 0.01; 
-              return value * (1 + variation);
+            const applyRandomVariation = (value: number, multiple: number) => {
+              const variation = (Math.random() - 0.5) * 2 * 0.01; // +/- 1% variation
+              const randomizedValue = value * (1 + variation);
+              return Math.round(randomizedValue / multiple) * multiple;
             };
 
             const manualActualWeights = {
-              pasir: applyRandomVariation(targetWeights.pasir),
-              batu: applyRandomVariation(targetWeights.batu),
-              semen: applyRandomVariation(targetWeights.semen),
-              air: applyRandomVariation(targetWeights.air),
+              pasir: applyRandomVariation(targetWeights.pasir, 5),
+              batu: applyRandomVariation(targetWeights.batu, 5),
+              semen: applyRandomVariation(targetWeights.semen, 1),
+              air: applyRandomVariation(targetWeights.air, 1),
             };
 
             setCompletedBatchData({
@@ -710,6 +710,7 @@ export function Dashboard() {
         airWeight,
         semenWeight,
         joggingValues,
+        actualMaterialWeights,
         currentMixNumber,
         jobInfo
       } = autoProcessStateRef.current;

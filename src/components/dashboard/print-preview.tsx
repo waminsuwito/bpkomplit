@@ -90,35 +90,35 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
                 <TableBody>
                   <TableRow>
                     <TableCell className="border py-1">Pasir</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{targetWeights.pasir.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{actualWeights.pasir.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{(actualWeights.pasir - targetWeights.pasir).toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.pasir)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.pasir)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.pasir - targetWeights.pasir)}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="border py-1">Batu</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{targetWeights.batu.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{actualWeights.batu.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{(actualWeights.batu - targetWeights.batu).toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.batu)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.batu)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.batu - targetWeights.batu)}</TableCell>
                   </TableRow>
                    <TableRow>
                     <TableCell className="border py-1">Semen</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{targetWeights.semen.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{actualWeights.semen.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{(actualWeights.semen - targetWeights.semen).toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.semen)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.semen)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.semen - targetWeights.semen)}</TableCell>
                   </TableRow>
                    <TableRow>
                     <TableCell className="border py-1">Air</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{targetWeights.air.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{actualWeights.air.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{(actualWeights.air - targetWeights.air).toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.air)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.air)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.air - targetWeights.air)}</TableCell>
                   </TableRow>
                 </TableBody>
                 <TableFooter>
                   <TableRow className="font-bold bg-gray-100">
                     <TableCell className="border py-1">Total</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{totalTarget.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{totalActual.toFixed(1)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{(totalActual - totalTarget).toFixed(1)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalTarget)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActual)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActual - totalTarget)}</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
