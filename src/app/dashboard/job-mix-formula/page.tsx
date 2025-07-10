@@ -5,13 +5,14 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Edit, PlusCircle, Trash2, Save } from 'lucide-react';
+import { Edit, PlusCircle, Trash2, Save, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -190,10 +191,18 @@ function FormulaManagerPage() {
                 {editingFormula ? `Editing formula: ${editingFormula.mutuBeton}` : 'Add a new job mix formula or edit an existing one.'}
               </CardDescription>
             </div>
-            <Button onClick={saveMaterialLabels}>
-              <Save className="mr-2 h-4 w-4" />
-              Simpan Nama Material
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button asChild variant="outline">
+                    <Link href="/dashboard">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Kembali ke Dashboard
+                    </Link>
+                </Button>
+                <Button onClick={saveMaterialLabels}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Simpan Nama Material
+                </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent>

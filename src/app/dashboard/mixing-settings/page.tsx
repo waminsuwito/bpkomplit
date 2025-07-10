@@ -2,11 +2,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Save, SlidersHorizontal, GripVertical } from 'lucide-react';
+import { Save, SlidersHorizontal, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -65,10 +66,18 @@ export default function MixingSettingsPage() {
               Atur urutan dan jeda waktu untuk proses pencampuran material dalam mode AUTO.
             </CardDescription>
           </div>
-          <Button onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            Simpan Pengaturan
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+                <Link href="/dashboard">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Kembali
+                </Link>
+            </Button>
+            <Button onClick={handleSave}>
+                <Save className="mr-2 h-4 w-4" />
+                Simpan
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

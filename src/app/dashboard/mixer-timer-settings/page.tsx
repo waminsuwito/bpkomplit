@@ -2,11 +2,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, Timer } from 'lucide-react';
+import { Save, Timer, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MIXER_TIMER_CONFIG_KEY, defaultMixerTimerConfig, type MixerTimerConfig } from '@/lib/config';
 
@@ -53,6 +54,12 @@ export default function MixerTimerSettingsPage() {
               Atur durasi (dalam detik) untuk setiap tahapan proses buka/tutup pintu mixer.
             </CardDescription>
           </div>
+           <Button asChild variant="outline">
+              <Link href="/dashboard">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Kembali
+              </Link>
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
