@@ -165,9 +165,9 @@ export function ControlPanel({
            </div>
            <div className="text-center text-primary uppercase text-sm tracking-wider font-semibold pt-4 mb-2">Kontrol Proses</div>
            <div className="grid grid-cols-3 gap-2">
-             <Button onClick={() => handleProcessControl('START')} className="font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL' || !!mixWarning}>START</Button>
+             <Button onClick={() => handleProcessControl('START')} className="font-bold text-xs col-span-1" disabled={!powerOn || (operasiMode === 'AUTO' && !!mixWarning)}>START</Button>
              <Button onClick={() => handleProcessControl('PAUSE')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>PAUSE</Button>
-             <Button onClick={() => handleProcessControl('STOP')} variant="destructive" className="font-bold text-xs col-span-1" disabled={!powerOn || operasiMode === 'MANUAL'}>STOP</Button>
+             <Button onClick={() => handleProcessControl('STOP')} variant="destructive" className="font-bold text-xs col-span-1" disabled={!powerOn}>STOP</Button>
            </div>
             <Button 
               onMouseDown={() => handleKlaksonPress(true)} 
