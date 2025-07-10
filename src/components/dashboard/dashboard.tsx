@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { WeightDisplayPanel } from './material-inventory';
-import { ControlPanel } from './batch-control';
+import { ControlPanel } from './control-panel';
 import { StatusPanel, type TimerDisplayState } from './status-panel';
 import { ManualControlPanel, type ManualControlsState } from './batch-history';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -269,27 +270,40 @@ export function Dashboard() {
   };
   
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
-    if (!powerOn || operasiMode !== 'AUTO') return;
+    if (!powerOn) return;
 
-    if (action === 'START') {
-      if (autoProcessStep === 'idle' || autoProcessStep === 'complete') {
-        setActivityLog([]);
+    if (action === 'STOP') {
+      if (operasiMode === 'AUTO') {
         resetAutoProcess();
-        setShowPrintPreview(false); // Hide previous print preview
-        setBatchStartTime(new Date());
-        setWeighingPhases({ aggregate: 'fast', air: 'fast', semen: 'fast' });
-        setAutoProcessStep('weighing-pasir');
-      } else if (autoProcessStep === 'paused') {
-        setAutoProcessStep(pausedStep);
       }
-    } else if (action === 'PAUSE') {
-      if (autoProcessStep !== 'paused' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete') {
-        setPausedStep(autoProcessStep);
-        setAutoProcessStep('paused');
-      }
-    } else if (action === 'STOP') {
-      resetAutoProcess();
       setActivityLog([]);
+      return;
+    }
+
+    if (operasiMode === 'AUTO') {
+      if (action === 'START') {
+        if (autoProcessStep === 'idle' || autoProcessStep === 'complete') {
+          setActivityLog([]);
+          resetAutoProcess();
+          setShowPrintPreview(false); // Hide previous print preview
+          setBatchStartTime(new Date());
+          setWeighingPhases({ aggregate: 'fast', air: 'fast', semen: 'fast' });
+          setAutoProcessStep('weighing-pasir');
+        } else if (autoProcessStep === 'paused') {
+          setAutoProcessStep(pausedStep);
+        }
+      } else if (action === 'PAUSE') {
+        if (autoProcessStep !== 'paused' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete') {
+          setPausedStep(autoProcessStep);
+          setAutoProcessStep('paused');
+        }
+      }
+    } else { // Manual mode logic for START/STOP
+      if (action === 'START') {
+        setActivityLog(prev => [...prev, { message: 'Proses manual dimulai.', id: Date.now(), color: 'text-green-400', timestamp: new Date().toLocaleTimeString('en-GB') }]);
+      } else if (action === 'STOP') {
+        setActivityLog(prev => [...prev, { message: 'Proses manual dihentikan.', id: Date.now(), color: 'text-red-400', timestamp: new Date().toLocaleTimeString('en-GB') }]);
+      }
     }
   };
 
