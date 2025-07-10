@@ -68,6 +68,9 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
+                    <Link href="/dashboard/tombol-manual">Tombol Manual</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/dashboard/job-mix-formula">Job Mix Formula</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

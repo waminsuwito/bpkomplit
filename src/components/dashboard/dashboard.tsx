@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { WeightDisplayPanel } from './material-inventory';
 import { ControlPanel } from './control-panel';
 import { StatusPanel, type TimerDisplayState } from './status-panel';
-import { ManualControlPanel, type ManualControlsState } from './batch-history';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PrintPreview } from './print-preview';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -133,19 +132,7 @@ export function Dashboard() {
     semen: 20,
   });
 
-  const [activeControls, setActiveControls] = useState<ManualControlsState>({
-    pasir1: false, pasir2: false, batu1: false, batu2: false,
-    airTimbang: false, airBuang: false,
-    selectedSilo: 'silo1',
-    semenTimbang: false,
-    semen: false,
-    pintuBuka: false, pintuTutup: false, 
-    konveyorBawah: false, 
-    konveyorAtas: false, 
-    klakson: false
-  });
-
-  const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('MANUAL');
+  const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('AUTO');
   const [autoProcessStep, setAutoProcessStep] = useState<AutoProcessStep>('idle');
   const [isManualProcessRunning, setIsManualProcessRunning] = useState(false);
   const [pausedStep, setPausedStep] = useState<AutoProcessStep>('idle');
@@ -177,7 +164,6 @@ export function Dashboard() {
   const dischargeGroupStartTimeRef = useRef(0);
   const currentDischargeGroupRef = useRef(1);
   
-  const prevControlsRef = useRef<ManualControlsState>();
   const prevAutoStepRef = useRef<AutoProcessStep>();
 
   // Load configs from localStorage on mount
@@ -213,12 +199,6 @@ export function Dashboard() {
     dischargeClockRef.current = 0;
     dischargeGroupStartTimeRef.current = 0;
     currentDischargeGroupRef.current = 1;
-    setActiveControls(prev => ({
-        ...prev,
-        pintuBuka: false,
-        pintuTutup: false,
-        klakson: false,
-    }));
   }, [mixingTime]);
 
   const handleSetPowerOn = (isOn: boolean) => {
@@ -226,44 +206,8 @@ export function Dashboard() {
     if (!isOn) {
       resetAutoProcess();
       setActivityLog([]);
-      setActiveControls({
-        pasir1: false, pasir2: false, batu1: false, batu2: false,
-        airTimbang: false, airBuang: false,
-        selectedSilo: 'silo1',
-        semenTimbang: false,
-        semen: false,
-        pintuBuka: false, pintuTutup: false, 
-        konveyorBawah: false, 
-        konveyorAtas: false, 
-        klakson: false
-      });
     }
   };
-
-  const handleToggle = useCallback((key: keyof ManualControlsState) => {
-    if (!powerOn || operasiMode !== 'MANUAL') return;
-    setActiveControls(prev => {
-      if (typeof prev[key] === 'boolean') {
-        return { ...prev, [key]: !prev[key] };
-      }
-      return prev;
-    });
-  }, [powerOn, operasiMode]);
-
-  const handlePress = useCallback((key: keyof ManualControlsState, isPressed: boolean) => {
-    if (!powerOn || operasiMode !== 'MANUAL') return;
-    setActiveControls(prev => {
-      if (prev[key] !== isPressed) {
-        return { ...prev, [key]: isPressed };
-      }
-      return prev;
-    });
-  }, [powerOn, operasiMode]);
-
-  const handleSiloChange = useCallback((silo: string) => {
-    if (!powerOn || operasiMode !== 'MANUAL') return;
-    setActiveControls(prev => ({ ...prev, selectedSilo: silo }));
-  }, [powerOn, operasiMode]);
 
   const handleJoggingChange = (material: 'aggregate' | 'air' | 'semen', value: number) => {
     if (!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')) return;
@@ -283,42 +227,6 @@ export function Dashboard() {
         if (isManualProcessRunning) {
             setIsManualProcessRunning(false);
             setActivityLog(prev => [...prev, { message: 'Proses manual dihentikan.', id: Date.now(), color: 'text-red-400', timestamp: new Date().toLocaleTimeString('en-GB') }]);
-            
-            // Generate print preview for manual mode
-            const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-            if (!selectedFormula) {
-                console.error("No formula selected for manual print.");
-                return;
-            }
-            
-            const applyRandomVariation = (value: number, multiple: number) => {
-              const variation = (Math.random() - 0.5) * 2 * 0.01; // +/- 1% variation
-              const randomizedValue = value * (1 + variation);
-              return Math.round(randomizedValue / multiple) * multiple;
-            };
-
-            const manualActualWeights = {
-              pasir1: applyRandomVariation(targetWeights.pasir1, 5),
-              pasir2: applyRandomVariation(targetWeights.pasir2, 5),
-              batu1: applyRandomVariation(targetWeights.batu1, 5),
-              batu2: applyRandomVariation(targetWeights.batu2, 5),
-              semen: applyRandomVariation(targetWeights.semen, 1),
-              air: applyRandomVariation(targetWeights.air, 1),
-            };
-
-            setCompletedBatchData({
-              jobId: `MANUAL-${Date.now()}`,
-              namaPelanggan: jobInfo.namaPelanggan,
-              lokasiProyek: jobInfo.lokasiProyek,
-              mutuBeton: selectedFormula.mutuBeton,
-              targetVolume: jobInfo.targetVolume,
-              slump: jobInfo.slump,
-              targetWeights: totalTargetWeights, 
-              actualWeights: manualActualWeights, 
-              startTime: batchStartTime,
-              endTime: new Date(),
-            });
-            setShowPrintPreview(true);
         }
       }
       return;
@@ -355,21 +263,6 @@ export function Dashboard() {
 
   // Effect for logging activities
   useEffect(() => {
-    const controlLabels: { [key in keyof Omit<ManualControlsState, 'selectedSilo'>]: { on: string; off: string } } = {
-        pasir1: { on: 'Menimbang Pasir 1 ON', off: 'Penimbangan Pasir 1 Selesai' },
-        pasir2: { on: 'Menimbang Pasir 2 ON', off: 'Penimbangan Pasir 2 Selesai' },
-        batu1: { on: 'Menimbang Batu 1 ON', off: 'Penimbangan Batu 1 Selesai' },
-        batu2: { on: 'Menimbang Batu 2 ON', off: 'Penimbangan Batu 2 Selesai' },
-        airTimbang: { on: 'Mengisi Air Timbang ON', off: 'Pengisian Air Timbang Selesai' },
-        airBuang: { on: 'Membuang Air ON', off: 'Pembuangan Air Selesai' },
-        semenTimbang: { on: 'Menimbang Semen ON', off: 'Penimbangan Semen Selesai' },
-        semen: { on: 'Membuang Semen ON', off: 'Pembuangan Semen Selesai' },
-        pintuBuka: { on: 'Membuka Pintu Mixer', off: 'Pintu Mixer Normal' },
-        pintuTutup: { on: 'Menutup Pintu Mixer', off: 'Pintu Mixer Normal' },
-        konveyorBawah: { on: 'Konveyor Bawah ON', off: 'Konveyor Bawah OFF' },
-        konveyorAtas: { on: 'Konveyor Atas ON', off: 'Konveyor Atas OFF' },
-        klakson: { on: 'Klakson ON', off: 'Klakson OFF' },
-    };
     const autoStepMessages: { [key in AutoProcessStep]: string | ((mixNum: number, totalMixes: number) => string) | null } = {
         idle: null,
         paused: 'Proses dijeda oleh operator.',
@@ -407,15 +300,6 @@ export function Dashboard() {
       });
     };
     
-    const prevControls = prevControlsRef.current;
-    if (operasiMode === 'MANUAL' && prevControls && powerOn) {
-      (Object.keys(controlLabels) as Array<keyof typeof controlLabels>).forEach(key => {
-        if (activeControls[key] !== prevControls[key]) {
-          logActivity(activeControls[key] ? controlLabels[key].on : controlLabels[key].off);
-        }
-      });
-    }
-
     const prevAutoStep = prevAutoStepRef.current;
     if (operasiMode === 'AUTO' && prevAutoStep !== autoProcessStep && powerOn) {
         const messageOrFn = autoStepMessages[autoProcessStep];
@@ -439,10 +323,9 @@ export function Dashboard() {
         }
     }
     
-    prevControlsRef.current = activeControls;
     prevAutoStepRef.current = autoProcessStep;
 
-  }, [activeControls, autoProcessStep, operasiMode, powerOn, weighingPhases.aggregate, currentMixNumber, jobInfo.jumlahMixing]);
+  }, [autoProcessStep, operasiMode, powerOn, weighingPhases.aggregate, currentMixNumber, jobInfo.jumlahMixing]);
 
   // Effect to log mode changes when power is on
   useEffect(() => {
@@ -459,35 +342,6 @@ export function Dashboard() {
         timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     }]);
   }, [powerOn, operasiMode]);
-
-
-  // Effect for Manual Mode Weight Simulation
-  useEffect(() => {
-    if (!powerOn || operasiMode !== 'MANUAL') return;
-
-    const interval = setInterval(() => {
-      if (activeControls.pasir1 || activeControls.pasir2 || activeControls.batu1 || activeControls.batu2) {
-        setAggregateWeight(w => w + (AGGREGATE_RATE * (UPDATE_INTERVAL / 1000)));
-      }
-      if (activeControls.konveyorBawah || activeControls.konveyorAtas) {
-        setAggregateWeight(w => Math.max(0, w - (CONVEYOR_DISCHARGE_RATE * (UPDATE_INTERVAL / 1000))));
-      }
-      if (activeControls.airTimbang) {
-        setAirWeight(w => w + (AIR_RATE * (UPDATE_INTERVAL / 1000)));
-      }
-      if (activeControls.airBuang) {
-        setAirWeight(w => Math.max(0, w - (AIR_RATE * (UPDATE_INTERVAL / 1000))));
-      }
-      if (activeControls.semenTimbang) {
-        setSemenWeight(w => w + (SEMEN_RATE * (UPDATE_INTERVAL / 1000)));
-      }
-      if (activeControls.semen) {
-        setSemenWeight(w => Math.max(0, w - (SEMEN_RATE * (UPDATE_INTERVAL / 1000))));
-      }
-    }, UPDATE_INTERVAL);
-
-    return () => clearInterval(interval);
-  }, [powerOn, operasiMode, activeControls]);
 
   // --- AUTO MODE EFFECTS ---
   
@@ -684,33 +538,6 @@ export function Dashboard() {
         if (timer) clearTimeout(timer);
     };
 }, [autoProcessStep, powerOn, operasiMode, formulas, currentMixNumber, totalActualWeights, totalTargetWeights, jobInfo.jumlahMixing, mixerTimerConfig]);
-
-  // Effect to manage actuators during auto mode post-mixing sequence
-  useEffect(() => {
-      if (!powerOn || operasiMode !== 'AUTO') {
-          return;
-      }
-      
-      const prevStep = prevAutoStepRef.current;
-      const isUnloadingStep = autoProcessStep.startsWith('unloading');
-      const isFinalMix = currentMixNumber === jobInfo.jumlahMixing;
-      
-      if (isUnloadingStep) {
-          setActiveControls(prev => ({
-              ...prev,
-              pintuBuka: autoProcessStep === 'unloading_door_open_1' || autoProcessStep === 'unloading_door_open_2' || autoProcessStep === 'unloading_door_open_3',
-              pintuTutup: autoProcessStep === 'unloading_door_close' || autoProcessStep === 'unloading_door_close_final',
-              klakson: autoProcessStep === 'unloading_klakson' && isFinalMix,
-          }));
-      } else if (prevStep && prevStep.startsWith('unloading')) {
-          setActiveControls(prev => ({
-              ...prev,
-              pintuBuka: false,
-              pintuTutup: false,
-              klakson: false,
-          }));
-      }
-  }, [autoProcessStep, operasiMode, powerOn, currentMixNumber, jobInfo.jumlahMixing]);
 
   // Combined Effect for weight simulation AND phase transitions
   useEffect(() => {
@@ -973,26 +800,7 @@ export function Dashboard() {
               />
             </div>
           </div>
-
-          <div className="space-y-4">
-            {operasiMode === 'MANUAL' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Manual Controls</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ManualControlPanel
-                    activeControls={activeControls}
-                    handleToggle={handleToggle}
-                    handlePress={handlePress}
-                    handleSiloChange={handleSiloChange}
-                    disabled={!powerOn || operasiMode === 'AUTO'}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
+          
           <Sheet open={showPrintPreview} onOpenChange={setShowPrintPreview}>
             <SheetContent className="w-full sm:max-w-4xl p-0">
                 <PrintPreview 
