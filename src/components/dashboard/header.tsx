@@ -209,9 +209,11 @@ export function Header() {
                       <KeyRound className="mr-2 h-4 w-4" />
                       <span>Ubah Password</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                       <SlidersHorizontal className="mr-2 h-4 w-4" />
-                       <span>Setting Relay</span>
+                    <DropdownMenuItem asChild>
+                       <Link href="/dashboard/relay-settings">
+                         <SlidersHorizontal className="mr-2 h-4 w-4" />
+                         <span>Setting Relay</span>
+                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <Cog className="mr-2 h-4 w-4" />
