@@ -136,6 +136,7 @@ export function Dashboard() {
 
   const [operasiMode, setOperasiMode] = useState<'MANUAL' | 'AUTO'>('MANUAL');
   const [autoProcessStep, setAutoProcessStep] = useState<AutoProcessStep>('idle');
+  const [isManualProcessRunning, setIsManualProcessRunning] = useState(false);
   const [pausedStep, setPausedStep] = useState<AutoProcessStep>('idle');
   const [timerMode, setTimerMode] = useState<TimerMode>('idle');
   
@@ -195,6 +196,7 @@ export function Dashboard() {
   
   const resetAutoProcess = useCallback(() => {
     setAutoProcessStep('idle');
+    setIsManualProcessRunning(false);
     setAggregateWeight(0);
     setAirWeight(0);
     setSemenWeight(0);
@@ -275,8 +277,42 @@ export function Dashboard() {
     if (action === 'STOP') {
       if (operasiMode === 'AUTO') {
         resetAutoProcess();
+      } else {
+        if (isManualProcessRunning) {
+            setIsManualProcessRunning(false);
+            setActivityLog(prev => [...prev, { message: 'Proses manual dihentikan.', id: Date.now(), color: 'text-red-400', timestamp: new Date().toLocaleTimeString('en-GB') }]);
+            
+            // Generate print preview for manual mode
+            const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+            if (!selectedFormula) {
+                // handle error, maybe a toast
+                console.error("No formula selected for manual print.");
+                return;
+            }
+            
+            // For manual mode, actual weight is assumed to be the target weight
+            const manualActualWeights = {
+              pasir: targetWeights.pasir,
+              batu: targetWeights.batu,
+              semen: targetWeights.semen,
+              air: targetWeights.air,
+            };
+
+            setCompletedBatchData({
+              jobId: `MANUAL-${Date.now()}`,
+              namaPelanggan: jobInfo.namaPelanggan,
+              lokasiProyek: jobInfo.lokasiProyek,
+              mutuBeton: selectedFormula.mutuBeton,
+              targetVolume: jobInfo.targetVolume,
+              slump: jobInfo.slump,
+              targetWeights: totalTargetWeights, // Total targets for the whole job
+              actualWeights: manualActualWeights, // Actuals for a single mix, but let's show total targets for consistency
+              startTime: batchStartTime,
+              endTime: new Date(),
+            });
+            setShowPrintPreview(true);
+        }
       }
-      setActivityLog([]);
       return;
     }
 
@@ -298,11 +334,13 @@ export function Dashboard() {
           setAutoProcessStep('paused');
         }
       }
-    } else { // Manual mode logic for START/STOP
-      if (action === 'START') {
+    } else { // Manual mode logic for START
+      if (action === 'START' && !isManualProcessRunning) {
+        setIsManualProcessRunning(true);
+        setBatchStartTime(new Date());
+        setShowPrintPreview(false);
+        setCompletedBatchData(null);
         setActivityLog(prev => [...prev, { message: 'Proses manual dimulai.', id: Date.now(), color: 'text-green-400', timestamp: new Date().toLocaleTimeString('en-GB') }]);
-      } else if (action === 'STOP') {
-        setActivityLog(prev => [...prev, { message: 'Proses manual dihentikan.', id: Date.now(), color: 'text-red-400', timestamp: new Date().toLocaleTimeString('en-GB') }]);
       }
     }
   };
@@ -623,7 +661,7 @@ export function Dashboard() {
     return () => {
         if (timer) clearTimeout(timer);
     };
-}, [autoProcessStep, powerOn, operasiMode, formulas, currentMixNumber, totalActualWeights, totalTargetWeights]);
+}, [autoProcessStep, powerOn, operasiMode, formulas, currentMixNumber, totalActualWeights, totalTargetWeights, jobInfo.jumlahMixing]);
 
   // Effect to manage actuators during auto mode post-mixing sequence
   useEffect(() => {
@@ -890,6 +928,7 @@ export function Dashboard() {
                 handleProcessControl={handleProcessControl}
                 jobInfo={jobInfo}
                 setJobInfo={setJobInfo}
+                isManualProcessRunning={isManualProcessRunning}
               />
             </div>
             <div className="col-span-3">
