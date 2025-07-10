@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Save, SlidersHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const RELAY_MAPPINGS_KEY = 'app-relay-mappings';
+export const RELAY_MAPPINGS_KEY = 'app-relay-mappings';
 
 const defaultControlKeys = [
   'pasir1', 'pasir2', 'batu1', 'batu2', 'airTimbang', 'airBuang',
@@ -38,20 +38,27 @@ const getInitialMappings = (): ControlMapping[] => {
 };
 
 export default function RelaySettingsPage() {
-  const [mappings, setMappings] = useState<ControlMapping[]>(getInitialMappings());
+  const [mappings, setMappings] = useState<ControlMapping[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     try {
-      const storedMappings = localStorage.getItem(RELAY_MAPPINGS_KEY);
-      if (storedMappings) {
-        setMappings(JSON.parse(storedMappings));
+      const storedMappingsRaw = localStorage.getItem(RELAY_MAPPINGS_KEY);
+      if (storedMappingsRaw) {
+        const storedMappings = JSON.parse(storedMappingsRaw);
+        // Ensure all default keys are present in case the list was updated
+        const fullMappings = getInitialMappings().map(defaultMapping => {
+            const stored = storedMappings.find((m: ControlMapping) => m.id === defaultMapping.id);
+            return stored ? stored : defaultMapping;
+        });
+        setMappings(fullMappings);
       } else {
         // If nothing is stored, initialize with defaults
         setMappings(getInitialMappings());
       }
     } catch (error) {
       console.error("Failed to load relay settings:", error);
+      setMappings(getInitialMappings());
     }
   }, []);
 
@@ -60,12 +67,6 @@ export default function RelaySettingsPage() {
       m.id === id ? { ...m, [field]: value } : m
     );
     setMappings(newMappings);
-    // Autosave on change
-    try {
-        localStorage.setItem(RELAY_MAPPINGS_KEY, JSON.stringify(newMappings));
-    } catch (error) {
-        console.error("Failed to save relay settings:", error);
-    }
   };
 
   const handleSaveAll = () => {
@@ -88,12 +89,12 @@ export default function RelaySettingsPage() {
                     Setting Relay & Label Tombol
                 </CardTitle>
                 <CardDescription>
-                    Kustomisasi nama tombol kontrol dan tetapkan nama relay yang sesuai. Perubahan disimpan otomatis.
+                    Kustomisasi nama tombol kontrol dan tetapkan nama relay yang sesuai.
                 </CardDescription>
             </div>
             <Button onClick={handleSaveAll}>
                 <Save className="mr-2 h-4 w-4" />
-                Simpan Semua
+                Simpan Semua Perubahan
             </Button>
         </div>
       </CardHeader>
