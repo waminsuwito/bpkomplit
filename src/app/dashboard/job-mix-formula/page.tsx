@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,7 @@ import { getFormulas, addFormula, updateFormula, deleteFormula } from '@/lib/for
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import React from 'react';
 
 const formulaSchema = z.object({
   mutuBeton: z.string().min(1, 'Mutu Beton is required.'),
@@ -44,6 +45,32 @@ const defaultMaterialLabels = {
 };
 
 type MaterialKeys = keyof typeof defaultMaterialLabels;
+
+
+// Extracted and memoized component to prevent re-renders on every keystroke
+const EditableLabel = React.memo(function EditableLabel({ 
+    materialKey, 
+    label, 
+    onLabelChange 
+}: { 
+    materialKey: MaterialKeys;
+    label: string;
+    onLabelChange: (key: MaterialKeys, value: string) => void;
+}) {
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center">
+                <Input 
+                    value={label}
+                    onChange={(e) => onLabelChange(materialKey, e.target.value)}
+                    className="font-medium text-sm border-0 border-b rounded-none px-1 h-8 focus-visible:ring-0 focus-visible:border-primary"
+                />
+                <span className="text-sm text-muted-foreground ml-1">(Kg)</span>
+            </div>
+        </div>
+    );
+});
+
 
 function FormulaManagerPage() {
   const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
@@ -181,19 +208,6 @@ function FormulaManagerPage() {
         </Dialog>
     );
   }
-  
-  const EditableLabel = ({ materialKey }: { materialKey: MaterialKeys }) => (
-    <div className="space-y-2">
-        <div className="flex items-center">
-            <Input 
-                value={materialLabels[materialKey]}
-                onChange={(e) => handleLabelChange(materialKey, e.target.value)}
-                className="font-medium text-sm border-0 border-b rounded-none px-1 h-8 focus-visible:ring-0 focus-visible:border-primary"
-            />
-            <span className="text-sm text-muted-foreground ml-1">(Kg)</span>
-        </div>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -234,42 +248,42 @@ function FormulaManagerPage() {
                   )} />
                   <FormField name="pasir1" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <EditableLabel materialKey="pasir1" />
+                      <EditableLabel materialKey="pasir1" label={materialLabels.pasir1} onLabelChange={handleLabelChange} />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                    <FormField name="pasir2" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <EditableLabel materialKey="pasir2" />
+                      <EditableLabel materialKey="pasir2" label={materialLabels.pasir2} onLabelChange={handleLabelChange} />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="batu1" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <EditableLabel materialKey="batu1" />
+                      <EditableLabel materialKey="batu1" label={materialLabels.batu1} onLabelChange={handleLabelChange} />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="batu2" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <EditableLabel materialKey="batu2" />
+                      <EditableLabel materialKey="batu2" label={materialLabels.batu2} onLabelChange={handleLabelChange} />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="semen" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <EditableLabel materialKey="semen" />
+                      <EditableLabel materialKey="semen" label={materialLabels.semen} onLabelChange={handleLabelChange} />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
                   )} />
                   <FormField name="air" control={form.control} render={({ field }) => (
                   <FormItem>
-                      <EditableLabel materialKey="air" />
+                      <EditableLabel materialKey="air" label={materialLabels.air} onLabelChange={handleLabelChange} />
                       <FormControl><Input type="number" {...field} /></FormControl>
                       <FormMessage />
                   </FormItem>
