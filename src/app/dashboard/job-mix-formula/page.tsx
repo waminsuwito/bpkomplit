@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getFormulas, addFormula, updateFormula, deleteFormula } from '@/lib/formula';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 const formulaSchema = z.object({
   mutuBeton: z.string().min(1, 'Mutu Beton is required.'),
