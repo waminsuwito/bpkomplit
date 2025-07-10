@@ -285,17 +285,21 @@ export function Dashboard() {
             // Generate print preview for manual mode
             const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
             if (!selectedFormula) {
-                // handle error, maybe a toast
                 console.error("No formula selected for manual print.");
                 return;
             }
             
-            // For manual mode, actual weight is assumed to be the target weight
+            const applyRandomVariation = (value: number) => {
+              // Generates a random number between -0.01 and +0.01 for a +/- 1% variation
+              const variation = (Math.random() - 0.5) * 2 * 0.01; 
+              return value * (1 + variation);
+            };
+
             const manualActualWeights = {
-              pasir: targetWeights.pasir,
-              batu: targetWeights.batu,
-              semen: targetWeights.semen,
-              air: targetWeights.air,
+              pasir: applyRandomVariation(targetWeights.pasir),
+              batu: applyRandomVariation(targetWeights.batu),
+              semen: applyRandomVariation(targetWeights.semen),
+              air: applyRandomVariation(targetWeights.air),
             };
 
             setCompletedBatchData({
@@ -305,8 +309,8 @@ export function Dashboard() {
               mutuBeton: selectedFormula.mutuBeton,
               targetVolume: jobInfo.targetVolume,
               slump: jobInfo.slump,
-              targetWeights: totalTargetWeights, // Total targets for the whole job
-              actualWeights: manualActualWeights, // Actuals for a single mix, but let's show total targets for consistency
+              targetWeights: totalTargetWeights, 
+              actualWeights: manualActualWeights, 
               startTime: batchStartTime,
               endTime: new Date(),
             });
