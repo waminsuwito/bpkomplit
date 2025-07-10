@@ -5,7 +5,6 @@ import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { UserCircle, LogOut, Fingerprint, Settings, Lock } from 'lucide-react';
 import {
   DropdownMenu,
@@ -14,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChangePasswordDialog } from './change-password-dialog';
+import { ChangePasswordDialog } from '@/components/dashboard/change-password-dialog';
 import { useState } from 'react';
 
 export function Header() {
