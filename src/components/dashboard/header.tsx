@@ -6,84 +6,16 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft, Settings, SlidersHorizontal, Cog, FileText, Timer } from 'lucide-react';
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { changePassword } from '@/lib/auth';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-
-
-const passwordFormSchema = z
-  .object({
-    oldPassword: z.string().min(1, { message: 'Password lama harus diisi.' }),
-    newPassword: z.string().min(6, { message: 'Password baru minimal 6 karakter.' }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Password baru tidak cocok.',
-    path: ['confirmPassword'],
-  });
-
-type PasswordFormValues = z.infer<typeof passwordFormSchema>;
-
+import { UserCircle, LogOut, Loader2, Fingerprint, ArrowLeft } from 'lucide-react';
+import React from 'react';
 
 export function Header() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const isAdminPage = pathname.startsWith('/admin');
-
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  
-  const { toast } = useToast();
-
-  const passwordForm = useForm<PasswordFormValues>({
-    resolver: zodResolver(passwordFormSchema),
-    defaultValues: { oldPassword: '', newPassword: '', confirmPassword: '' },
-  });
-  
-  const { isSubmitting: isChangingPassword } = passwordForm.formState;
-
-  const handlePasswordChange = async (values: PasswordFormValues) => {
-    if (!user) return;
-    const result = await changePassword(user.id, values.oldPassword, values.newPassword);
-    if (result.success) {
-      toast({ title: 'Berhasil', description: result.message });
-      setIsPasswordDialogOpen(false);
-      passwordForm.reset();
-    } else {
-      toast({ variant: 'destructive', title: 'Gagal', description: result.message });
-    }
-  };
-
 
   const formatRoleName = (role: string) => {
     return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
-
-  const showAdvancedSettings = user?.role === 'supervisor' || user?.role === 'super_admin';
 
   return (
     <>
@@ -119,116 +51,6 @@ export function Header() {
                 </Link>
               </Button>
             )}
-            
-            {user.role === 'super_admin' && !isAdminPage && (
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/admin/super-admin">
-                  <Shield className="mr-2 h-4 w-4" />
-                  User Management
-                </Link>
-              </Button>
-            )}
-            
-            <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Setting
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                       <Link href="/dashboard/relay-settings">
-                         <SlidersHorizontal className="mr-2 h-4 w-4" />
-                         <span>Setting Relay</span>
-                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard/mixer-timer-settings">
-                        <Timer className="mr-2 h-4 w-4" />
-                        <span>Timer Pintu Mixer</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard/mixing-settings">
-                        <Cog className="mr-2 h-4 w-4" />
-                        <span>Pengaturan Lanjutan</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/dashboard/job-mix-formula">
-                        <FileText className="mr-2 h-4 w-4" />
-                        <span>Job Mix Formula</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                     <DropdownMenuItem onSelect={() => setIsPasswordDialogOpen(true)}>
-                      <KeyRound className="mr-2 h-4 w-4" />
-                      <span>Ubah Password</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Ubah Password</DialogTitle>
-                  <DialogDescription>
-                    Masukkan password lama dan password baru Anda di bawah ini.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...passwordForm}>
-                  <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
-                    <FormField
-                      control={passwordForm.control}
-                      name="oldPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password Lama</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Masukkan password lama" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={passwordForm.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password Baru</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Masukkan password baru" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={passwordForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Konfirmasi Password Baru</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Konfirmasi password baru" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <DialogClose asChild><Button type="button" variant="outline">Batal</Button></DialogClose>
-                      <Button type="submit" disabled={isChangingPassword}>
-                        {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Simpan Perubahan
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
 
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />

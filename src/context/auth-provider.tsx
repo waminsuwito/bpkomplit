@@ -43,10 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/dashboard');
     } else if (userData.role === 'super_admin' || userData.role === 'admin_lokasi' || userData.role === 'logistik_material' || userData.role === 'hse_hrd_lokasi') {
       router.push('/admin');
-    } else if (userData.role === 'karyawan') {
+    } else if (userData.role === 'karyawan' || userData.role === 'operator' || userData.role === 'supervisor' || userData.role === 'laborat' || userData.role === 'mekanik' || userData.role === 'tukang_las' || userData.role === 'logistik_spareparts') {
       router.push('/karyawan');
     } else {
-      router.push('/dashboard');
+      router.push('/'); // Fallback to login page for screen_view or unhandled roles
     }
   };
 

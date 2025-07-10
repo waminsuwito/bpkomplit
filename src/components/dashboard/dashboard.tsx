@@ -7,7 +7,6 @@ import { ControlPanel } from './control-panel';
 import { StatusPanel, type TimerDisplayState } from './status-panel';
 import { ManualControlPanel, type ManualControlsState } from './batch-history';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AiAdvisor } from './ai-advisor';
 import { PrintPreview } from './print-preview';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess, MIXER_TIMER_CONFIG_KEY, defaultMixerTimerConfig } from '@/lib/config';
@@ -992,7 +991,6 @@ export function Dashboard() {
                 </CardContent>
               </Card>
             )}
-            {user?.role === 'super_admin' && <AiAdvisor />}
           </div>
 
           <Sheet open={showPrintPreview} onOpenChange={setShowPrintPreview}>
