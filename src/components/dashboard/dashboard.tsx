@@ -31,6 +31,7 @@ export function Dashboard() {
   const [airWeight, setAirWeight] = useState(0);
   const [semenWeight, setSemenWeight] = useState(0);
   const [currentMixNumber, setCurrentMixNumber] = useState(0);
+  const [autoProcessStep, setAutoProcessStep] = useState<AutoProcessStep>('idle');
 
   const [powerOn, setPowerOn] = useState(true);
   const [mixingTime, setMixingTime] = useState(15);
