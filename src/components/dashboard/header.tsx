@@ -146,14 +146,12 @@ export function Header() {
                       <Cog className="mr-2 h-4 w-4" />
                       <span>Pengaturan Lanjutan</span>
                     </DropdownMenuItem>
-                     {(user.role === 'supervisor' || user.role === 'super_admin') && (
-                       <DropdownMenuItem asChild>
-                         <Link href="/dashboard/job-mix-formula">
-                           <FileText className="mr-2 h-4 w-4" />
-                           <span>Job Mix Formula</span>
-                         </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem asChild>
+                        <Link href="/dashboard/job-mix-formula">
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Job Mix Formula</span>
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem onSelect={() => setIsPasswordDialogOpen(true)}>
                       <KeyRound className="mr-2 h-4 w-4" />
