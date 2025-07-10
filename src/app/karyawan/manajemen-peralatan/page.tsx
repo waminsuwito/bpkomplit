@@ -1,254 +1,173 @@
-'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Wrench, PlusCircle, Trash2, Sheet as SheetIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { EditableVehicleList } from '@/components/karyawan/editable-vehicle-list';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+/*
+  Sketch Arduino Mega 2560 untuk Batching Plant Controller
+  Disesuaikan untuk membaca data dari Indikator Timbangan GSC SGW-3015S
+  dan menerima perintah kontrol dari aplikasi web melalui program Agent.
+*/
 
+#include <ArduinoJson.h> // Library untuk JSON Parsing
 
-const VEHICLES_STORAGE_KEY = 'app-vehicles';
+// --- Konfigurasi Serial ---
+// Serial: Terhubung ke Komputer (Agent) untuk menerima perintah & mengirim data berat.
+// Serial1: Terhubung ke Indikator Timbangan GSC SGW-3015S (Pin 19-RX1, 18-TX1).
+#define SERIAL_AGENT Serial
+#define SERIAL_INDICATOR Serial1
 
-interface Vehicle {
-  id: string;
-  nomorPolisi: string;
-  nomorLambung: string;
-  jenisKendaraan: string;
-  namaOperatorSopir: string;
-  nik: string;
+// --- Konfigurasi Pin Relay (sesuai diskusi sebelumnya) ---
+#define RELAY_PASIR1_PIN      22
+#define RELAY_PASIR2_PIN      23
+#define RELAY_BATU1_PIN       24
+#define RELAY_BATU2_PIN       25
+#define RELAY_AIR_TIMBANG_PIN 26
+#define RELAY_AIR_BUANG_PIN   27
+#define RELAY_SEMEN_TIMBANG_PIN 28
+#define RELAY_SEMEN_BUANG_PIN   29
+#define RELAY_PINTU_BUKA_PIN  30
+#define RELAY_PINTU_TUTUP_PIN 31
+#define RELAY_KONVEYOR_BAWAH_PIN 32
+#define RELAY_KONVEYOR_ATAS_PIN  33
+#define RELAY_KLAKSON_PIN     34
+#define RELAY_SILO1_PIN       35
+#define RELAY_SILO2_PIN       36
+#define RELAY_SILO3_PIN       37
+#define RELAY_SILO4_PIN       38
+#define RELAY_SILO5_PIN       39
+#define RELAY_SILO6_PIN       40
+
+const int SILO_PINS[] = { RELAY_SILO1_PIN, RELAY_SILO2_PIN, RELAY_SILO3_PIN, RELAY_SILO4_PIN, RELAY_SILO5_PIN, RELAY_SILO6_PIN };
+const int NUM_SILOS = sizeof(SILO_PINS) / sizeof(SILO_PINS[0]);
+const size_t JSON_DOC_SIZE = 256;
+
+void setup() {
+  // Inisialisasi komunikasi serial ke komputer/agent
+  SERIAL_AGENT.begin(9600);
+  
+  // Inisialisasi komunikasi serial ke indikator timbangan
+  // Pastikan baud rate ini sama dengan pengaturan di GSC SGW-3015S Anda (default biasanya 9600)
+  SERIAL_INDICATOR.begin(9600);
+
+  SERIAL_AGENT.println("Inisialisasi semua pin relay...");
+
+  // Daftar semua pin untuk inisialisasi yang lebih rapi
+  const int ALL_RELAY_PINS[] = {
+    RELAY_PASIR1_PIN, RELAY_PASIR2_PIN, RELAY_BATU1_PIN, RELAY_BATU2_PIN,
+    RELAY_AIR_TIMBANG_PIN, RELAY_AIR_BUANG_PIN, RELAY_SEMEN_TIMBANG_PIN, RELAY_SEMEN_BUANG_PIN,
+    RELAY_PINTU_BUKA_PIN, RELAY_PINTU_TUTUP_PIN, RELAY_KONVEYOR_BAWAH_PIN, RELAY_KONVEYOR_ATAS_PIN,
+    RELAY_KLAKSON_PIN, RELAY_SILO1_PIN, RELAY_SILO2_PIN, RELAY_SILO3_PIN,
+    RELAY_SILO4_PIN, RELAY_SILO5_PIN, RELAY_SILO6_PIN
+  };
+
+  // Inisialisasi semua pin sebagai OUTPUT dan set ke LOW
+  // Asumsi: Relay adalah active-high (HIGH = ON, LOW = OFF)
+  for (int pin : ALL_RELAY_PINS) {
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+  }
+
+  SERIAL_AGENT.println("Arduino Mega 2560 siap! Menunggu data dari indikator dan perintah dari agent...");
 }
 
-const initialFormState = {
-  nomorPolisi: '',
-  nomorLambung: '',
-  jenisKendaraan: '',
-  namaOperatorSopir: '',
-  nik: '',
-};
+void loop() {
+  // --- Bagian 1: Membaca data dari Indikator Timbangan (Serial1) ---
+  if (SERIAL_INDICATOR.available()) {
+    String dataFromIndicator = SERIAL_INDICATOR.readStringUntil('\n');
+    dataFromIndicator.trim(); // Hapus spasi atau karakter tidak terlihat di awal/akhir
 
-export default function ManajemenPeralatanPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [formState, setFormState] = useState(initialFormState);
-  const [isListOpen, setIsListOpen] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadVehicles();
-  }, []);
-  
-  // Also reload vehicles when the dialog is closed, in case changes were made
-  useEffect(() => {
-    if (!isListOpen) {
-      loadVehicles();
-    }
-  }, [isListOpen]);
-
-  const loadVehicles = () => {
-     try {
-      const storedVehicles: Vehicle[] = JSON.parse(localStorage.getItem(VEHICLES_STORAGE_KEY) || '[]');
-      setVehicles(storedVehicles);
-    } catch (error) {
-      console.error("Failed to load vehicles:", error);
-    }
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value.toUpperCase() }));
-  };
-
-  const handleAddVehicle = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formState.nomorPolisi.trim() && !formState.nomorLambung.trim()) {
-        toast({
-            variant: 'destructive',
-            title: 'Gagal',
-            description: 'Nomor Polisi atau Nomor Lambung harus diisi.',
-        });
-        return;
-    }
+    // Parsing data dari format GSC "ST,GS,  123.45,kg"
+    char dataBuffer[30];
+    dataFromIndicator.toCharArray(dataBuffer, 30);
     
-    if (!formState.nik.trim()) {
-      toast({
-            variant: 'destructive',
-            title: 'Gagal',
-            description: 'NIK harus diisi.',
-        });
-        return;
+    char* token = strtok(dataBuffer, ","); // Token pertama (Status)
+    token = strtok(NULL, ",");             // Token kedua (Tipe Berat)
+    token = strtok(NULL, ",");             // Token ketiga (Nilai Berat)
+
+    if (token != NULL) {
+      float berat = atof(token); // Konversi string nilai berat ke float
+      
+      // Kirim data berat yang sudah diproses ke agent/komputer
+      StaticJsonDocument<100> docWeight;
+      docWeight["type"] = "weight"; // Memberitahu agent bahwa ini adalah data berat
+      docWeight["value"] = berat;
+      serializeJson(docWeight, SERIAL_AGENT);
+      SERIAL_AGENT.println(); // Newline sebagai pemisah pesan
+    }
+  }
+
+  // --- Bagian 2: Menerima perintah dari Agent (Serial) ---
+  if (SERIAL_AGENT.available()) {
+    String jsonString = SERIAL_AGENT.readStringUntil('\n');
+
+    StaticJsonDocument<JSON_DOC_SIZE> docCommand;
+    DeserializationError error = deserializeJson(docCommand, jsonString);
+
+    if (error) {
+      SERIAL_AGENT.print(F("deserializeJson() failed: "));
+      SERIAL_AGENT.println(error.f_str());
+      return;
     }
 
-    const newVehicle: Vehicle = {
-        ...formState,
-        id: new Date().toISOString() + Math.random(),
-    };
+    const char* command = docCommand["command"];
+    if (!command) return;
 
-    const updatedVehicles = [...vehicles, newVehicle];
-    localStorage.setItem(VEHICLES_STORAGE_KEY, JSON.stringify(updatedVehicles));
-    setVehicles(updatedVehicles);
-    setFormState(initialFormState);
-    toast({ title: 'Berhasil', description: 'Kendaraan baru telah ditambahkan.' });
-  };
-  
-  const handleDeleteVehicle = (id: string) => {
-    const updatedVehicles = vehicles.filter(v => v.id !== id);
-    localStorage.setItem(VEHICLES_STORAGE_KEY, JSON.stringify(updatedVehicles));
-    setVehicles(updatedVehicles);
-     toast({
-      variant: 'destructive',
-      title: 'Dihapus',
-      description: 'Data kendaraan telah dihapus.',
-    });
+    if (strcmp(command, "SET_RELAY") == 0) {
+      handleSetRelay(docCommand);
+    } else if (strcmp(command, "SELECT_SILO") == 0) {
+      handleSelectSilo(docCommand);
+    }
+    // Tambahkan 'else if' untuk perintah lain jika ada di masa depan
   }
+}
+
+// Fungsi untuk menangani perintah SET_RELAY
+void handleSetRelay(JsonDocument& doc) {
+  const char* relayId = doc["relayId"];
+  bool state = doc["state"];
+  if (!relayId) return;
+
+  int targetPin = -1;
+
+  if (strcmp(relayId, "pasir1") == 0) targetPin = RELAY_PASIR1_PIN;
+  else if (strcmp(relayId, "pasir2") == 0) targetPin = RELAY_PASIR2_PIN;
+  else if (strcmp(relayId, "batu1") == 0) targetPin = RELAY_BATU1_PIN;
+  else if (strcmp(relayId, "batu2") == 0) targetPin = RELAY_BATU2_PIN;
+  else if (strcmp(relayId, "airTimbang") == 0) targetPin = RELAY_AIR_TIMBANG_PIN;
+  else if (strcmp(relayId, "airBuang") == 0) targetPin = RELAY_AIR_BUANG_PIN;
+  else if (strcmp(relayId, "semenTimbang") == 0) targetPin = RELAY_SEMEN_TIMBANG_PIN;
+  else if (strcmp(relayId, "semen") == 0) targetPin = RELAY_SEMEN_BUANG_PIN; // Disesuaikan dengan nama baru
+  else if (strcmp(relayId, "pintuBuka") == 0) targetPin = RELAY_PINTU_BUKA_PIN;
+  else if (strcmp(relayId, "pintuTutup") == 0) targetPin = RELAY_PINTU_TUTUP_PIN;
+  else if (strcmp(relayId, "konveyorBawah") == 0) targetPin = RELAY_KONVEYOR_BAWAH_PIN;
+  else if (strcmp(relayId, "konveyorAtas") == 0) targetPin = RELAY_KONVEYOR_ATAS_PIN;
+  else if (strcmp(relayId, "klakson") == 0) targetPin = RELAY_KLAKSON_PIN;
   
-  return (
-    <div className="space-y-6">
-        <Dialog open={isListOpen} onOpenChange={setIsListOpen}>
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                        <CardTitle className="flex items-center gap-2">
-                            <Wrench className="h-6 w-6 text-primary" />
-                            Tambah Kendaraan Baru
-                        </CardTitle>
-                        <CardDescription>
-                            Gunakan formulir ini untuk menambah satu kendaraan atau gunakan "List Armada" untuk edit massal.
-                        </CardDescription>
-                        </div>
-                        <DialogTrigger asChild>
-                            <Button variant="outline">
-                                <SheetIcon className="mr-2 h-4 w-4" />
-                                List Armada
-                            </Button>
-                        </DialogTrigger>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleAddVehicle} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-                        <div className="space-y-2">
-                            <Label htmlFor="nomorLambung">Nomor Lambung</Label>
-                            <Input id="nomorLambung" name="nomorLambung" value={formState.nomorLambung} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="nomorPolisi">Nomor Polisi</Label>
-                            <Input id="nomorPolisi" name="nomorPolisi" value={formState.nomorPolisi} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
-                        </div>
-                         <div className="space-y-2 md:col-span-1">
-                            <Label htmlFor="jenisKendaraan">Jenis Kendaraan</Label>
-                            <Input id="jenisKendaraan" name="jenisKendaraan" value={formState.jenisKendaraan} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
-                        </div>
-                        <div className="space-y-2 md:col-span-1">
-                            <Label htmlFor="namaOperatorSopir">Nama Sopir/Operator</Label>
-                            <Input id="namaOperatorSopir" name="namaOperatorSopir" value={formState.namaOperatorSopir} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
-                        </div>
-                         <div className="space-y-2 md:col-span-1">
-                            <Label htmlFor="nik">NIK</Label>
-                            <Input id="nik" name="nik" value={formState.nik} onChange={handleInputChange} style={{ textTransform: 'uppercase' }} />
-                        </div>
-                        <div className="md:col-span-1">
-                            <Button type="submit" className="w-full">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Tambah
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+  if (targetPin != -1) {
+    digitalWrite(targetPin, state ? HIGH : LOW);
+    // Optional: Kirim konfirmasi kembali ke agent
+    // SERIAL_AGENT.print("OK: Relay "); SERIAL_AGENT.print(relayId); SERIAL_AGENT.println(state ? " ON" : " OFF");
+  } else {
+    // SERIAL_AGENT.print("Error: relayId tidak dikenal: "); SERIAL_AGENT.println(relayId);
+  }
+}
 
-            <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col p-0">
-                <DialogHeader className="sr-only">
-                    <DialogTitle>List Armada</DialogTitle>
-                    <DialogDescription>
-                        Tabel untuk mengedit semua kendaraan dalam mode massal.
-                    </DialogDescription>
-                </DialogHeader>
-               <EditableVehicleList />
-            </DialogContent>
-        </Dialog>
+// Fungsi untuk menangani perintah SELECT_SILO
+void handleSelectSilo(JsonDocument& doc) {
+  const char* siloId = doc["siloId"];
+  if (!siloId) return;
 
+  int selectedSiloIndex = -1;
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Daftar Kendaraan Saat Ini</CardTitle>
-                <CardDescription>Menampilkan daftar semua kendaraan yang terdaftar.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>No.</TableHead>
-                                <TableHead>Nomor Lambung</TableHead>
-                                <TableHead>Nomor Polisi</TableHead>
-                                <TableHead>Jenis Kendaraan</TableHead>
-                                <TableHead>Nama Sopir/Operator</TableHead>
-                                <TableHead>NIK</TableHead>
-                                <TableHead className="text-center">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {vehicles.length > 0 ? (
-                                vehicles.map((v, index) => (
-                                <TableRow key={v.id}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{v.nomorLambung}</TableCell>
-                                    <TableCell>{v.nomorPolisi}</TableCell>
-                                    <TableCell>{v.jenisKendaraan}</TableCell>
-                                    <TableCell>{v.namaOperatorSopir}</TableCell>
-                                    <TableCell>{v.nik}</TableCell>
-                                    <TableCell className="text-center">
-                                       <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                              <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                  Apakah Anda yakin ingin menghapus kendaraan dengan Nopol {v.nomorPolisi || v.nomorLambung}?
-                                              </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteVehicle(v.id)}>
-                                                  Ya, Hapus
-                                              </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
-                                    </TableCell>
-                                </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
-                                        Belum ada kendaraan yang ditambahkan.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-    </div>
-  );
+  if (strcmp(siloId, "silo1") == 0) selectedSiloIndex = 0;
+  else if (strcmp(siloId, "silo2") == 0) selectedSiloIndex = 1;
+  else if (strcmp(siloId, "silo3") == 0) selectedSiloIndex = 2;
+  else if (strcmp(siloId, "silo4") == 0) selectedSiloIndex = 3;
+  else if (strcmp(siloId, "silo5") == 0) selectedSiloIndex = 4;
+  else if (strcmp(siloId, "silo6") == 0) selectedSiloIndex = 5;
+
+  if (selectedSiloIndex != -1) {
+    for (int i = 0; i < NUM_SILOS; i++) {
+      digitalWrite(SILO_PINS[i], (i == selectedSiloIndex) ? HIGH : LOW);
+    }
+    // Optional: Kirim konfirmasi
+    // SERIAL_AGENT.print("OK: Silo "); SERIAL_AGENT.print(siloId); SERIAL_AGENT.println(" selected.");
+  }
 }
