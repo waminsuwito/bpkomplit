@@ -125,10 +125,6 @@ export function StatusPanel({ log, timerDisplay, mixingTime, setMixingTime, disa
             ))
           )}
         </div>
-        <Separator className="my-4 bg-primary/20" />
-        <div className="text-center text-muted-foreground text-sm flex-shrink-0">
-          <p>Arduino Mega2560 - USB Connected</p>
-        </div>
       </CardContent>
     </Card>
   );
