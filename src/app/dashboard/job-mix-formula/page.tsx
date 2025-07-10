@@ -21,8 +21,10 @@ import { Label } from '@/components/ui/label';
 
 const formulaSchema = z.object({
   mutuBeton: z.string().min(1, 'Mutu Beton is required.'),
-  pasir: z.coerce.number().min(0, 'Value must be positive.'),
-  batu: z.coerce.number().min(0, 'Value must be positive.'),
+  pasir1: z.coerce.number().min(0, 'Value must be positive.'),
+  pasir2: z.coerce.number().min(0, 'Value must be positive.'),
+  batu1: z.coerce.number().min(0, 'Value must be positive.'),
+  batu2: z.coerce.number().min(0, 'Value must be positive.'),
   air: z.coerce.number().min(0, 'Value must be positive.'),
   semen: z.coerce.number().min(0, 'Value must be positive.'),
 });
@@ -50,8 +52,10 @@ function FormulaManagerPage() {
     resolver: zodResolver(formulaSchema),
     defaultValues: {
       mutuBeton: '',
-      pasir: 0,
-      batu: 0,
+      pasir1: 0,
+      pasir2: 0,
+      batu1: 0,
+      batu2: 0,
       air: 0,
       semen: 0,
     },
@@ -61,7 +65,7 @@ function FormulaManagerPage() {
     if (editingFormula) {
       form.reset(editingFormula);
     } else {
-      form.reset({ mutuBeton: '', pasir: 0, batu: 0, air: 0, semen: 0 });
+      form.reset({ mutuBeton: '', pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 });
     }
   }, [editingFormula, form]);
 
@@ -166,60 +170,79 @@ function FormulaManagerPage() {
         </CardHeader>
         <CardContent>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-6">
-                <FormField name="mutuBeton" control={form.control} render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                    <FormLabel>Mutu Beton (e.g., K225)</FormLabel>
-                    <FormControl><Input {...field} style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-                )} />
-                <FormField name="pasir" control={form.control} render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Pasir (Kg)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-                )} />
-                <FormField name="batu" control={form.control} render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Batu (Kg)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-                )} />
-                <FormField name="air" control={form.control} render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Air (Kg)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-                )} />
-                <FormField name="semen" control={form.control} render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Semen (Kg)</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-                )} />
-                <div className="md:col-span-6 flex justify-end gap-2">
-                {editingFormula && <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>}
-                <Button type="submit">
-                    {editingFormula ? 'Update Formula' : 'Add Formula'}
-                </Button>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <FormField name="mutuBeton" control={form.control} render={({ field }) => (
+                  <FormItem className="md:col-span-4">
+                      <FormLabel>Mutu Beton (e.g., K225)</FormLabel>
+                      <FormControl><Input {...field} style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )} />
+                  <FormField name="pasir1" control={form.control} render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Pasir 1 (Kg)</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )} />
+                   <FormField name="pasir2" control={form.control} render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Pasir 2 (Kg)</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )} />
+                  <FormField name="batu1" control={form.control} render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Batu 1 (Kg)</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )} />
+                  <FormField name="batu2" control={form.control} render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Batu 2 (Kg)</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )} />
+                  <FormField name="semen" control={form.control} render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Semen (Kg)</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )} />
+                  <FormField name="air" control={form.control} render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Air (Kg)</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )} />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  {editingFormula && <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>}
+                  <Button type="submit">
+                      {editingFormula ? 'Update Formula' : 'Add Formula'}
+                  </Button>
                 </div>
             </form>
             </Form>
             
-            <div className="border rounded-lg">
+            <div className="border rounded-lg overflow-x-auto mt-6">
             <Table>
                 <TableHeader>
                 <TableRow>
                     <TableHead>Mutu Beton</TableHead>
-                    <TableHead>Pasir (Kg)</TableHead>
-                    <TableHead>Batu (Kg)</TableHead>
-                    <TableHead>Air (Kg)</TableHead>
+                    <TableHead>Pasir 1 (Kg)</TableHead>
+                    <TableHead>Pasir 2 (Kg)</TableHead>
+                    <TableHead>Batu 1 (Kg)</TableHead>
+                    <TableHead>Batu 2 (Kg)</TableHead>
                     <TableHead>Semen (Kg)</TableHead>
+                    <TableHead>Air (Kg)</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
                 </TableHeader>
@@ -227,10 +250,12 @@ function FormulaManagerPage() {
                 {formulas.map((formula) => (
                     <TableRow key={formula.id}>
                     <TableCell className="font-medium">{formula.mutuBeton}</TableCell>
-                    <TableCell>{formula.pasir}</TableCell>
-                    <TableCell>{formula.batu}</TableCell>
-                    <TableCell>{formula.air}</TableCell>
+                    <TableCell>{formula.pasir1}</TableCell>
+                    <TableCell>{formula.pasir2}</TableCell>
+                    <TableCell>{formula.batu1}</TableCell>
+                    <TableCell>{formula.batu2}</TableCell>
                     <TableCell>{formula.semen}</TableCell>
+                    <TableCell>{formula.air}</TableCell>
                     <TableCell className="flex justify-center items-center gap-2">
                         <Button variant="outline" size="icon" onClick={() => handleEdit(formula)}>
                         <Edit className="h-4 w-4" />

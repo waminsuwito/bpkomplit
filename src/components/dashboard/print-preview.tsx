@@ -28,9 +28,14 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
     endTime,
     jobId
   } = data;
-
-  const totalTarget = Object.values<number>(targetWeights).reduce((sum, val) => sum + val, 0);
-  const totalActual = Object.values<number>(actualWeights).reduce((sum, val) => sum + val, 0);
+  
+  const totalTargetPasir = (targetWeights.pasir1 || 0) + (targetWeights.pasir2 || 0);
+  const totalTargetBatu = (targetWeights.batu1 || 0) + (targetWeights.batu2 || 0);
+  const totalActualPasir = (actualWeights.pasir1 || 0) + (actualWeights.pasir2 || 0);
+  const totalActualBatu = (actualWeights.batu1 || 0) + (actualWeights.batu2 || 0);
+  
+  const totalTarget = totalTargetPasir + totalTargetBatu + targetWeights.semen + targetWeights.air;
+  const totalActual = totalActualPasir + totalActualBatu + actualWeights.semen + actualWeights.air;
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
@@ -90,15 +95,15 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
                 <TableBody>
                   <TableRow>
                     <TableCell className="border py-1">Pasir</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.pasir)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.pasir)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.pasir - targetWeights.pasir)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalTargetPasir)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualPasir)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualPasir - totalTargetPasir)}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="border py-1">Batu</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.batu)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.batu)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.batu - targetWeights.batu)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalTargetBatu)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualBatu)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualBatu - totalTargetBatu)}</TableCell>
                   </TableRow>
                    <TableRow>
                     <TableCell className="border py-1">Semen</TableCell>

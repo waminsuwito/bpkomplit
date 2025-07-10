@@ -2,6 +2,7 @@
 
 
 
+
 import type { LucideIcon } from 'lucide-react';
 
 export interface Material {
@@ -22,14 +23,6 @@ export interface Formula {
     quantity: number;
   }[];
   mixingTime: number; // in seconds
-}
-
-export interface Batch {
-  id: string;
-  formula: Formula;
-  timestamp: string;
-  status: 'Completed' | 'Failed' | 'In Progress';
-  deviations?: string;
 }
 
 export const userRoles = [
@@ -110,8 +103,10 @@ export interface User {
 export interface JobMixFormula {
   id: string;
   mutuBeton: string;
-  pasir: number;
-  batu: number;
+  pasir1: number;
+  pasir2: number;
+  batu1: number;
+  batu2: number;
   air: number;
   semen: number;
 }
