@@ -11,9 +11,6 @@ interface AuthContextType {
   login: (userData: Omit<User, 'password'>) => void;
   logout: () => void;
   isLoading: boolean;
-  isDashboardAdmin: boolean;
-  loginDashboardAdmin: (password: string) => Promise<boolean>;
-  logoutDashboardAdmin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +18,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDashboardAdmin, setIsDashboardAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -57,33 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    setIsDashboardAdmin(false); // Reset admin mode on full logout
     router.push('/');
   };
 
-  const loginDashboardAdmin = async (password: string): Promise<boolean> => {
-    if (!user) return false;
-    
-    const canAccess = user.role === 'supervisor' || user.role === 'super_admin';
-    if (!canAccess) return false;
-
-    // Verify password against the source of truth (localStorage via verifyLogin)
-    const verifiedUser = await verifyLogin(user.username, password);
-
-    if (verifiedUser) {
-      setIsDashboardAdmin(true);
-      return true;
-    }
-    
-    return false;
-  };
-
-  const logoutDashboardAdmin = () => {
-    setIsDashboardAdmin(false);
-  };
-
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, isDashboardAdmin, loginDashboardAdmin, logoutDashboardAdmin }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -13,8 +13,8 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess } from '@/lib/config';
 import type { MixingProcessConfig, MixingProcessStep } from '@/components/admin/mixing-process-form';
 import { useAuth } from '@/context/auth-provider';
-import { FormulaManager } from './formula-manager';
 import type { JobMixFormula } from '@/lib/types';
+import { getFormulas } from '@/lib/formula';
 
 // Define rates for weight change, units per second
 const AGGREGATE_RATE = 250; // kg/s
@@ -30,11 +30,6 @@ const AGGREGATE_TOLERANCE_KG = 10;
 const AIR_TOLERANCE_KG = 5;
 const SEMEN_TOLERANCE_KG = 5;
 
-const initialFormulas: JobMixFormula[] = [
-  { id: '1', mutuBeton: 'K225', pasir: 765, batu: 1029, air: 215, semen: 371 },
-  { id: '2', mutuBeton: 'K300', pasir: 698, batu: 1047, air: 215, semen: 413 },
-  { id: '3', mutuBeton: 'K350', pasir: 681, batu: 1021, air: 215, semen: 439 },
-];
 
 type AutoProcessStep =
   | 'idle'
@@ -73,7 +68,7 @@ export function Dashboard() {
     colorClass: 'text-primary',
   });
 
-  const [formulas, setFormulas] = useState<JobMixFormula[]>(initialFormulas);
+  const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
   const [targetWeights, setTargetWeights] = useState({ pasir: 0, batu: 0, air: 0, semen: 0 });
   const [actualMaterialWeights, setActualMaterialWeights] = useState({ pasir: 0, batu: 0, semen: 0, air: 0 });
   
@@ -82,15 +77,25 @@ export function Dashboard() {
   const [totalActualWeights, setTotalActualWeights] = useState({ pasir: 0, batu: 0, semen: 0, air: 0 });
   const [totalTargetWeights, setTotalTargetWeights] = useState({ pasir: 0, batu: 0, semen: 0, air: 0 });
 
+  useEffect(() => {
+    setFormulas(getFormulas());
+  }, []);
+
 
   const [jobInfo, setJobInfo] = useState({
-    selectedFormulaId: formulas[0]?.id || '',
+    selectedFormulaId: '',
     namaPelanggan: 'PT. JAYA KONSTRUKSI',
     lokasiProyek: 'Jalan Sudirman, Pekanbaru',
     targetVolume: 1.0,
     jumlahMixing: 1,
     slump: 12,
   });
+
+  useEffect(() => {
+    if (formulas.length > 0 && !jobInfo.selectedFormulaId) {
+      setJobInfo(prev => ({...prev, selectedFormulaId: formulas[0].id}));
+    }
+  }, [formulas, jobInfo.selectedFormulaId]);
 
   const [mixingProcessConfig, setMixingProcessConfig] = useState<MixingProcessConfig>(defaultMixingProcess);
   
@@ -168,19 +173,6 @@ export function Dashboard() {
   
   const prevControlsRef = useRef<ManualControlsState>();
   const prevAutoStepRef = useRef<AutoProcessStep>();
-
-  const handleAddFormula = (newFormulaData: Omit<JobMixFormula, 'id'>) => {
-    const newFormula = { ...newFormulaData, id: new Date().toISOString() };
-    setFormulas(prev => [...prev, newFormula]);
-  };
-
-  const handleUpdateFormula = (updatedFormula: JobMixFormula) => {
-    setFormulas(prev => prev.map(f => f.id === updatedFormula.id ? updatedFormula : f));
-  };
-
-  const handleDeleteFormula = (formulaId: string) => {
-    setFormulas(prev => prev.filter(f => f.id !== formulaId));
-  };
 
   // Load config from localStorage on mount
   useEffect(() => {
@@ -897,17 +889,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-4">
-      {isDashboardAdmin ? (
-        <div className="mb-4">
-            <FormulaManager 
-                formulas={formulas}
-                onAdd={handleAddFormula}
-                onUpdate={handleUpdateFormula}
-                onDelete={handleDeleteFormula}
-            />
-        </div>
-      ) : (
-        <>
+      <>
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12">
               <WeightDisplayPanel
@@ -980,7 +962,6 @@ export function Dashboard() {
             </SheetContent>
           </Sheet>
         </>
-      )}
     </div>
   );
 }

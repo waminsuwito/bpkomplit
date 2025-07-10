@@ -1,0 +1,60 @@
+
+'use client';
+
+import type { JobMixFormula } from '@/lib/types';
+
+const FORMULAS_STORAGE_KEY = 'app-job-mix-formulas';
+
+const initialFormulas: JobMixFormula[] = [
+  { id: '1', mutuBeton: 'K225', pasir: 765, batu: 1029, air: 215, semen: 371 },
+  { id: '2', mutuBeton: 'K300', pasir: 698, batu: 1047, air: 215, semen: 413 },
+  { id: '3', mutuBeton: 'K350', pasir: 681, batu: 1021, air: 215, semen: 439 },
+];
+
+export function getFormulas(): JobMixFormula[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+  try {
+    const storedFormulas = window.localStorage.getItem(FORMULAS_STORAGE_KEY);
+    if (storedFormulas) {
+      return JSON.parse(storedFormulas);
+    }
+    // If no formulas are stored, seed with initial formulas
+    window.localStorage.setItem(FORMULAS_STORAGE_KEY, JSON.stringify(initialFormulas));
+    return initialFormulas;
+  } catch (error) {
+    console.error('Failed to access formulas from localStorage:', error);
+    return initialFormulas;
+  }
+}
+
+export function saveFormulas(formulas: JobMixFormula[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(FORMULAS_STORAGE_KEY, JSON.stringify(formulas));
+  } catch (error) {
+    console.error('Failed to save formulas to localStorage:', error);
+  }
+}
+
+export function addFormula(formulaData: Omit<JobMixFormula, 'id'>): void {
+  const formulas = getFormulas();
+  const newFormula: JobMixFormula = { ...formulaData, id: new Date().toISOString() };
+  const updatedFormulas = [...formulas, newFormula];
+  saveFormulas(updatedFormulas);
+}
+
+export function updateFormula(updatedFormula: JobMixFormula): void {
+  const formulas = getFormulas();
+  const updatedFormulas = formulas.map((f) =>
+    f.id === updatedFormula.id ? updatedFormula : f
+  );
+  saveFormulas(updatedFormulas);
+}
+
+export function deleteFormula(formulaId: string): void {
+  const formulas = getFormulas();
+  const updatedFormulas = formulas.filter((f) => f.id !== formulaId);
+  saveFormulas(updatedFormulas);
+}

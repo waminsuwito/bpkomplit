@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft, Settings, SlidersHorizontal, Cog } from 'lucide-react';
+import { UserCircle, LogOut, Shield, KeyRound, Lock, Loader2, Fingerprint, ArrowLeft, Settings, SlidersHorizontal, Cog, FileText } from 'lucide-react';
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -23,6 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 
 import { Input } from '@/components/ui/input';
@@ -50,14 +51,11 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 
 export function Header() {
-  const { user, logout, isDashboardAdmin, loginDashboardAdmin, logoutDashboardAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith('/admin');
 
-  const [password, setPassword] = useState('');
-  const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   
   const { toast } = useToast();
 
@@ -83,20 +81,6 @@ export function Header() {
 
   const formatRoleName = (role: string) => {
     return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoginLoading(true);
-    const success = await loginDashboardAdmin(password);
-    if (success) {
-      toast({ title: "Admin Access Granted", description: "You can now manage formulas." });
-      setIsAdminLoginOpen(false);
-      setPassword('');
-    } else {
-      toast({ variant: 'destructive', title: "Login Failed", description: "Incorrect password." });
-    }
-    setIsLoginLoading(false);
   };
 
   return (
@@ -133,60 +117,7 @@ export function Header() {
                 </Link>
               </Button>
             )}
-
-            {/* In-Dashboard Admin for Formulas */}
-            {(user.role === 'supervisor' || user.role === 'super_admin') && !isAdminPage && (
-              <>
-                {isDashboardAdmin ? (
-                  <Button variant="destructive" size="sm" onClick={logoutDashboardAdmin}>
-                    <Lock className="mr-2 h-4 w-4" />
-                    Exit Admin Mode
-                  </Button>
-                ) : (
-                  <Dialog open={isAdminLoginOpen} onOpenChange={setIsAdminLoginOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <KeyRound className="mr-2 h-4 w-4" />
-                        Formula Management
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Administrator Login</DialogTitle>
-                        <DialogDescription>
-                          Enter your password to manage job mix formulas.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleAdminLogin}>
-                        <div className="grid gap-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="admin-password">
-                              Password for {user.username}
-                            </Label>
-                            <Input
-                              id="admin-password"
-                              type="password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              placeholder="Enter your password"
-                              required
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                           <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                          <Button type="submit" disabled={isLoginLoading}>
-                            {isLoginLoading ? <Loader2 className="animate-spin" /> : "Login"}
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                )}
-              </>
-            )}
-
-            {/* User Management Admin for Super Admin */}
+            
             {user.role === 'super_admin' && !isAdminPage && (
               <Button variant="outline" size="sm" asChild>
                 <Link href="/admin/super-admin">
@@ -205,10 +136,14 @@ export function Header() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => setIsPasswordDialogOpen(true)}>
-                      <KeyRound className="mr-2 h-4 w-4" />
-                      <span>Ubah Password</span>
-                    </DropdownMenuItem>
+                    {(user.role === 'supervisor' || user.role === 'super_admin') && (
+                       <DropdownMenuItem asChild>
+                         <Link href="/dashboard/job-mix-formula">
+                           <FileText className="mr-2 h-4 w-4" />
+                           <span>Job Mix Formula</span>
+                         </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                        <Link href="/dashboard/relay-settings">
                          <SlidersHorizontal className="mr-2 h-4 w-4" />
@@ -218,6 +153,11 @@ export function Header() {
                     <DropdownMenuItem>
                       <Cog className="mr-2 h-4 w-4" />
                       <span>Pengaturan Lanjutan</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                     <DropdownMenuItem onSelect={() => setIsPasswordDialogOpen(true)}>
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      <span>Ubah Password</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
