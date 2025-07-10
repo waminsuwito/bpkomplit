@@ -2,12 +2,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Save, SlidersHorizontal } from 'lucide-react';
+import { Save, SlidersHorizontal, PlusCircle, ArrowLeft, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 export const RELAY_MAPPINGS_KEY = 'app-relay-mappings';
 
@@ -17,7 +20,7 @@ const defaultControlKeys = [
   'konveyorAtas', 'klakson'
 ] as const;
 
-type ControlKey = typeof defaultControlKeys[number];
+type ControlKey = typeof defaultControlKeys[number] | string;
 
 export interface ControlMapping {
   id: ControlKey;
@@ -26,6 +29,9 @@ export interface ControlMapping {
 }
 
 const formatDefaultLabel = (key: string): string => {
+  if (key.startsWith('custom-')) {
+    return 'Tombol Baru';
+  }
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
 };
 
@@ -46,14 +52,8 @@ export default function RelaySettingsPage() {
       const storedMappingsRaw = localStorage.getItem(RELAY_MAPPINGS_KEY);
       if (storedMappingsRaw) {
         const storedMappings = JSON.parse(storedMappingsRaw);
-        // Ensure all default keys are present
-        const fullMappings = getInitialMappings().map(defaultMapping => {
-            const stored = storedMappings.find((m: ControlMapping) => m.id === defaultMapping.id);
-            return stored ? stored : defaultMapping;
-        });
-        setMappings(fullMappings);
+        setMappings(storedMappings);
       } else {
-        // If nothing is stored, initialize with defaults
         setMappings(getInitialMappings());
       }
     } catch (error) {
@@ -68,10 +68,26 @@ export default function RelaySettingsPage() {
     );
     setMappings(newMappings);
   };
+  
+  const handleAddNewRow = () => {
+    const newRow: ControlMapping = {
+      id: `custom-${Date.now()}`,
+      label: '',
+      relayName: '',
+    };
+    setMappings(prev => [...prev, newRow]);
+  };
+
+  const handleDeleteRow = (idToDelete: ControlKey) => {
+    setMappings(prev => prev.filter(m => m.id !== idToDelete));
+    toast({ variant: 'destructive', title: 'Baris Dihapus', description: 'Baris telah dihapus. Jangan lupa simpan perubahan.' });
+  };
 
   const handleSaveAll = () => {
     try {
-      localStorage.setItem(RELAY_MAPPINGS_KEY, JSON.stringify(mappings));
+      const mappingsToSave = mappings.filter(m => m.label.trim() !== '' || m.relayName.trim() !== '');
+      localStorage.setItem(RELAY_MAPPINGS_KEY, JSON.stringify(mappingsToSave));
+      setMappings(mappingsToSave);
       toast({ title: 'Berhasil', description: 'Semua pengaturan relay telah disimpan.' });
     } catch (error) {
       console.error("Failed to save relay settings:", error);
@@ -82,20 +98,28 @@ export default function RelaySettingsPage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap justify-between items-center gap-4">
             <div>
                 <CardTitle className="flex items-center gap-2">
                     <SlidersHorizontal className="h-6 w-6 text-primary" />
                     Setting Relay & Label Tombol
                 </CardTitle>
                 <CardDescription>
-                    Kustomisasi nama tombol kontrol dan tetapkan nama relay yang sesuai.
+                    Kustomisasi nama tombol kontrol, tetapkan nama relay, dan tambahkan baris baru jika perlu.
                 </CardDescription>
             </div>
-            <Button onClick={handleSaveAll}>
-                <Save className="mr-2 h-4 w-4" />
-                Simpan Semua Perubahan
-            </Button>
+            <div className="flex items-center gap-2">
+               <Button asChild variant="outline">
+                    <Link href="/dashboard">
+                        <ArrowLeft className="mr-2 h-4 w-4"/>
+                        Kembali ke Dashboard
+                    </Link>
+                </Button>
+                 <Button onClick={handleSaveAll}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Simpan Semua Perubahan
+                </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -104,7 +128,8 @@ export default function RelaySettingsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-1/3">Label Tombol (Bisa Diedit)</TableHead>
-                <TableHead>Nama Relay (Bisa Diedit)</TableHead>
+                <TableHead className="w-1/3">Nama Relay (Bisa Diedit)</TableHead>
+                <TableHead className="text-center">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -126,10 +151,40 @@ export default function RelaySettingsPage() {
                       className="max-w-xs"
                     />
                   </TableCell>
+                  <TableCell className="text-center">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Hapus</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Apakah Anda yakin ingin menghapus baris untuk "{mapping.label || 'Baris kosong'}"?
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteRow(mapping.id)}>
+                                  Ya, Hapus
+                              </AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+        </div>
+        <div className="mt-4 flex justify-start">
+            <Button variant="outline" onClick={handleAddNewRow}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Tambah Baris Baru
+            </Button>
         </div>
       </CardContent>
     </Card>
