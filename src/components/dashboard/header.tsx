@@ -6,12 +6,20 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserCircle, LogOut, Loader2, Fingerprint, ArrowLeft } from 'lucide-react';
-import React from 'react';
+import { UserCircle, LogOut, Fingerprint, Settings, Lock } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChangePasswordDialog } from './change-password-dialog';
+import { useState } from 'react';
 
 export function Header() {
   const { user, logout } = useAuth();
-  const pathname = usePathname();
+  const [isPasswordDialogOpen, setPasswordDialogOpen] = useState(false);
 
   const formatRoleName = (role: string) => {
     return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -43,7 +51,7 @@ export function Header() {
               <p className="text-xs text-muted-foreground">{user.jabatan || formatRoleName(user.role)}</p>
             </div>
             
-             {user?.jabatan === 'OPRATOR BP' && pathname.startsWith('/dashboard') && (
+             {user?.jabatan === 'OPRATOR BP' && (
               <Button asChild variant="outline" size="sm">
                 <Link href="/karyawan">
                   <Fingerprint className="mr-2 h-4 w-4" />
@@ -52,6 +60,34 @@ export function Header() {
               </Button>
             )}
 
+             <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Setting
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/job-mix-formula">Job Mix Formula</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/mixing-settings">Pengaturan Lanjutan</Link>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem asChild>
+                    <Link href="/dashboard/mixer-timer-settings">Timer Pintu Mixer</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                     <Link href="/dashboard/relay-settings">Setting Relay</Link>
+                  </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setPasswordDialogOpen(true)}>
+                  <Lock className="mr-2 h-4 w-4" />
+                  <span>Ubah Password</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout
@@ -59,6 +95,13 @@ export function Header() {
           </div>
         )}
       </header>
+       {user && (
+        <ChangePasswordDialog
+          isOpen={isPasswordDialogOpen}
+          onOpenChange={setPasswordDialogOpen}
+          userId={user.id}
+        />
+      )}
     </>
   );
 }
