@@ -2,8 +2,31 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import type { User } from '@/lib/types';
+import { useRouter, usePathname } from 'next/navigation';
+import type { User, UserRole } from '@/lib/types';
+
+// Helper function to determine the correct default page for a user
+const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
+    if (user.jabatan === 'OPRATOR BP') return '/dashboard';
+    
+    const roleRedirects: Partial<Record<UserRole, string>> = {
+        'super_admin': '/admin/super-admin',
+        'admin_lokasi': '/admin/laporan-harian',
+        'logistik_material': '/admin/pemasukan-material',
+        'hse_hrd_lokasi': '/admin/absensi-karyawan-hari-ini'
+    };
+    
+    if (roleRedirects[user.role]) {
+        return roleRedirects[user.role]!;
+    }
+    
+    if (user.role.startsWith('karyawan') || user.role === 'operator') {
+        return '/karyawan/absensi-harian';
+    }
+
+    return '/'; // Default fallback
+};
+
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -36,17 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: Omit<User, 'password'>) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-
-    // --- NEW, SIMPLIFIED REDIRECTION LOGIC ---
-    // AuthGuard will handle the fine-grained redirection.
-    // This just provides a sensible default destination.
-    if (userData.jabatan === 'OPRATOR BP') {
-      router.push('/dashboard');
-    } else if (userData.role.includes('admin') || userData.role.includes('logistik') || userData.role.includes('hse')) {
-      router.push('/admin/laporan-harian'); // A safe default for all admin types
-    } else {
-       router.push('/karyawan'); // Default for all other roles
-    }
+    // REMOVED ROUTER.PUSH FROM HERE.
+    // The AuthGuard on the destination page will handle the redirect if the user is already logged in.
+    // Or the login page itself will redirect.
+    const destination = getDefaultRouteForUser(userData);
+    router.push(destination);
   };
 
   const logout = () => {

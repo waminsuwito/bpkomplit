@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-provider';
 import { verifyLogin } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -11,24 +11,57 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { User, UserRole } from '@/lib/types';
+
+const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
+    if (user.jabatan === 'OPRATOR BP') return '/dashboard';
+    
+    const roleRedirects: Partial<Record<UserRole, string>> = {
+        'super_admin': '/admin/super-admin',
+        'admin_lokasi': '/admin/laporan-harian',
+        'logistik_material': '/admin/pemasukan-material',
+        'hse_hrd_lokasi': '/admin/absensi-karyawan-hari-ini'
+    };
+    
+    if (roleRedirects[user.role]) {
+        return roleRedirects[user.role]!;
+    }
+    
+    if (user.role.startsWith('karyawan') || user.role === 'operator') {
+        return '/karyawan/absensi-harian';
+    }
+
+    return '/'; // Default fallback
+};
+
 
 export default function LoginPage() {
-  const { login, isLoading: isAuthLoading } = useAuth();
+  const { user, login, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    // If user is already logged in (e.g., from a previous session), redirect them.
+    if (user && !isAuthLoading) {
+      const destination = getDefaultRouteForUser(user);
+      router.replace(destination);
+    }
+  }, [user, isAuthLoading, router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifying(true);
     setError('');
     try {
-      const user = await verifyLogin(username, password);
-      if (user) {
-        toast({ title: 'Login Successful', description: `Welcome, ${user.username}!` });
-        login(user);
+      const loggedInUser = await verifyLogin(username, password);
+      if (loggedInUser) {
+        toast({ title: 'Login Successful', description: `Welcome, ${loggedInUser.username}!` });
+        login(loggedInUser); // login now handles the redirect
       } else {
         const errorMessage = 'Username, NIK, atau password salah.';
         setError(errorMessage);
@@ -52,6 +85,18 @@ export default function LoginPage() {
 
   const isLoading = isAuthLoading || isVerifying;
 
+  // If the user is already authenticated, show a loading state while redirecting
+  if (isAuthLoading || user) {
+      return (
+          <div className="flex h-screen w-full items-center justify-center bg-background">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-muted-foreground">Mengalihkan...</p>
+              </div>
+          </div>
+      );
+  }
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-sm">
