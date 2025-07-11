@@ -67,10 +67,6 @@ export function Dashboard() {
   const [batchStartTime, setBatchStartTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    setFormulas(getFormulas());
-  }, []);
-
-  useEffect(() => {
     if (!powerOn) return; // Don't connect if power is off
 
     const db = getDatabase(app);
@@ -117,6 +113,10 @@ export function Dashboard() {
       unsubscribeStatus();
     };
   }, [powerOn, app, mixingTime, toast]);
+
+  useEffect(() => {
+    setFormulas(getFormulas());
+  }, []);
 
   useEffect(() => {
     if (formulas.length > 0 && !jobInfo.selectedFormulaId) {
