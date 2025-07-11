@@ -20,29 +20,24 @@ const initialUsers: User[] = [
   { id: 'karyawan-1', username: 'karyawan', password: 'karyawan', role: 'karyawan', location: 'BP PEKANBARU', nik: 'K001', jabatan: 'HELPER' },
 ];
 
-function getInitialUsers(): User[] {
+export function getUsers(): User[] {
   if (typeof window !== 'undefined') {
     try {
       const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
       if (storedUsers) {
         return JSON.parse(storedUsers);
       } else {
-        // If no users are stored, seed with initial users
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
         return initialUsers;
       }
     } catch (error) {
       console.error('Failed to access users from localStorage:', error);
-      return initialUsers; // Fallback
+      return initialUsers;
     }
   }
-  return [];
+  return []; // Return empty array on server-side
 }
 
-
-export function getUsers(): User[] {
-  return getInitialUsers();
-}
 
 export function saveUsers(users: User[]): void {
   if (typeof window !== 'undefined') {
@@ -56,6 +51,7 @@ export function saveUsers(users: User[]): void {
 
 export function verifyLogin(usernameOrNik: string, password: string): Promise<Omit<User, 'password'> | null> {
   return new Promise((resolve) => {
+    // getUsers() is now safe to call here because this function is only called from a client component event handler.
     const users = getUsers();
     const user = users.find(
       (u) =>
