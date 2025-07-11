@@ -68,7 +68,11 @@ export function Dashboard() {
 
   useEffect(() => {
     setFormulas(getFormulas());
-    
+  }, []);
+
+  useEffect(() => {
+    if (!powerOn) return; // Don't connect if power is off
+
     const db = getDatabase(app);
     const weightsRef = ref(db, 'realtime/weights');
     const statusRef = ref(db, 'realtime/status');
@@ -81,6 +85,13 @@ export function Dashboard() {
         setAirWeight(data.air || 0);
         setSemenWeight(data.semen || 0);
       }
+    }, (error) => {
+      console.error("Firebase weight listener error:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Koneksi Timbangan Gagal',
+        description: 'Tidak dapat terhubung ke Realtime Database untuk data timbangan. Cek aturan keamanan Anda.'
+      });
     });
 
     // Listener for status changes from the agent
@@ -92,13 +103,20 @@ export function Dashboard() {
             setActivityLog(prev => [...prev, ...(data.newLogs || [])].slice(-5));
             setCurrentMixNumber(data.currentMixNumber || 0);
         }
+    }, (error) => {
+      console.error("Firebase status listener error:", error);
+       toast({
+        variant: 'destructive',
+        title: 'Koneksi Status Gagal',
+        description: 'Tidak dapat terhubung ke Realtime Database untuk status proses. Cek aturan keamanan Anda.'
+      });
     });
 
     return () => {
       unsubscribeWeights();
       unsubscribeStatus();
     };
-  }, [app, mixingTime]);
+  }, [powerOn, app, mixingTime, toast]);
 
   useEffect(() => {
     if (formulas.length > 0 && !jobInfo.selectedFormulaId) {
