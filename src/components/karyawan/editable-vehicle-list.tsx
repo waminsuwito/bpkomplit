@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -34,6 +35,7 @@ export function EditableVehicleList() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // This is the critical fix: localStorage is only accessed inside useEffect.
     try {
       const storedVehicles: Vehicle[] = JSON.parse(localStorage.getItem(VEHICLES_STORAGE_KEY) || '[]');
       const initialData = Array(TOTAL_ROWS).fill({});
