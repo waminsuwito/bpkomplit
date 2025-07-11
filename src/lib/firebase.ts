@@ -9,14 +9,14 @@ import { getDatabase } from 'firebase/database';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyB5MPo5udTSUTgitB_oK6I2ZeKOcv3-tS4",
-  authDomain: "batchingplantmanager-5f679.firebaseapp.com",
-  projectId: "batchingplantmanager-5f679",
-  storageBucket: "batchingplantmanager-5f679.appspot.com",
-  messagingSenderId: "643284217395",
-  appId: "1:643284217395:web:e474af169185d52d3d7d46",
-  measurementId: "G-JMF86KVYLP",
-  databaseURL: "https://batchingplantmanager-5f679-default-rtdb.firebaseio.com"
+  apiKey: "AIzaSyBqJ8mUH8D-_nxyUCtYdYvKInbqgjGWFa8",
+  authDomain: "mymanagerbp.firebaseapp.com",
+  projectId: "mymanagerbp",
+  storageBucket: "mymanagerbp.appspot.com",
+  messagingSenderId: "160970644943",
+  appId: "1:160970644943:web:1d121ec96612e8a41f86ba",
+  measurementId: "G-8GT1SNNB7C",
+  databaseURL: "https://mymanagerbp-default-rtdb.firebaseio.com"
 };
 
 
