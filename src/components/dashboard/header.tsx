@@ -29,11 +29,11 @@ export function Header() {
       <header className="sticky top-0 flex h-20 items-center justify-between gap-4 border-b border-primary/20 bg-background px-6 z-10 no-print">
         <div className="flex items-center gap-4">
           <Image
-            src="https://i.ibb.co/V0NgdXZ/images.jpg"
+            src="https://i.ibb.co/L50HjH2/logo-farika.png"
             alt="PT. FARIKA RIAU PERKASA Logo"
-            width={40}
-            height={40}
-            className="rounded-md"
+            width={45}
+            height={45}
+            className="rounded-full"
           />
           <div>
             <h1 className="text-2xl font-bold text-primary">PT. FARIKA RIAU PERKASA</h1>

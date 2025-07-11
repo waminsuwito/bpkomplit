@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -11,12 +12,12 @@ export const metadata: Metadata = {
     title: 'PT. FARIKA RIAU PERKASA',
     description: 'One Stop Concrete Solution',
     type: 'website',
-    images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
+    images: ['https://i.ibb.co/L50HjH2/logo-farika.png'],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@lovable_dev',
-    images: ['https://lovable.dev/opengraph-image-p98pqg.png'],
+    images: ['https://i.ibb.co/L50HjH2/logo-farika.png'],
   },
 };
 

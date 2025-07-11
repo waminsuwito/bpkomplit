@@ -57,11 +57,11 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <Image
-            src="https://i.ibb.co/V0NgdXZ/images.jpg"
+            src="https://i.ibb.co/L50HjH2/logo-farika.png"
             alt="Company Logo"
-            width={80}
-            height={80}
-            className="mx-auto rounded-lg mb-4"
+            width={120}
+            height={120}
+            className="mx-auto rounded-full mb-4"
           />
           <CardTitle className="text-2xl text-primary">PT. FARIKA RIAU PERKASA</CardTitle>
           <CardDescription>
