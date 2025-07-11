@@ -57,7 +57,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <Image
-            src="https://i.ibb.co/V0NgdX7z/images.jpg"
+            src="https://i.ibb.co/V0NgdXZ/images.jpg"
             alt="Company Logo"
             width={80}
             height={80}
