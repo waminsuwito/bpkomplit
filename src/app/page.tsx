@@ -102,7 +102,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <Image
-            src="https://i.postimg.cc/J03RrqkF/logo-frp-Indonesia-1.png"
+            src="https://i.ibb.co/VvZPq6k/logo-frp-Indonesia-1.png"
             alt="Company Logo"
             width={120}
             height={120}
