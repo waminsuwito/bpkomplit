@@ -4,7 +4,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
-import { verifyLogin } from '@/lib/auth';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -38,11 +37,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
 
-    // Specific redirection for OPRATOR BP jabatan, takes precedence
+    // --- REDIRECTION LOGIC ---
+    // Direct to the most specific page based on role/jabatan.
+
     if (userData.jabatan === 'OPRATOR BP') {
       router.push('/dashboard');
-    } else if (userData.role === 'super_admin' || userData.role === 'admin_lokasi' || userData.role === 'logistik_material' || userData.role === 'hse_hrd_lokasi') {
-      router.push('/admin');
+    } else if (userData.role === 'super_admin') {
+      router.push('/admin/super-admin');
+    } else if (userData.role === 'admin_lokasi') {
+      router.push('/admin/laporan-harian');
+    } else if (userData.role === 'logistik_material') {
+      router.push('/admin/pemasukan-material');
+    } else if (userData.role === 'hse_hrd_lokasi') {
+      router.push('/admin/absensi-karyawan-hari-ini');
     } else if (userData.role === 'karyawan' || userData.role === 'operator' || userData.role === 'supervisor' || userData.role === 'laborat' || userData.role === 'mekanik' || userData.role === 'tukang_las' || userData.role === 'logistik_spareparts') {
       router.push('/karyawan');
     } else {
