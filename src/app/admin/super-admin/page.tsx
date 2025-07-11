@@ -15,11 +15,13 @@ import { useToast } from '@/hooks/use-toast';
 export default function SuperAdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Safely load users on the client side
+    // Safely load users on the client side after the component has mounted
     setUsers(getUsers());
+    setIsLoading(false);
   }, []);
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
@@ -95,6 +97,14 @@ export default function SuperAdminPage() {
   // We need to pass users without their passwords to the list component for display
   const usersForDisplay = users.map(({ password, ...user }) => user);
 
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <p>Loading user data...</p>
+        </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl space-y-6 mx-auto">
        <Card>
@@ -130,5 +140,3 @@ export default function SuperAdminPage() {
     </div>
   );
 }
-
-    
