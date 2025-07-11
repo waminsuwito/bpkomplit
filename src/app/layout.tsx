@@ -12,12 +12,12 @@ export const metadata: Metadata = {
     title: 'PT. FARIKA RIAU PERKASA',
     description: 'One Stop Concrete Solution',
     type: 'website',
-    images: ['https://i.ibb.co/L50HjH2/logo-farika.png'],
+    images: ['https://i.postimg.cc/J03RrqkF/logo-frp-Indonesia-1.png'],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@lovable_dev',
-    images: ['https://i.ibb.co/L50HjH2/logo-farika.png'],
+    images: ['https://i.postimg.cc/J03RrqkF/logo-frp-Indonesia-1.png'],
   },
 };
 

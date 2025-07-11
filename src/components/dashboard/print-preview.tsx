@@ -50,7 +50,7 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
         <div id="print-preview-content" className="bg-white text-black p-8 rounded-md shadow-lg max-w-2xl mx-auto font-sans">
           <header className="flex items-center justify-between border-b-2 border-black pb-4">
             <div className="flex items-center gap-4">
-              <Image src="https://i.ibb.co/L50HjH2/logo-farika.png" alt="Company Logo" width={60} height={60} />
+              <Image src="https://i.postimg.cc/J03RrqkF/logo-frp-Indonesia-1.png" alt="Company Logo" width={60} height={60} />
               <div>
                 <h1 className="text-xl font-bold">PT. FARIKA RIAU PERKASA</h1>
                 <p className="text-xs">Batching Plant</p>
