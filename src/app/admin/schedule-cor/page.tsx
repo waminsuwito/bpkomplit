@@ -51,6 +51,7 @@ export default function ScheduleCorPage() {
   const [formState, setFormState] = useState<Omit<Schedule, 'id' | 'date'>>(initialFormState);
 
   useEffect(() => {
+    // Safely load schedules only on the client side
     setAllSchedules(getSchedules());
   }, []);
 
@@ -79,21 +80,25 @@ export default function ScheduleCorPage() {
       alert('Semua kolom harus diisi.');
       return;
     }
-    const newSchedule: Schedule = {
-      id: new Date().toISOString(),
-      ...formState,
-      date: format(date, 'yyyy-MM-dd'),
-    };
-    const updatedSchedules = [...allSchedules, newSchedule];
-    setAllSchedules(updatedSchedules);
-    saveSchedules(updatedSchedules);
+    setAllSchedules(currentSchedules => {
+        const newSchedule: Schedule = {
+            id: new Date().toISOString(),
+            ...formState,
+            date: format(date, 'yyyy-MM-dd'),
+        };
+        const updatedSchedules = [...currentSchedules, newSchedule];
+        saveSchedules(updatedSchedules);
+        return updatedSchedules;
+    });
     setFormState(initialFormState); // Reset form
   };
 
   const handleDeleteSchedule = (id: string) => {
-    const updatedSchedules = allSchedules.filter(schedule => schedule.id !== id);
-    setAllSchedules(updatedSchedules);
-    saveSchedules(updatedSchedules);
+    setAllSchedules(currentSchedules => {
+        const updatedSchedules = currentSchedules.filter(schedule => schedule.id !== id);
+        saveSchedules(updatedSchedules);
+        return updatedSchedules;
+    });
   };
 
   return (
@@ -281,3 +286,5 @@ export default function ScheduleCorPage() {
     </div>
   );
 }
+
+    

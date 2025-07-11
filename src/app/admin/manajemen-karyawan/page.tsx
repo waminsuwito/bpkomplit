@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -141,10 +142,12 @@ export default function ManajemenKaryawanPage() {
   };
   
   const handleDeleteReport = (id: string) => {
-    const updatedReports = reports.filter(r => r.id !== id);
-    setReports(updatedReports);
-    saveToLocalStorage(updatedReports);
-    toast({ variant: 'destructive', title: 'Report Deleted', description: `Data for ${id} has been deleted.` });
+    setReports(currentReports => {
+        const updatedReports = currentReports.filter(r => r.id !== id);
+        saveToLocalStorage(updatedReports);
+        toast({ variant: 'destructive', title: 'Report Deleted', description: `Data for ${id} has been deleted.` });
+        return updatedReports;
+    });
   }
 
   return (
@@ -288,3 +291,5 @@ export default function ManajemenKaryawanPage() {
     </div>
   );
 }
+
+    

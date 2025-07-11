@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Shield } from 'lucide-react';
@@ -12,9 +13,14 @@ import { useToast } from '@/hooks/use-toast';
 
 
 export default function SuperAdminPage() {
-  const [users, setUsers] = useState<User[]>(() => getUsers());
+  const [users, setUsers] = useState<User[]>([]);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Safely load users on the client side
+    setUsers(getUsers());
+  }, []);
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
     const allUsers = getUsers();
@@ -124,3 +130,5 @@ export default function SuperAdminPage() {
     </div>
   );
 }
+
+    
