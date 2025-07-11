@@ -26,22 +26,16 @@ function ControlGroup({ title, children, className }: { title: string, children:
 
 type ManualControlKey = 'pasir1' | 'pasir2' | 'batu1' | 'batu2' | 'airTimbang' | 'airBuang' | 'semenTimbang' | 'semen' | 'pintuBuka' | 'pintuTutup' | 'konveyorBawah' | 'konveyorAtas' | 'klakson';
 
-type ManualControlsState = {
-  [key in ManualControlKey]: boolean;
-} & {
-  selectedSilo: string;
-};
-
 const sendRelayCommand = (relayId: ManualControlKey, state: boolean) => {
     const db = getDatabase(app);
-    const commandRef = ref(db, 'realtime/manualCommand');
-    set(commandRef, { relayId, state, timestamp: Date.now() });
+    const commandRef = ref(db, `realtime/manualState/${relayId}`);
+    set(commandRef, { state, timestamp: Date.now() });
 };
 
 const sendSiloCommand = (siloId: string) => {
     const db = getDatabase(app);
-    const commandRef = ref(db, 'realtime/manualCommand');
-    set(commandRef, { relayId: 'selectSilo', state: siloId, timestamp: Date.now() });
+    const commandRef = ref(db, 'realtime/manualState/selectedSilo');
+    set(commandRef, { state: siloId, timestamp: Date.now() });
 }
 
 const MomentaryButton = ({ 
@@ -206,7 +200,7 @@ export default function TombolManualPage() {
                                 </MomentaryButton>
                                 <MomentaryButton 
                                 controlKey="pintuTutup"
-                                className={cn("text-white font-bold text-xs bg-red-600 hover:bg-red-700')}
+                                className={cn("text-white font-bold text-xs bg-red-600 hover:bg-red-700")}
                                 >
                                 {getLabel('pintuTutup', 'PINTU TUTUP')}
                                 </MomentaryButton>
