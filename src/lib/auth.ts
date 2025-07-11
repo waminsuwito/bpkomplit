@@ -21,23 +21,25 @@ const initialUsers: User[] = [
 ];
 
 export function getUsers(): User[] {
-  if (typeof window !== 'undefined') {
-    try {
-      const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-      if (storedUsers) {
-        return JSON.parse(storedUsers);
-      } else {
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-        return initialUsers;
-      }
-    } catch (error) {
-      console.error('Failed to access users from localStorage:', error);
+  // This function is now safe to call from anywhere on the client-side.
+  if (typeof window === 'undefined') {
+    return []; // Return empty array on server-side or during pre-rendering.
+  }
+  try {
+    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+    if (storedUsers) {
+      return JSON.parse(storedUsers);
+    } else {
+      // Seed the storage if it's the first time.
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
       return initialUsers;
     }
+  } catch (error) {
+    console.error('Failed to access users from localStorage:', error);
+    // Return initial users as a fallback in case of parsing errors.
+    return initialUsers;
   }
-  return []; // Return empty array on server-side
 }
-
 
 export function saveUsers(users: User[]): void {
   if (typeof window !== 'undefined') {
@@ -51,7 +53,7 @@ export function saveUsers(users: User[]): void {
 
 export function verifyLogin(usernameOrNik: string, password: string): Promise<Omit<User, 'password'> | null> {
   return new Promise((resolve) => {
-    // getUsers() is now safe to call here because this function is only called from a client component event handler.
+    // getUsers() is safe to call here because this function is only triggered by a user action (form submission).
     const users = getUsers();
     const user = users.find(
       (u) =>
@@ -59,13 +61,15 @@ export function verifyLogin(usernameOrNik: string, password: string): Promise<Om
         u.password === password
     );
 
-    if (user) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...userWithoutPassword } = user;
-      resolve(userWithoutPassword);
-    } else {
-      resolve(null);
-    }
+    setTimeout(() => {
+        if (user) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { password, ...userWithoutPassword } = user;
+          resolve(userWithoutPassword);
+        } else {
+          resolve(null);
+        }
+    }, 250); // Simulate network delay
   });
 }
 
