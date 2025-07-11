@@ -8,18 +8,17 @@ import { getDatabase } from 'firebase/database';
 
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDSNTS7HvOFKSNkFojAN6qzljX5EGsNtzQ",
-  authDomain: "frp-batching-plant-management.firebaseapp.com",
-  projectId: "frp-batching-plant-management",
-  storageBucket: "frp-batching-plant-management.appspot.com",
-  messagingSenderId: "1029241421718",
-  appId: "1:1029241421718:web:6d85e62262fc22f26567b7",
-  measurementId: "G-952KLPTDVZ",
-  // Add the databaseURL for Realtime Database
-  databaseURL: "https://frp-batching-plant-management-default-rtdb.asia-southeast1.firebasedatabase.app"
+  apiKey: "AIzaSyB5MPo5udTSUTgitB_oK6I2ZeKOcv3-tS4",
+  authDomain: "batchingplantmanager-5f679.firebaseapp.com",
+  projectId: "batchingplantmanager-5f679",
+  storageBucket: "batchingplantmanager-5f679.appspot.com",
+  messagingSenderId: "643284217395",
+  appId: "1:643284217395:web:e474af169185d52d3d7d46",
+  measurementId: "G-JMF86KVYLP",
+  databaseURL: "https://batchingplantmanager-5f679-default-rtdb.firebaseio.com"
 };
+
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
