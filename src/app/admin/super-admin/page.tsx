@@ -18,10 +18,16 @@ export default function SuperAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Safely load users on the client side after the component has mounted
   useEffect(() => {
-    // Safely load users on the client side after the component has mounted
-    setUsers(getUsers());
-    setIsLoading(false);
+    try {
+      setUsers(getUsers());
+    } catch (error) {
+      console.error("Failed to load users:", error);
+      toast({ variant: 'destructive', title: "Error", description: "Could not load user data." });
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {

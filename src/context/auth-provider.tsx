@@ -37,23 +37,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
 
-    // --- REDIRECTION LOGIC ---
-    // Direct to the most specific page based on role/jabatan.
-
+    // --- NEW, SIMPLIFIED REDIRECTION LOGIC ---
+    // AuthGuard will handle the fine-grained redirection.
+    // This just provides a sensible default destination.
     if (userData.jabatan === 'OPRATOR BP') {
       router.push('/dashboard');
-    } else if (userData.role === 'super_admin') {
-      router.push('/admin/super-admin');
-    } else if (userData.role === 'admin_lokasi') {
-      router.push('/admin/laporan-harian');
-    } else if (userData.role === 'logistik_material') {
-      router.push('/admin/pemasukan-material');
-    } else if (userData.role === 'hse_hrd_lokasi') {
-      router.push('/admin/absensi-karyawan-hari-ini');
-    } else if (userData.role === 'karyawan' || userData.role === 'operator' || userData.role === 'supervisor' || userData.role === 'laborat' || userData.role === 'mekanik' || userData.role === 'tukang_las' || userData.role === 'logistik_spareparts') {
-      router.push('/karyawan');
+    } else if (userData.role.includes('admin') || userData.role.includes('logistik') || userData.role.includes('hse')) {
+      router.push('/admin/laporan-harian'); // A safe default for all admin types
     } else {
-      router.push('/'); // Fallback to login page for screen_view or unhandled roles
+       router.push('/karyawan'); // Default for all other roles
     }
   };
 
