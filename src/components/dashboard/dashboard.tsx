@@ -22,6 +22,23 @@ type AutoProcessStep =
   | 'paused'
   | 'complete';
 
+// Helper function to generate simulated weights with realistic deviation
+const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'cement_water'): number => {
+  const deviation = 0.015; // 1.5%
+  const min = target * (1 - deviation);
+  const max = target * (1 + deviation);
+  const randomWeight = Math.random() * (max - min) + min;
+
+  if (materialType === 'aggregate') {
+    // Round to the nearest 0.5 for sand and stone
+    return Math.round(randomWeight * 2) / 2;
+  } else {
+    // Round to the nearest integer for cement and water
+    return Math.round(randomWeight);
+  }
+};
+
+
 export function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -214,14 +231,13 @@ export function Dashboard() {
             setIsManualProcessRunning(false);
             const endTime = new Date();
 
-            // For simulation, actual weights will be the same as target weights.
             const simulationWeights = {
-                pasir1: targetWeights.pasir1,
-                pasir2: targetWeights.pasir2,
-                batu1: targetWeights.batu1,
-                batu2: targetWeights.batu2,
-                air: targetWeights.air,
-                semen: targetWeights.semen,
+                pasir1: generateSimulatedWeight(targetWeights.pasir1, 'aggregate'),
+                pasir2: generateSimulatedWeight(targetWeights.pasir2, 'aggregate'),
+                batu1: generateSimulatedWeight(targetWeights.batu1, 'aggregate'),
+                batu2: generateSimulatedWeight(targetWeights.batu2, 'aggregate'),
+                air: generateSimulatedWeight(targetWeights.air, 'cement_water'),
+                semen: generateSimulatedWeight(targetWeights.semen, 'cement_water'),
             };
 
             const finalData = {
@@ -231,7 +247,7 @@ export function Dashboard() {
                 startTime: batchStartTime,
                 endTime: endTime,
                 targetWeights: targetWeights,
-                actualWeights: simulationWeights // Use simulation weights
+                actualWeights: simulationWeights
             };
             setCompletedBatchData(finalData);
             setShowPrintPreview(true);
