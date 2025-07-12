@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { getScheduleSheetData, saveScheduleSheetData } from '@/lib/schedule';
 import type { ScheduleSheetRow } from '@/lib/types';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 
 
 const TOTAL_ROWS = 15;
@@ -26,10 +28,12 @@ const fieldKeys: (keyof ScheduleSheetRow)[] = [
 ];
 
 
-export function ScheduleSheet() {
+export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) {
   const [data, setData] = useState<ScheduleSheetRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleSheetRow)));
   const [date, setDate] = useState(format(new Date(), 'dd MMMM yyyy'));
   const { toast } = useToast();
+  const [requestNo, setRequestNo] = useState('');
+  const [requestVol, setRequestVol] = useState('');
 
   useEffect(() => {
     try {
@@ -62,6 +66,14 @@ export function ScheduleSheet() {
     }
   }
   
+  const handleOperatorSave = () => {
+    // Logic for operator saving Request No and Vol
+    toast({
+        title: 'Tersimpan (Operator)',
+        description: `Request No: ${requestNo}, Vol: ${requestVol} M³`
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, rowIndex: number, colIndex: number) => {
     const { key } = e;
     let nextRowIndex = rowIndex;
@@ -114,10 +126,27 @@ export function ScheduleSheet() {
                     </CardTitle>
                     <CardDescription>Tanggal: {date}</CardDescription>
                 </div>
-                <Button onClick={handleSave}>
-                    <Save className="mr-2 h-4 w-4" />
-                    Simpan
-                </Button>
+                {isOperatorView ? (
+                    <div className="flex items-end gap-4">
+                        <div className="space-y-1">
+                            <Label htmlFor="request-no">REQUEST NO</Label>
+                            <Input id="request-no" value={requestNo} onChange={e => setRequestNo(e.target.value)} placeholder="Masukkan No Request" />
+                        </div>
+                        <div className="space-y-1">
+                            <Label htmlFor="request-vol">VOL</Label>
+                            <Input id="request-vol" type="number" value={requestVol} onChange={e => setRequestVol(e.target.value)} placeholder="M³" className="w-24" />
+                        </div>
+                        <Button onClick={handleOperatorSave}>
+                            <Save className="mr-2 h-4 w-4" />
+                            Simpan
+                        </Button>
+                    </div>
+                ) : (
+                    <Button onClick={handleSave}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Simpan
+                    </Button>
+                )}
             </div>
         </CardHeader>
         <CardContent>

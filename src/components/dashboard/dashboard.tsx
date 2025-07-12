@@ -182,7 +182,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.selectedFormulaId, formulas, scheduleData]);
+  }, [jobInfo.selectedFormulaId, formulas, scheduleData, isJobInfoLocked, toast]);
 
   useEffect(() => {
     try {
@@ -416,7 +416,7 @@ export function Dashboard() {
               />
             </div>
              <div className="col-span-12">
-                <ScheduleSheet />
+                <ScheduleSheet isOperatorView={true} />
             </div>
           </div>
           
