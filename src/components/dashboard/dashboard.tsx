@@ -223,11 +223,7 @@ export function Dashboard() {
     return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 };
   }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
   
-
-  const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
-    if (!powerOn) return;
-    
-    const finishAndPrintBatch = () => {
+  const finishAndPrintBatch = () => {
         const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
         if (!selectedFormula) return;
 
@@ -278,6 +274,8 @@ export function Dashboard() {
         }
     }
 
+  const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
+    if (!powerOn) return;
 
     if (operasiMode === 'AUTO') {
         if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
@@ -285,9 +283,11 @@ export function Dashboard() {
                 toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Pastikan Formula, Target Volume, dan Jumlah Mixing sudah terisi.' });
                 return;
             }
+            // This is where hardware control would start. We just log it for now.
              setAutoProcessStep('weighing');
              addLog('Proses AUTO dimulai.', 'text-primary');
         } else {
+             // This is where hardware control would stop.
             setAutoProcessStep('idle');
             resetStateForNewJob();
             finishAndPrintBatch();
