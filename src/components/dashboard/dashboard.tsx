@@ -198,52 +198,44 @@ export function Dashboard() {
         } else {
             set(commandRef, { action, timestamp: Date.now() });
         }
-    } else { // MANUAL MODE
+    } else { // MANUAL MODE - Print Simulation
+        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+        if (!selectedFormula) {
+          toast({ variant: 'destructive', title: 'Gagal Simulasi', description: 'Pilih formula mutu beton terlebih dahulu.' });
+          return;
+        }
+
         if (action === 'START') {
             resetStateForNewJob();
             setIsManualProcessRunning(true);
             setBatchStartTime(new Date());
-            addLog('Sesi pencatatan manual dimulai.', 'text-green-500');
+            addLog('Sesi simulasi cetak dimulai.', 'text-green-500');
         } else if (action === 'STOP' && isManualProcessRunning) {
             setIsManualProcessRunning(false);
-            const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
             const endTime = new Date();
 
-            const volumePerMix = jobInfo.jumlahMixing > 0 ? jobInfo.targetVolume / jobInfo.jumlahMixing : 0;
-            const manualTargetWeights = selectedFormula ? {
-                pasir1: selectedFormula.pasir1 * volumePerMix,
-                pasir2: selectedFormula.pasir2 * volumePerMix,
-                batu1: selectedFormula.batu1 * volumePerMix,
-                batu2: selectedFormula.batu2 * volumePerMix,
-                air: selectedFormula.air * volumePerMix,
-                semen: selectedFormula.semen * volumePerMix,
-            } : targetWeights; // fallback to whatever is there
-            
-            const totalActualAggregate = aggregateWeight;
-            const actualPasir1 = (manualTargetWeights.pasir1 / (manualTargetWeights.pasir1 + manualTargetWeights.pasir2)) * totalActualAggregate || 0;
-            const actualPasir2 = (manualTargetWeights.pasir2 / (manualTargetWeights.pasir1 + manualTargetWeights.pasir2)) * totalActualAggregate || 0;
-            const actualBatu1 = (manualTargetWeights.batu1 / (manualTargetWeights.batu1 + manualTargetWeights.batu2)) * totalActualAggregate || 0;
-            const actualBatu2 = (manualTargetWeights.batu2 / (manualTargetWeights.batu1 + manualTargetWeights.batu2)) * totalActualAggregate || 0;
+            // For simulation, actual weights will be the same as target weights.
+            const simulationWeights = {
+                pasir1: targetWeights.pasir1,
+                pasir2: targetWeights.pasir2,
+                batu1: targetWeights.batu1,
+                batu2: targetWeights.batu2,
+                air: targetWeights.air,
+                semen: targetWeights.semen,
+            };
 
             const finalData = {
                 ...jobInfo,
-                jobId: `MANUAL-${Date.now().toString().slice(-6)}`,
-                mutuBeton: selectedFormula?.mutuBeton || 'N/A',
+                jobId: `SIM-${Date.now().toString().slice(-6)}`,
+                mutuBeton: selectedFormula.mutuBeton,
                 startTime: batchStartTime,
                 endTime: endTime,
-                targetWeights: manualTargetWeights,
-                actualWeights: {
-                    pasir1: actualPasir1,
-                    pasir2: actualPasir2,
-                    batu1: actualBatu1,
-                    batu2: actualBatu2,
-                    air: airWeight,
-                    semen: semenWeight,
-                }
+                targetWeights: targetWeights,
+                actualWeights: simulationWeights // Use simulation weights
             };
             setCompletedBatchData(finalData);
             setShowPrintPreview(true);
-            addLog('Sesi manual selesai. Menampilkan pratinjau cetak.', 'text-primary');
+            addLog('Simulasi selesai. Menampilkan pratinjau cetak.', 'text-primary');
         }
     }
   };
