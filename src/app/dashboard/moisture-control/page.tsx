@@ -55,7 +55,6 @@ export default function MoistureControlPage() {
 
   const handlePercentageChange = (material: MaterialKey, value: string) => {
     const numericValue = Number(value);
-    // Allow negative numbers
     if (!isNaN(numericValue)) {
       setMoisturePercentages(prev => ({
         ...prev,
@@ -68,7 +67,7 @@ export default function MoistureControlPage() {
     if (!selectedFormula) return null;
 
     const results = {
-      ...selectedFormula, // Start with original values
+      ...selectedFormula,
       koreksi_pasir1: 0,
       koreksi_pasir2: 0,
       koreksi_batu1: 0,
@@ -179,27 +178,32 @@ export default function MoistureControlPage() {
             <TableBody>
               {selectedFormula && calculationResults ? (
                 <>
-                  {aggregateMaterials.map(({ key, label }) => (
-                    <TableRow key={key}>
-                      <TableCell className="font-medium">{label}</TableCell>
-                      <TableCell className="text-center">{selectedFormula[key].toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={moisturePercentages[key]}
-                          onChange={e => handlePercentageChange(key, e.target.value)}
-                          className="max-w-[120px] mx-auto text-center"
-                          step="0.1"
-                        />
-                      </TableCell>
-                      <TableCell className="text-center font-semibold text-destructive">
-                        + {calculationResults[`koreksi_${key}` as keyof typeof calculationResults].toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-center font-bold text-lg text-primary">
-                        {(calculationResults[`${key}_koreksi` as keyof typeof calculationResults] as number).toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {aggregateMaterials.map(({ key, label }) => {
+                    const originalWeight = selectedFormula[key];
+                    if (typeof originalWeight !== 'number') return null;
+
+                    return (
+                      <TableRow key={key}>
+                        <TableCell className="font-medium">{label}</TableCell>
+                        <TableCell className="text-center">{originalWeight.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={moisturePercentages[key]}
+                            onChange={e => handlePercentageChange(key, e.target.value)}
+                            className="max-w-[120px] mx-auto text-center"
+                            step="0.1"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center font-semibold text-destructive">
+                          + {calculationResults[`koreksi_${key}` as keyof typeof calculationResults].toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-center font-bold text-lg text-primary">
+                          {(calculationResults[`${key}_koreksi` as keyof typeof calculationResults] as number).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                    <TableRow>
                       <TableCell className="font-medium">Semen</TableCell>
                       <TableCell className="text-center">{selectedFormula.semen.toFixed(2)}</TableCell>
