@@ -27,24 +27,29 @@ const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'ce
   const deviation = 0.015; // 1.5%
   const min = target * (1 - deviation);
   const max = target * (1 + deviation);
+  const randomWeight = Math.random() * (max - min) + min;
+
   let finalWeight;
+  let roundedTarget;
 
-  while (true) {
-    const randomWeight = Math.random() * (max - min) + min;
-
-    if (materialType === 'aggregate') {
-      // Round to the nearest multiple of 5 for sand and stone
-      finalWeight = Math.round(randomWeight / 5) * 5;
-    } else {
-      // Round to the nearest integer (multiple of 1) for cement and water
-      finalWeight = Math.round(randomWeight);
-    }
-    
+  if (materialType === 'aggregate') {
+    // Round to the nearest multiple of 5 for sand and stone
+    finalWeight = Math.round(randomWeight / 5) * 5;
+    roundedTarget = Math.round(target / 5) * 5;
     // Ensure the final weight is not exactly the target
-    if (finalWeight !== Math.round(target)) {
-        break;
+    if (finalWeight === roundedTarget) {
+      finalWeight += (Math.random() < 0.5 ? -5 : 5);
+    }
+  } else {
+    // Round to the nearest integer (multiple of 1) for cement and water
+    finalWeight = Math.round(randomWeight);
+    roundedTarget = Math.round(target);
+     // Ensure the final weight is not exactly the target
+    if (finalWeight === roundedTarget) {
+      finalWeight += (Math.random() < 0.5 ? -1 : 1);
     }
   }
+  
   return finalWeight;
 };
 
