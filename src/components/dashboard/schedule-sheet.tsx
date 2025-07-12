@@ -5,19 +5,21 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Save } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 const SCHEDULE_SHEET_STORAGE_KEY = 'app-schedule-sheet-data';
 const TOTAL_ROWS = 15;
 
 const headers = [
     'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 
-    'VOLUME M3', 'TM KE', 'TEKIRIM M3', 'SISA M3', 'VOL LOADING'
+    'VOLUME M3', 'TM KE', 'TEKIRIM M3', 'SISA M3'
 ];
 const fieldKeys = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 
-    'volume', 'tmKe', 'terkirim', 'sisa', 'volLoading'
+    'volume', 'tmKe', 'terkirim', 'sisa'
 ];
 
 type ScheduleRow = {
@@ -27,6 +29,7 @@ type ScheduleRow = {
 export function ScheduleSheet() {
   const [data, setData] = useState<ScheduleRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleRow)));
   const [date, setDate] = useState(format(new Date(), 'dd MMMM yyyy'));
+  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -43,13 +46,17 @@ export function ScheduleSheet() {
     const updatedData = [...data];
     updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
     setData(updatedData);
-    // Auto-save on change
-    try {
-        localStorage.setItem(SCHEDULE_SHEET_STORAGE_KEY, JSON.stringify(updatedData));
-    } catch (error) {
-        console.error("Failed to auto-save schedule sheet data", error);
-    }
   };
+  
+  const handleSave = () => {
+     try {
+        localStorage.setItem(SCHEDULE_SHEET_STORAGE_KEY, JSON.stringify(data));
+        toast({ title: 'Berhasil', description: 'Data schedule berhasil disimpan.' });
+    } catch (error) {
+        console.error("Failed to save schedule sheet data", error);
+        toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal menyimpan data schedule.' });
+    }
+  }
 
   return (
     <Card>
@@ -62,6 +69,10 @@ export function ScheduleSheet() {
                     </CardTitle>
                     <CardDescription>Tanggal: {date}</CardDescription>
                 </div>
+                <Button onClick={handleSave}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Simpan
+                </Button>
             </div>
         </CardHeader>
         <CardContent>
