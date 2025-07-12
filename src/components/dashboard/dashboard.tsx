@@ -75,6 +75,7 @@ export function Dashboard() {
   
   const initialJobInfo = {
     selectedFormulaId: '',
+    reqNo: '',
     namaPelanggan: '',
     lokasiProyek: '',
     targetVolume: 1.0,
@@ -164,6 +165,7 @@ export function Dashboard() {
     if (matchingSchedule) {
       setJobInfo(prev => ({
         ...prev,
+        reqNo: matchingSchedule.noPo || '',
         namaPelanggan: matchingSchedule.nama || '',
         lokasiProyek: matchingSchedule.lokasi || '',
         targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,

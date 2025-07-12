@@ -21,6 +21,7 @@ interface ControlPanelProps {
   
   jobInfo: {
     selectedFormulaId: string;
+    reqNo: string;
     namaPelanggan: string;
     lokasiProyek: string;
     targetVolume: number;
@@ -77,6 +78,17 @@ export function ControlPanel({
       {/* Job Info */}
       <Card className="col-span-1">
         <CardContent className="pt-6 space-y-4">
+          <div>
+            <Label htmlFor="req-no" className="text-xs text-muted-foreground">REQ NO</Label>
+             <Input 
+                id="req-no" 
+                placeholder="Masukkan nomor request" 
+                value={jobInfo.reqNo} 
+                onChange={e => handleJobInfoChange('reqNo', e.target.value.toUpperCase())} 
+                style={{ textTransform: 'uppercase' }}
+                disabled={!powerOn || isJobInfoLocked} 
+            />
+          </div>
           <div>
             <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
             <Select 
