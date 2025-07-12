@@ -5,9 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Save, CalendarDays, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { CalendarDays } from 'lucide-react';
 import { format } from 'date-fns';
 
 const SCHEDULE_SHEET_STORAGE_KEY = 'app-schedule-sheet-data';
@@ -29,7 +27,6 @@ type ScheduleRow = {
 export function ScheduleSheet() {
   const [data, setData] = useState<ScheduleRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleRow)));
   const [date, setDate] = useState(format(new Date(), 'dd MMMM yyyy'));
-  const { toast } = useToast();
 
   useEffect(() => {
     try {
@@ -46,22 +43,13 @@ export function ScheduleSheet() {
     const updatedData = [...data];
     updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
     setData(updatedData);
-  };
-
-  const handleSave = () => {
+    // Auto-save on change
     try {
-      localStorage.setItem(SCHEDULE_SHEET_STORAGE_KEY, JSON.stringify(data));
-      toast({ title: "Berhasil", description: "Data schedule berhasil disimpan." });
+        localStorage.setItem(SCHEDULE_SHEET_STORAGE_KEY, JSON.stringify(updatedData));
     } catch (error) {
-        toast({ variant: 'destructive', title: "Gagal", description: "Tidak dapat menyimpan data schedule." });
+        console.error("Failed to auto-save schedule sheet data", error);
     }
   };
-
-  const handleClearRow = (rowIndex: number) => {
-    const updatedData = [...data];
-    updatedData[rowIndex] = {} as ScheduleRow;
-    setData(updatedData);
-  }
 
   return (
     <Card>
@@ -74,7 +62,6 @@ export function ScheduleSheet() {
                     </CardTitle>
                     <CardDescription>Tanggal: {date}</CardDescription>
                 </div>
-                <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Simpan Data</Button>
             </div>
         </CardHeader>
         <CardContent>
@@ -85,7 +72,6 @@ export function ScheduleSheet() {
                             {headers.map(header => (
                                 <TableHead key={header} className="text-center font-bold whitespace-nowrap px-2 text-black">{header}</TableHead>
                             ))}
-                             <TableHead className="text-center font-bold text-black">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -101,11 +87,6 @@ export function ScheduleSheet() {
                                         />
                                     </TableCell>
                                 ))}
-                                <TableCell className="border-t border-gray-300 text-center">
-                                    <Button variant="ghost" size="icon" onClick={() => handleClearRow(rowIndex)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
