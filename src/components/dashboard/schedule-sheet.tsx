@@ -15,11 +15,11 @@ const TOTAL_ROWS = 15;
 
 const headers = [
     'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 
-    'VOLUME M3', 'TM KE', 'TEKIRIM M3', 'SISA M3'
+    'VOLUME M³', 'TEKIRIM M³', 'SISA M³'
 ];
 const fieldKeys = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 
-    'volume', 'tmKe', 'terkirim', 'sisa'
+    'volume', 'terkirim', 'sisa'
 ];
 
 type ScheduleRow = {
