@@ -25,23 +25,16 @@ type AutoProcessStep =
 // Helper function to generate simulated weights with realistic deviation and specific rounding rules
 const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'cement_water'): number => {
   const deviation = 0.02; // 2%
+  const roundingUnit = materialType === 'aggregate' ? 5 : 1;
+
+  // Calculate random weight
   const min = target * (1 - deviation);
   const max = target * (1 + deviation);
   const randomWeight = Math.random() * (max - min) + min;
 
-  let finalWeight;
-  let roundedTarget;
-  let roundingUnit;
-
-  if (materialType === 'aggregate') {
-    roundingUnit = 5;
-    finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
-    roundedTarget = Math.round(target / roundingUnit) * roundingUnit;
-  } else {
-    roundingUnit = 1;
-    finalWeight = Math.round(randomWeight);
-    roundedTarget = Math.round(target);
-  }
+  // Round the weight and target to the same unit
+  let finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
+  const roundedTarget = Math.round(target / roundingUnit) * roundingUnit;
   
   // Ensure the final weight is not exactly the target
   if (finalWeight === roundedTarget) {
@@ -134,9 +127,11 @@ export function Dashboard() {
   }, [powerOn, toast]);
 
   useEffect(() => {
-    setFormulas(getFormulas());
+    const loadedFormulas = getFormulas();
+    setFormulas(loadedFormulas);
   }, []);
 
+  // Effect to set a default formula ID once formulas are loaded
   useEffect(() => {
     if (formulas.length > 0 && !jobInfo.selectedFormulaId) {
       setJobInfo(prev => ({...prev, selectedFormulaId: formulas[0].id}));
@@ -174,32 +169,21 @@ export function Dashboard() {
 
       if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
         // --- START OF VALIDATION ---
-        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-        
-        if (!selectedFormula) {
-            toast({
-                variant: 'destructive',
-                title: 'Gagal Memulai',
-                description: 'Formula mutu beton belum dipilih.',
-            });
+        if (!jobInfo.selectedFormulaId) {
+            toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Formula mutu beton belum dipilih.' });
             return;
         }
-
+        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+        if (!selectedFormula) {
+            toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Formula yang dipilih tidak valid.' });
+            return;
+        }
         if (!jobInfo.targetVolume || jobInfo.targetVolume <= 0) {
-          toast({
-            variant: 'destructive',
-            title: 'Gagal Memulai',
-            description: 'Target Volume harus lebih besar dari 0.',
-          });
+          toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Target Volume harus lebih besar dari 0.' });
           return;
         }
-
         if (!jobInfo.jumlahMixing || jobInfo.jumlahMixing <= 0) {
-          toast({
-            variant: 'destructive',
-            title: 'Gagal Memulai',
-            description: 'Jumlah Mixing harus lebih besar dari 0.',
-          });
+          toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Jumlah Mixing harus lebih besar dari 0.' });
           return;
         }
         // --- END OF VALIDATION ---
