@@ -146,45 +146,47 @@ export function Dashboard() {
     setScheduleData(loadedSchedule);
   }, []);
 
-  // Effect to set a default formula ID once formulas are loaded
+  // Effect to auto-fill job info when REQ NO changes
   useEffect(() => {
-    if (formulas.length > 0 && !jobInfo.selectedFormulaId) {
-      setJobInfo(prev => ({...prev, selectedFormulaId: formulas[0].id}));
+    if (!jobInfo.reqNo.trim()) {
+        if (isJobInfoLocked) {
+          setJobInfo(initialJobInfo);
+          setIsJobInfoLocked(false);
+        }
+        return;
     }
-  }, [formulas, jobInfo.selectedFormulaId]);
 
-  // Effect to auto-fill job info when formula selection changes
-  useEffect(() => {
-    if (!jobInfo.selectedFormulaId || !formulas.length) return;
+    const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
+    if (isNaN(reqNoAsNumber)) return;
 
-    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-    if (!selectedFormula) return;
+    const matchingSchedule = scheduleData.find(row => parseInt(row.no, 10) === reqNoAsNumber);
 
-    const matchingSchedule = scheduleData.find(row => row.mutuBeton === selectedFormula.mutuBeton && (row.nama || row.lokasi));
-    
     if (matchingSchedule) {
+      const matchingFormula = formulas.find(f => f.mutuBeton === matchingSchedule.mutuBeton);
+
       setJobInfo(prev => ({
         ...prev,
-        reqNo: matchingSchedule.noPo || '',
+        selectedFormulaId: matchingFormula ? matchingFormula.id : '',
         namaPelanggan: matchingSchedule.nama || '',
         lokasiProyek: matchingSchedule.lokasi || '',
-        targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
+        // Keep volume and mixing count separate as they need to be manually entered by operator
       }));
       setIsJobInfoLocked(true);
-      toast({ title: 'Jadwal Ditemukan', description: `Data untuk ${selectedFormula.mutuBeton} telah dimuat.` });
+      toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
     } else {
-      // If no matching schedule, unlock the fields
+      // If no matching schedule, reset fields but keep the reqNo
       if (isJobInfoLocked) {
         setJobInfo(prev => ({
           ...initialJobInfo,
-          selectedFormulaId: prev.selectedFormulaId, // keep the selected formula
+          reqNo: prev.reqNo, // keep the entered req no
         }));
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.selectedFormulaId, formulas, scheduleData, isJobInfoLocked, toast]);
+  }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast]);
+
 
   useEffect(() => {
     try {
@@ -206,7 +208,6 @@ export function Dashboard() {
      setShowPrintPreview(false);
      setCompletedBatchData(null);
      setBatchStartTime(null);
-     // Don't reset jobInfo here, it should be done manually
   }
 
   const handleResetJob = () => {
