@@ -39,7 +39,7 @@ const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'ce
   let finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
   const roundedTarget = Math.round(target / roundingUnit) * roundingUnit;
   if (finalWeight === roundedTarget) {
-    finalWeight += (Math.random() < 0.5 ? -roundingUnit : roundin_gUnit);
+    finalWeight += (Math.random() < 0.5 ? -roundingUnit : roundingUnit);
   }
   return finalWeight;
 };
@@ -162,6 +162,7 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
+        targetVolume: prev.targetVolume,
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
