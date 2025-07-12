@@ -252,7 +252,7 @@ export function Dashboard() {
         if (jobInfo.reqNo) {
             const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
             if (!isNaN(reqNoAsNumber)) {
-                const updatedSchedule = scheduleData.map(row => {
+                const updatedSchedule = getScheduleSheetData().map(row => {
                     if (parseInt(row.no, 10) === reqNoAsNumber) {
                         const currentTerkirim = parseFloat(row.terkirim) || 0;
                         const newTerkirim = currentTerkirim + jobInfo.targetVolume;
@@ -303,6 +303,7 @@ export function Dashboard() {
             setIsManualProcessRunning(false);
             finishAndPrintBatch();
             addLog('Loading manual selesai', 'text-primary');
+            handleResetJob();
         }
     }
   };
