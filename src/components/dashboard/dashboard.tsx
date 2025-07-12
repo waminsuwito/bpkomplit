@@ -175,7 +175,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast, initialJobInfo]);
+  }, [jobInfo.reqNo, scheduleData, formulas, toast]);
 
 
   useEffect(() => {
@@ -301,6 +301,7 @@ export function Dashboard() {
             addLog('Loading manual dimulai', 'text-green-500');
         } else if (action === 'STOP' && isManualProcessRunning) {
             setIsManualProcessRunning(false);
+            setIsJobInfoLocked(false);
             finishAndPrintBatch();
             handleResetJob();
             addLog('Loading manual selesai', 'text-primary');
