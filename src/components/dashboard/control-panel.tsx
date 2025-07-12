@@ -94,7 +94,7 @@ export function ControlPanel({
             <Select 
               value={jobInfo.selectedFormulaId} 
               onValueChange={(value) => handleJobInfoChange('selectedFormulaId', value)} 
-              disabled={!powerOn}
+              disabled={!powerOn || isJobInfoLocked}
             >
               <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
               <SelectContent>
@@ -142,7 +142,7 @@ export function ControlPanel({
                 onChange={(e) => handleJobInfoChange('targetVolume', Number(e.target.value))}
                 min="0.5"
                 step="0.1"
-                disabled={!powerOn || isJobInfoLocked} 
+                disabled={!powerOn} 
             />
           </div>
            <div>
