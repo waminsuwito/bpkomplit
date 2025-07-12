@@ -114,6 +114,29 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     }
   };
 
+  const renderCellContent = (row: ScheduleSheetRow, key: keyof ScheduleSheetRow, rowIndex: number, colIndex: number) => {
+    const isReadOnlyForAdmin = !isOperatorView && (key === 'terkirim' || key === 'sisa');
+    
+    if (isOperatorView || isReadOnlyForAdmin) {
+      return (
+        <div className="w-full min-h-[40px] text-center bg-transparent text-black flex items-center justify-center p-2">
+          <p className="whitespace-pre-wrap break-words">{row[key] || ''}</p>
+        </div>
+      );
+    }
+  
+    return (
+      <Textarea
+        id={`${key}-${rowIndex}`}
+        value={row[key] || ''}
+        onChange={e => handleInputChange(rowIndex, key, e.target.value)}
+        onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
+        className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none p-2"
+        style={{ textTransform: 'uppercase' }}
+      />
+    );
+  };
+
 
   return (
     <Card>
@@ -164,20 +187,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                             <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0 hover:bg-gray-100">
                                 {fieldKeys.map((key, colIndex) => (
                                     <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300 align-top h-[40px]">
-                                        {isOperatorView ? (
-                                             <div className="w-full min-h-[40px] text-center bg-transparent text-black flex items-center justify-center p-2">
-                                                <p className="whitespace-pre-wrap break-words">{row[key] || ''}</p>
-                                             </div>
-                                        ) : (
-                                            <Textarea
-                                                id={`${key}-${rowIndex}`}
-                                                value={row[key] || ''}
-                                                onChange={e => handleInputChange(rowIndex, key, e.target.value)}
-                                                onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
-                                                className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none p-2"
-                                                style={{ textTransform: 'uppercase' }}
-                                            />
-                                        )}
+                                        {renderCellContent(row, key, rowIndex, colIndex)}
                                     </TableCell>
                                 ))}
                             </TableRow>
