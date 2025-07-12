@@ -18,6 +18,8 @@ import { getFormulas } from '@/lib/formula';
 import { app } from '@/lib/firebase'; // Import Firebase app instance
 import { useToast } from '@/hooks/use-toast';
 import { getScheduleSheetData } from '@/lib/schedule';
+import { Button } from '../ui/button';
+import { XCircle } from 'lucide-react';
 
 
 type AutoProcessStep =
@@ -71,7 +73,7 @@ export function Dashboard() {
   const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
   const [scheduleData, setScheduleData] = useState<ScheduleSheetRow[]>([]);
   
-  const [jobInfo, setJobInfo] = useState({
+  const initialJobInfo = {
     selectedFormulaId: '',
     namaPelanggan: '',
     lokasiProyek: '',
@@ -79,7 +81,11 @@ export function Dashboard() {
     jumlahMixing: 1,
     slump: 12,
     mediaCor: '',
-  });
+  };
+  
+  const [jobInfo, setJobInfo] = useState(initialJobInfo);
+  const [isJobInfoLocked, setIsJobInfoLocked] = useState(false);
+
 
   const [mixingProcessConfig, setMixingProcessConfig] = useState<MixingProcessConfig>(defaultMixingProcess);
   const [mixerTimerConfig, setMixerTimerConfig] = useState<MixerTimerConfig>(defaultMixerTimerConfig);
@@ -148,12 +154,13 @@ export function Dashboard() {
 
   // Effect to auto-fill job info when formula selection changes
   useEffect(() => {
-    if (!jobInfo.selectedFormulaId || !formulas.length || !scheduleData.length) return;
+    if (!jobInfo.selectedFormulaId || !formulas.length) return;
 
     const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
     if (!selectedFormula) return;
 
-    const matchingSchedule = scheduleData.find(row => row.mutuBeton === selectedFormula.mutuBeton);
+    const matchingSchedule = scheduleData.find(row => row.mutuBeton === selectedFormula.mutuBeton && (row.nama || row.lokasi));
+    
     if (matchingSchedule) {
       setJobInfo(prev => ({
         ...prev,
@@ -163,6 +170,17 @@ export function Dashboard() {
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
       }));
+      setIsJobInfoLocked(true);
+      toast({ title: 'Jadwal Ditemukan', description: `Data untuk ${selectedFormula.mutuBeton} telah dimuat.` });
+    } else {
+      // If no matching schedule, unlock the fields
+      if (isJobInfoLocked) {
+        setJobInfo(prev => ({
+          ...initialJobInfo,
+          selectedFormulaId: prev.selectedFormulaId, // keep the selected formula
+        }));
+        setIsJobInfoLocked(false);
+      }
     }
   }, [jobInfo.selectedFormulaId, formulas, scheduleData]);
 
@@ -186,7 +204,15 @@ export function Dashboard() {
      setShowPrintPreview(false);
      setCompletedBatchData(null);
      setBatchStartTime(null);
+     // Don't reset jobInfo here, it should be done manually
   }
+
+  const handleResetJob = () => {
+    setJobInfo(initialJobInfo);
+    setIsJobInfoLocked(false);
+    resetStateForNewJob();
+    toast({ title: 'Formulir Direset', description: 'Anda sekarang dapat memasukkan data pekerjaan manual.' });
+  };
 
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
     if (!powerOn) return;
@@ -338,6 +364,16 @@ export function Dashboard() {
     <div className="space-y-4">
       <>
           <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={handleResetJob}
+                disabled={!isJobInfoLocked}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Reset Job & Isi Manual
+              </Button>
+            </div>
             <div className="col-span-12">
               <WeightDisplayPanel
                 aggregateWeight={aggregateWeight}
@@ -363,6 +399,7 @@ export function Dashboard() {
                 jobInfo={jobInfo}
                 setJobInfo={setJobInfo}
                 isManualProcessRunning={isManualProcessRunning}
+                isJobInfoLocked={isJobInfoLocked}
               />
             </div>
             <div className="col-span-3">

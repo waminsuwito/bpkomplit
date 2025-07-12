@@ -30,6 +30,7 @@ interface ControlPanelProps {
   };
   setJobInfo: (info: React.SetStateAction<ControlPanelProps['jobInfo']>) => void;
   isManualProcessRunning: boolean;
+  isJobInfoLocked: boolean;
 }
 
 export function ControlPanel({
@@ -42,6 +43,7 @@ export function ControlPanel({
   jobInfo,
   setJobInfo,
   isManualProcessRunning,
+  isJobInfoLocked,
 }: ControlPanelProps) {
 
   const [mixWarning, setMixWarning] = useState('');
@@ -100,7 +102,7 @@ export function ControlPanel({
                 value={jobInfo.namaPelanggan} 
                 onChange={e => handleJobInfoChange('namaPelanggan', e.target.value.toUpperCase())} 
                 style={{ textTransform: 'uppercase' }}
-                disabled={!powerOn} 
+                disabled={!powerOn || isJobInfoLocked} 
             />
           </div>
           <div>
@@ -111,7 +113,7 @@ export function ControlPanel({
                 value={jobInfo.lokasiProyek} 
                 onChange={e => handleJobInfoChange('lokasiProyek', e.target.value.toUpperCase())} 
                 style={{ textTransform: 'uppercase' }}
-                disabled={!powerOn}
+                disabled={!powerOn || isJobInfoLocked}
             />
           </div>
         </CardContent>
@@ -128,7 +130,7 @@ export function ControlPanel({
                 onChange={(e) => handleJobInfoChange('targetVolume', Number(e.target.value))}
                 min="0.5"
                 step="0.1"
-                disabled={!powerOn} 
+                disabled={!powerOn || isJobInfoLocked} 
             />
           </div>
            <div>
@@ -157,7 +159,7 @@ export function ControlPanel({
                     type="number" 
                     value={jobInfo.slump} 
                     onChange={(e) => handleJobInfoChange('slump', Number(e.target.value))} 
-                    disabled={!powerOn}
+                    disabled={!powerOn || isJobInfoLocked}
                 />
               </div>
               <div>
@@ -166,7 +168,7 @@ export function ControlPanel({
                     id="media-cor" 
                     value={jobInfo.mediaCor} 
                     readOnly
-                    disabled={!powerOn}
+                    disabled={!powerOn || isJobInfoLocked}
                 />
               </div>
            </div>
