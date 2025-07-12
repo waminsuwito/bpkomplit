@@ -78,6 +78,7 @@ export function Dashboard() {
     targetVolume: 1.0,
     jumlahMixing: 1,
     slump: 12,
+    mediaCor: '',
   });
 
   const [mixingProcessConfig, setMixingProcessConfig] = useState<MixingProcessConfig>(defaultMixingProcess);
@@ -160,6 +161,7 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
+        mediaCor: matchingSchedule.mediaCor || '',
       }));
     }
   }, [jobInfo.selectedFormulaId, formulas, scheduleData]);

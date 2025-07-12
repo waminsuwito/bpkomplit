@@ -26,6 +26,7 @@ interface ControlPanelProps {
     targetVolume: number;
     jumlahMixing: number;
     slump: number;
+    mediaCor: string;
   };
   setJobInfo: (info: React.SetStateAction<ControlPanelProps['jobInfo']>) => void;
   isManualProcessRunning: boolean;
@@ -148,16 +149,27 @@ export function ControlPanel({
                 </div>
              )}
           </div>
-          <div>
-            <Label htmlFor="slump" className="text-xs text-muted-foreground">SLUMP (CM)</Label>
-            <Input 
-                id="slump" 
-                type="number" 
-                value={jobInfo.slump} 
-                onChange={(e) => handleJobInfoChange('slump', Number(e.target.value))} 
-                disabled={!powerOn}
-            />
-          </div>
+           <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="slump" className="text-xs text-muted-foreground">SLUMP (CM)</Label>
+                <Input 
+                    id="slump" 
+                    type="number" 
+                    value={jobInfo.slump} 
+                    onChange={(e) => handleJobInfoChange('slump', Number(e.target.value))} 
+                    disabled={!powerOn}
+                />
+              </div>
+              <div>
+                <Label htmlFor="media-cor" className="text-xs text-muted-foreground">MEDIA COR</Label>
+                <Input 
+                    id="media-cor" 
+                    value={jobInfo.mediaCor} 
+                    readOnly
+                    disabled={!powerOn}
+                />
+              </div>
+           </div>
         </CardContent>
       </Card>
 
