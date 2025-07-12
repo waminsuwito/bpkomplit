@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -100,46 +100,6 @@ export function EditableVehicleList() {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
-    const { key } = e;
-    let nextRowIndex = rowIndex;
-    let nextColIndex = colIndex;
-
-    if (key === 'Enter' || key === 'ArrowDown') {
-        e.preventDefault();
-        nextRowIndex = rowIndex + 1;
-    } else if (key === 'ArrowUp') {
-        e.preventDefault();
-        nextRowIndex = rowIndex - 1;
-    } else if (key === 'ArrowRight' && e.currentTarget.selectionStart === e.currentTarget.value.length) {
-        e.preventDefault();
-        nextColIndex = colIndex + 1;
-    } else if (key === 'ArrowLeft' && e.currentTarget.selectionStart === 0) {
-        e.preventDefault();
-        nextColIndex = colIndex - 1;
-    } else {
-        return;
-    }
-
-    if (nextColIndex >= fields.length) {
-        nextColIndex = 0;
-        nextRowIndex = rowIndex + 1;
-    }
-    if (nextColIndex < 0) {
-        nextColIndex = fields.length - 1;
-        nextRowIndex = rowIndex - 1;
-    }
-
-    if (nextRowIndex >= 0 && nextRowIndex < TOTAL_ROWS) {
-        const nextField = fields[nextColIndex];
-        const nextInputId = `${nextField}-${nextRowIndex}`;
-        const nextInput = document.getElementById(nextInputId);
-        if (nextInput) {
-            nextInput.focus();
-        }
-    }
-  };
-
   if (isLoading) {
     return (
         <div className="p-4 space-y-2">
@@ -185,7 +145,6 @@ export function EditableVehicleList() {
                                     id={`${field}-${index}`}
                                     value={row[field] || ''}
                                     onChange={(e) => handleInputChange(index, field, e.target.value)}
-                                    onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
                                     className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
                                     style={{ textTransform: 'uppercase' }}
                                 />

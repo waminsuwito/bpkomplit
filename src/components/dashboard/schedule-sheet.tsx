@@ -60,6 +60,47 @@ export function ScheduleSheet() {
         toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal menyimpan data schedule.' });
     }
   }
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
+    const { key } = e;
+    let nextRowIndex = rowIndex;
+    let nextColIndex = colIndex;
+
+    if (key === 'Enter' || key === 'ArrowDown') {
+        e.preventDefault();
+        nextRowIndex = rowIndex + 1;
+    } else if (key === 'ArrowUp') {
+        e.preventDefault();
+        nextRowIndex = rowIndex - 1;
+    } else if (key === 'ArrowRight' && e.currentTarget.selectionStart === e.currentTarget.value.length) {
+        e.preventDefault();
+        nextColIndex = colIndex + 1;
+    } else if (key === 'ArrowLeft' && e.currentTarget.selectionStart === 0) {
+        e.preventDefault();
+        nextColIndex = colIndex - 1;
+    } else {
+        return;
+    }
+
+    if (nextColIndex >= fieldKeys.length) {
+        nextColIndex = 0;
+        nextRowIndex = rowIndex + 1;
+    }
+    if (nextColIndex < 0) {
+        nextColIndex = fieldKeys.length - 1;
+        nextRowIndex = rowIndex - 1;
+    }
+
+    if (nextRowIndex >= 0 && nextRowIndex < TOTAL_ROWS) {
+        const nextField = fieldKeys[nextColIndex];
+        const nextInputId = `${nextField}-${nextRowIndex}`;
+        const nextInput = document.getElementById(nextInputId);
+        if (nextInput) {
+            nextInput.focus();
+        }
+    }
+  };
+
 
   return (
     <Card>
@@ -91,11 +132,13 @@ export function ScheduleSheet() {
                     <TableBody>
                         {data.map((row, rowIndex) => (
                             <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0 hover:bg-gray-100">
-                                {fieldKeys.map(key => (
+                                {fieldKeys.map((key, colIndex) => (
                                     <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300">
                                         <Input
+                                            id={`${key}-${rowIndex}`}
                                             value={row[key] || ''}
                                             onChange={e => handleInputChange(rowIndex, key, e.target.value)}
+                                            onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
                                             className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
                                             style={{ textTransform: 'uppercase' }}
                                         />
