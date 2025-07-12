@@ -74,9 +74,10 @@ export function printElement(elementId: string) {
   tempContainer.innerHTML = printContent.innerHTML;
 
   // Find the logo image and reliably set its src
-  const logoImg = tempContainer.querySelector('img[src*="i.ibb.co"], img[src*="iili.io"]');
+  const logoImg = tempContainer.querySelector('img[alt*="Logo"]');
   if (logoImg) {
-    logoImg.setAttribute('src', 'https://iili.io/FGZubdx.png');
+    // This is the most reliable way: use the local path for printing
+    logoImg.setAttribute('src', '/logo.png');
   }
 
   printWindow.document.write(tempContainer.innerHTML);

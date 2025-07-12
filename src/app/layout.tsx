@@ -12,12 +12,12 @@ export const metadata: Metadata = {
     title: 'PT. FARIKA RIAU PERKASA',
     description: 'One Stop Concrete Solution',
     type: 'website',
-    images: ['https://iili.io/FGZubdx.png'],
+    images: ['/logo.png'],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@lovable_dev',
-    images: ['https://iili.io/FGZubdx.png'],
+    images: ['/logo.png'],
   },
 };
 

@@ -102,7 +102,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <Image
-            src="https://iili.io/FGZubdx.png"
+            src="/logo.png"
             alt="Company Logo"
             width={120}
             height={120}
