@@ -140,9 +140,8 @@ export function ScheduleSheet() {
                                             value={row[key] || ''}
                                             onChange={e => handleInputChange(rowIndex, key, e.target.value)}
                                             onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
-                                            className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none overflow-hidden"
+                                            className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none"
                                             style={{ textTransform: 'uppercase' }}
-                                            rows={1}
                                         />
                                     </TableCell>
                                 ))}
