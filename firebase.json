@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "project": "mymanagerbp",
     "public": "out",
     "ignore": [
       "firebase.json",
