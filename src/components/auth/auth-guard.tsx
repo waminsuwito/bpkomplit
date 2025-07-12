@@ -10,6 +10,7 @@ import { type User, type UserRole, type UserJabatan } from '@/lib/types';
 // This helper MUST stay in sync with the one in AuthProvider
 const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     if (user.jabatan === 'OPRATOR BP') return '/dashboard';
+    if (user.jabatan === 'ADMIN BP') return '/admin-bp/schedule-cor-hari-ini';
     
     const roleRedirects: Partial<Record<UserRole, string>> = {
         'super_admin': '/admin/super-admin',

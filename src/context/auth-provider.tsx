@@ -8,6 +8,7 @@ import type { User, UserRole } from '@/lib/types';
 // Helper function to determine the correct default page for a user
 const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     if (user.jabatan === 'OPRATOR BP') return '/dashboard';
+    if (user.jabatan === 'ADMIN BP') return '/admin-bp/schedule-cor-hari-ini';
     
     const roleRedirects: Partial<Record<UserRole, string>> = {
         'super_admin': '/admin/super-admin',
