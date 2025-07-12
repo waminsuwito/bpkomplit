@@ -39,7 +39,7 @@ const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'ce
   let finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
   const roundedTarget = Math.round(target / roundingUnit) * roundingUnit;
   if (finalWeight === roundedTarget) {
-    finalWeight += (Math.random() < 0.5 ? -roundingUnit : roundingUnit);
+    finalWeight += (Math.random() < 0.5 ? -roundingUnit : roundin_gUnit);
   }
   return finalWeight;
 };
@@ -140,11 +140,11 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!jobInfo.reqNo.trim()) {
-        if (isJobInfoLocked) {
-          setJobInfo(initialJobInfo);
-          setIsJobInfoLocked(false);
-        }
-        return;
+      if (isJobInfoLocked) {
+        setJobInfo(initialJobInfo);
+        setIsJobInfoLocked(false);
+      }
+      return;
     }
 
     const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
@@ -162,7 +162,6 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        targetVolume: prev.targetVolume > 0 ? prev.targetVolume : parseFloat(matchingSchedule.volume) || prev.targetVolume,
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
@@ -175,7 +174,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, toast]);
+  }, [jobInfo.reqNo, scheduleData, formulas, toast, isJobInfoLocked]);
 
 
   useEffect(() => {
