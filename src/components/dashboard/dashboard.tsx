@@ -71,7 +71,7 @@ export function Dashboard() {
     reqNo: '',
     namaPelanggan: '',
     lokasiProyek: '',
-    targetVolume: 1.0,
+    targetVolume: 0,
     jumlahMixing: 1,
     slump: 12,
     mediaCor: '',
@@ -162,7 +162,7 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,
+        targetVolume: prev.targetVolume > 0 ? prev.targetVolume : parseFloat(matchingSchedule.volume) || prev.targetVolume,
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
@@ -175,7 +175,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast]);
+  }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast, initialJobInfo]);
 
 
   useEffect(() => {
@@ -255,7 +255,7 @@ export function Dashboard() {
                 const updatedSchedule = getScheduleSheetData().map(row => {
                     if (parseInt(row.no, 10) === reqNoAsNumber) {
                         const currentTerkirim = parseFloat(row.terkirim) || 0;
-                        const newTerkirim = currentTerkirim + jobInfo.targetVolume;
+                        const newTerkirim = currentTerkirim + (jobInfo.targetVolume || 0);
                         const originalVolume = parseFloat(row.volume) || 0;
                         const newSisa = originalVolume - newTerkirim;
 
@@ -302,8 +302,8 @@ export function Dashboard() {
         } else if (action === 'STOP' && isManualProcessRunning) {
             setIsManualProcessRunning(false);
             finishAndPrintBatch();
-            addLog('Loading manual selesai', 'text-primary');
             handleResetJob();
+            addLog('Loading manual selesai', 'text-primary');
         }
     }
   };

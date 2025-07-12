@@ -140,7 +140,7 @@ export function ControlPanel({
                 type="number" 
                 value={jobInfo.targetVolume} 
                 onChange={(e) => handleJobInfoChange('targetVolume', Number(e.target.value))}
-                min="0.5"
+                min="0"
                 step="0.1"
                 disabled={!powerOn} 
             />
