@@ -68,7 +68,18 @@ export function printElement(elementId: string) {
   `);
 
   printWindow.document.write('</head><body>');
-  printWindow.document.write(printContent.innerHTML.replace('https://i.ibb.co/VvZPq6k/logo-frp-Indonesia-1.png', 'https://iili.io/FGZubdx.png'));
+  
+  // Create a temporary container to manipulate the content
+  const tempContainer = document.createElement('div');
+  tempContainer.innerHTML = printContent.innerHTML;
+
+  // Find the logo image and reliably set its src
+  const logoImg = tempContainer.querySelector('img[src*="i.ibb.co"], img[src*="iili.io"]');
+  if (logoImg) {
+    logoImg.setAttribute('src', 'https://iili.io/FGZubdx.png');
+  }
+
+  printWindow.document.write(tempContainer.innerHTML);
   printWindow.document.write('</body></html>');
   
   printWindow.document.close();
