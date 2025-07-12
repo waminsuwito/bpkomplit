@@ -174,47 +174,48 @@ export function Dashboard() {
     if (!powerOn) return;
 
     if (operasiMode === 'AUTO') {
-        const db = getDatabase(app);
-        const commandRef = ref(db, 'realtime/command');
+      const db = getDatabase(app);
+      const commandRef = ref(db, 'realtime/command');
 
-        if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
-            const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-            
-            if (!selectedFormula) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Gagal Memulai',
-                    description: 'Formula mutu beton belum dipilih.',
-                });
-                return;
-            }
-
-            if (!(jobInfo.targetVolume > 0) || !(jobInfo.jumlahMixing > 0)) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Gagal Memulai',
-                    description: 'Target Volume dan Jumlah Mixing harus lebih besar dari 0.',
-                });
-                return;
-            }
-            
-            resetStateForNewJob();
-            set(commandRef, {
-                action: 'START',
-                timestamp: Date.now(),
-                jobDetails: {
-                    ...jobInfo,
-                    targetWeights,
-                    mixingTime,
-                    mixingProcessConfig,
-                    mixerTimerConfig,
-                    mutuBeton: selectedFormula.mutuBeton
-                }
+      if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
+        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+        
+        if (!selectedFormula) {
+            toast({
+                variant: 'destructive',
+                title: 'Gagal Memulai',
+                description: 'Formula mutu beton belum dipilih.',
             });
-            setBatchStartTime(new Date());
-        } else {
-            set(commandRef, { action, timestamp: Date.now() });
+            return;
         }
+
+        if (!(jobInfo.targetVolume > 0) || !(jobInfo.jumlahMixing > 0)) {
+            toast({
+                variant: 'destructive',
+                title: 'Gagal Memulai',
+                description: 'Target Volume dan Jumlah Mixing harus lebih besar dari 0.',
+            });
+            return;
+        }
+        
+        resetStateForNewJob();
+        set(commandRef, {
+            action: 'START',
+            timestamp: Date.now(),
+            jobDetails: {
+                ...jobInfo,
+                targetWeights,
+                mixingTime,
+                mixingProcessConfig,
+                mixerTimerConfig,
+                mutuBeton: selectedFormula.mutuBeton
+            }
+        });
+        setBatchStartTime(new Date());
+      } else {
+          // For any other action (STOP, PAUSE, or START to resume) in AUTO mode
+          set(commandRef, { action, timestamp: Date.now() });
+      }
     } else { // MANUAL MODE - Print Simulation
         const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
         if (!selectedFormula) {
