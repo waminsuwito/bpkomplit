@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { CalendarDays, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -61,7 +62,7 @@ export function ScheduleSheet() {
     }
   }
   
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, rowIndex: number, colIndex: number) => {
     const { key } = e;
     let nextRowIndex = rowIndex;
     let nextColIndex = colIndex;
@@ -72,10 +73,10 @@ export function ScheduleSheet() {
     } else if (key === 'ArrowUp') {
         e.preventDefault();
         nextRowIndex = rowIndex - 1;
-    } else if (key === 'ArrowRight' && e.currentTarget.selectionStart === e.currentTarget.value.length) {
+    } else if (key === 'ArrowRight') {
         e.preventDefault();
         nextColIndex = colIndex + 1;
-    } else if (key === 'ArrowLeft' && e.currentTarget.selectionStart === 0) {
+    } else if (key === 'ArrowLeft') {
         e.preventDefault();
         nextColIndex = colIndex - 1;
     } else {
@@ -133,14 +134,15 @@ export function ScheduleSheet() {
                         {data.map((row, rowIndex) => (
                             <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0 hover:bg-gray-100">
                                 {fieldKeys.map((key, colIndex) => (
-                                    <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300">
-                                        <Input
+                                    <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300 align-top">
+                                        <Textarea
                                             id={`${key}-${rowIndex}`}
                                             value={row[key] || ''}
                                             onChange={e => handleInputChange(rowIndex, key, e.target.value)}
                                             onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
-                                            className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
+                                            className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none overflow-hidden"
                                             style={{ textTransform: 'uppercase' }}
+                                            rows={1}
                                         />
                                     </TableCell>
                                 ))}
