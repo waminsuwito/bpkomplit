@@ -240,6 +240,7 @@ export type ScheduleSheetRow = {
   lokasi: string;
   mutuBeton: string;
   slump: string;
+  mediaCor: string;
   volume: string;
   terkirim: string;
   sisa: string;

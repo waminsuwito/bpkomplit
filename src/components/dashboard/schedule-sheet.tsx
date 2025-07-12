@@ -16,11 +16,11 @@ import type { ScheduleSheetRow } from '@/lib/types';
 const TOTAL_ROWS = 15;
 
 const headers = [
-    'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 
+    'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 'MEDIA COR CP/M',
     'VOLUME M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³'
 ];
 const fieldKeys: (keyof ScheduleSheetRow)[] = [
-    'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 
+    'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 'mediaCor',
     'volume', 'terkirim', 'sisa', 'penambahanVol'
 ];
 
