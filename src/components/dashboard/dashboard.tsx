@@ -191,6 +191,7 @@ export function Dashboard() {
       const commandRef = ref(db, 'realtime/command');
 
       if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
+        // --- START OF VALIDATION ---
         const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
         
         if (!selectedFormula) {
@@ -202,16 +203,26 @@ export function Dashboard() {
             return;
         }
 
-        if (!(jobInfo.targetVolume > 0) || !(jobInfo.jumlahMixing > 0)) {
-            toast({
-                variant: 'destructive',
-                title: 'Gagal Memulai',
-                description: 'Target Volume dan Jumlah Mixing harus lebih besar dari 0.',
-            });
-            return;
+        if (!jobInfo.targetVolume || jobInfo.targetVolume <= 0) {
+          toast({
+            variant: 'destructive',
+            title: 'Gagal Memulai',
+            description: 'Target Volume harus lebih besar dari 0.',
+          });
+          return;
         }
 
-        // Calculate target weights right before sending
+        if (!jobInfo.jumlahMixing || jobInfo.jumlahMixing <= 0) {
+          toast({
+            variant: 'destructive',
+            title: 'Gagal Memulai',
+            description: 'Jumlah Mixing harus lebih besar dari 0.',
+          });
+          return;
+        }
+        // --- END OF VALIDATION ---
+
+        // Calculate target weights right before sending, now that we know inputs are valid
         const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
         const currentTargetWeights = {
             pasir1: selectedFormula.pasir1 * volumePerMix,
