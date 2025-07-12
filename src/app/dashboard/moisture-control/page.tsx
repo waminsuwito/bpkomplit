@@ -55,7 +55,8 @@ export default function MoistureControlPage() {
 
   const handlePercentageChange = (material: MaterialKey, value: string) => {
     const numericValue = Number(value);
-    if (!isNaN(numericValue) && numericValue >= 0) {
+    // Allow negative numbers
+    if (!isNaN(numericValue)) {
       setMoisturePercentages(prev => ({
         ...prev,
         [material]: numericValue,
@@ -188,7 +189,6 @@ export default function MoistureControlPage() {
                           value={moisturePercentages[key]}
                           onChange={e => handlePercentageChange(key, e.target.value)}
                           className="max-w-[120px] mx-auto text-center"
-                          min="0"
                           step="0.1"
                         />
                       </TableCell>
