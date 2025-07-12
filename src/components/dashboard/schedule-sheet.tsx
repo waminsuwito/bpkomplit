@@ -9,40 +9,43 @@ import { CalendarDays, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { getScheduleSheetData, saveScheduleSheetData } from '@/lib/schedule';
+import type { ScheduleSheetRow } from '@/lib/types';
 
-const SCHEDULE_SHEET_STORAGE_KEY = 'app-schedule-sheet-data';
+
 const TOTAL_ROWS = 15;
 
 const headers = [
     'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 
     'VOLUME M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³'
 ];
-const fieldKeys = [
+const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 
     'volume', 'terkirim', 'sisa', 'penambahanVol'
 ];
 
-type ScheduleRow = {
-    [key in typeof fieldKeys[number]]: string;
-};
 
 export function ScheduleSheet() {
-  const [data, setData] = useState<ScheduleRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleRow)));
+  const [data, setData] = useState<ScheduleSheetRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleSheetRow)));
   const [date, setDate] = useState(format(new Date(), 'dd MMMM yyyy'));
   const { toast } = useToast();
 
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem(SCHEDULE_SHEET_STORAGE_KEY);
-      if (storedData) {
-        setData(JSON.parse(storedData));
+      const storedData = getScheduleSheetData();
+      if (storedData.length > 0) {
+        const fullData = [...storedData];
+        while (fullData.length < TOTAL_ROWS) {
+            fullData.push({} as ScheduleSheetRow);
+        }
+        setData(fullData);
       }
     } catch (error) {
         console.error("Failed to load schedule sheet data", error);
     }
   }, []);
 
-  const handleInputChange = (rowIndex: number, key: string, value: string) => {
+  const handleInputChange = (rowIndex: number, key: keyof ScheduleSheetRow, value: string) => {
     const updatedData = [...data];
     updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
     setData(updatedData);
@@ -50,7 +53,7 @@ export function ScheduleSheet() {
   
   const handleSave = () => {
      try {
-        localStorage.setItem(SCHEDULE_SHEET_STORAGE_KEY, JSON.stringify(data));
+        saveScheduleSheetData(data);
         toast({ title: 'Berhasil', description: 'Data schedule berhasil disimpan.' });
     } catch (error) {
         console.error("Failed to save schedule sheet data", error);

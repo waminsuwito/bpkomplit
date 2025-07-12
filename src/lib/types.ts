@@ -232,3 +232,16 @@ export interface TruckChecklistReport {
   timestamp: string; // ISO String of submission time
   items: TruckChecklistItem[];
 }
+
+export type ScheduleSheetRow = {
+  no: string;
+  noPo: string;
+  nama: string;
+  lokasi: string;
+  mutuBeton: string;
+  slump: string;
+  volume: string;
+  terkirim: string;
+  sisa: string;
+  penambahanVol: string;
+};

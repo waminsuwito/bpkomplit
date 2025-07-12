@@ -13,10 +13,12 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess, MIXER_TIMER_CONFIG_KEY, defaultMixerTimerConfig } from '@/lib/config';
 import type { MixingProcessConfig, MixerTimerConfig } from '@/lib/config';
 import { useAuth } from '@/context/auth-provider';
-import type { JobMixFormula } from '@/lib/types';
+import type { JobMixFormula, ScheduleSheetRow } from '@/lib/types';
 import { getFormulas } from '@/lib/formula';
 import { app } from '@/lib/firebase'; // Import Firebase app instance
 import { useToast } from '@/hooks/use-toast';
+import { getScheduleSheetData } from '@/lib/schedule';
+
 
 type AutoProcessStep =
   | 'idle'
@@ -67,11 +69,12 @@ export function Dashboard() {
   });
 
   const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
+  const [scheduleData, setScheduleData] = useState<ScheduleSheetRow[]>([]);
   
   const [jobInfo, setJobInfo] = useState({
     selectedFormulaId: '',
-    namaPelanggan: 'PT. JAYA KONSTRUKSI',
-    lokasiProyek: 'Jalan Sudirman, Pekanbaru',
+    namaPelanggan: '',
+    lokasiProyek: '',
     targetVolume: 1.0,
     jumlahMixing: 1,
     slump: 12,
@@ -127,9 +130,12 @@ export function Dashboard() {
     };
   }, [powerOn, toast]);
 
+  // Load static data on mount
   useEffect(() => {
     const loadedFormulas = getFormulas();
     setFormulas(loadedFormulas);
+    const loadedSchedule = getScheduleSheetData();
+    setScheduleData(loadedSchedule);
   }, []);
 
   // Effect to set a default formula ID once formulas are loaded
@@ -138,6 +144,25 @@ export function Dashboard() {
       setJobInfo(prev => ({...prev, selectedFormulaId: formulas[0].id}));
     }
   }, [formulas, jobInfo.selectedFormulaId]);
+
+  // Effect to auto-fill job info when formula selection changes
+  useEffect(() => {
+    if (!jobInfo.selectedFormulaId || !formulas.length || !scheduleData.length) return;
+
+    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+    if (!selectedFormula) return;
+
+    const matchingSchedule = scheduleData.find(row => row.mutuBeton === selectedFormula.mutuBeton);
+    if (matchingSchedule) {
+      setJobInfo(prev => ({
+        ...prev,
+        namaPelanggan: matchingSchedule.nama || '',
+        lokasiProyek: matchingSchedule.lokasi || '',
+        targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,
+        slump: parseFloat(matchingSchedule.slump) || prev.slump,
+      }));
+    }
+  }, [jobInfo.selectedFormulaId, formulas, scheduleData]);
 
   useEffect(() => {
     try {
