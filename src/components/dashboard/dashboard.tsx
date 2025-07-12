@@ -17,7 +17,7 @@ import type { JobMixFormula, ScheduleSheetRow } from '@/lib/types';
 import { getFormulas } from '@/lib/formula';
 import { app } from '@/lib/firebase'; // Import Firebase app instance
 import { useToast } from '@/hooks/use-toast';
-import { getScheduleSheetData } from '@/lib/schedule';
+import { getScheduleSheetData, saveScheduleSheetData } from '@/lib/schedule';
 import { Button } from '../ui/button';
 import { XCircle } from 'lucide-react';
 
@@ -162,6 +162,7 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
+        targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
@@ -225,6 +226,58 @@ export function Dashboard() {
 
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
     if (!powerOn) return;
+    
+    const finishAndPrintBatch = () => {
+        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+        if (!selectedFormula) return;
+
+        const simulationWeights = {
+            pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
+            pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
+            batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
+            batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
+            air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
+            semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
+        };
+
+        const finalData = {
+            ...jobInfo,
+            jobId: `SIM-${Date.now().toString().slice(-6)}`,
+            mutuBeton: selectedFormula.mutuBeton,
+            startTime: batchStartTime,
+            endTime: new Date(),
+            targetWeights: currentTargetWeights,
+            actualWeights: simulationWeights
+        };
+        setCompletedBatchData(finalData);
+        setShowPrintPreview(true);
+
+        // Update schedule sheet
+        if (jobInfo.reqNo) {
+            const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
+            if (!isNaN(reqNoAsNumber)) {
+                const updatedSchedule = scheduleData.map(row => {
+                    if (parseInt(row.no, 10) === reqNoAsNumber) {
+                        const currentTerkirim = parseFloat(row.terkirim) || 0;
+                        const newTerkirim = currentTerkirim + jobInfo.targetVolume;
+                        const originalVolume = parseFloat(row.volume) || 0;
+                        const newSisa = originalVolume - newTerkirim;
+
+                        return {
+                            ...row,
+                            terkirim: newTerkirim.toFixed(2),
+                            sisa: newSisa.toFixed(2)
+                        };
+                    }
+                    return row;
+                });
+                setScheduleData(updatedSchedule);
+                saveScheduleSheetData(updatedSchedule);
+                toast({ title: "Schedule Updated", description: `Volume terkirim untuk REQ NO ${jobInfo.reqNo} telah diperbarui.`});
+            }
+        }
+    }
+
 
     if (operasiMode === 'AUTO') {
         if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
@@ -237,15 +290,10 @@ export function Dashboard() {
         } else {
             setAutoProcessStep('idle');
             resetStateForNewJob();
+            finishAndPrintBatch();
             addLog('Proses AUTO dihentikan.', 'text-destructive');
         }
-    } else { // MANUAL MODE - Print Simulation
-        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-        if (!selectedFormula) {
-          toast({ variant: 'destructive', title: 'Gagal Simulasi', description: 'Pilih formula mutu beton terlebih dahulu.' });
-          return;
-        }
-        
+    } else { // MANUAL MODE
         if (action === 'START') {
             resetStateForNewJob();
             setIsManualProcessRunning(true);
@@ -253,28 +301,7 @@ export function Dashboard() {
             addLog('Loading manual dimulai', 'text-green-500');
         } else if (action === 'STOP' && isManualProcessRunning) {
             setIsManualProcessRunning(false);
-            const endTime = new Date();
-
-            const simulationWeights = {
-                pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
-                pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
-                batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
-                batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
-                air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
-                semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
-            };
-
-            const finalData = {
-                ...jobInfo,
-                jobId: `SIM-${Date.now().toString().slice(-6)}`,
-                mutuBeton: selectedFormula.mutuBeton,
-                startTime: batchStartTime,
-                endTime: endTime,
-                targetWeights: currentTargetWeights,
-                actualWeights: simulationWeights
-            };
-            setCompletedBatchData(finalData);
-            setShowPrintPreview(true);
+            finishAndPrintBatch();
             addLog('Loading manual selesai', 'text-primary');
         }
     }
