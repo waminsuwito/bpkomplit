@@ -73,7 +73,6 @@ export function Dashboard() {
   });
 
   const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
-  const [targetWeights, setTargetWeights] = useState({ pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 });
   
   const [jobInfo, setJobInfo] = useState({
     selectedFormulaId: '',
@@ -145,23 +144,6 @@ export function Dashboard() {
   }, [formulas, jobInfo.selectedFormulaId]);
 
   useEffect(() => {
-    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-    if (selectedFormula && jobInfo.jumlahMixing > 0 && jobInfo.targetVolume > 0) {
-      const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
-      setTargetWeights({
-        pasir1: selectedFormula.pasir1 * volumePerMix,
-        pasir2: selectedFormula.pasir2 * volumePerMix,
-        batu1: selectedFormula.batu1 * volumePerMix,
-        batu2: selectedFormula.batu2 * volumePerMix,
-        air: selectedFormula.air * volumePerMix,
-        semen: selectedFormula.semen * volumePerMix,
-      });
-    } else {
-       setTargetWeights({ pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 });
-    }
-  }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
-
-  useEffect(() => {
     try {
       const savedProcess = window.localStorage.getItem(MIXING_PROCESS_STORAGE_KEY);
       if (savedProcess) setMixingProcessConfig(JSON.parse(savedProcess));
@@ -222,7 +204,7 @@ export function Dashboard() {
         }
         // --- END OF VALIDATION ---
 
-        // Calculate target weights right before sending, now that we know inputs are valid
+        // Calculate target weights right before sending
         const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
         const currentTargetWeights = {
             pasir1: selectedFormula.pasir1 * volumePerMix,
@@ -257,6 +239,16 @@ export function Dashboard() {
           toast({ variant: 'destructive', title: 'Gagal Simulasi', description: 'Pilih formula mutu beton terlebih dahulu.' });
           return;
         }
+        
+        const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
+        const currentTargetWeights = {
+            pasir1: selectedFormula.pasir1 * volumePerMix,
+            pasir2: selectedFormula.pasir2 * volumePerMix,
+            batu1: selectedFormula.batu1 * volumePerMix,
+            batu2: selectedFormula.batu2 * volumePerMix,
+            air: selectedFormula.air * volumePerMix,
+            semen: selectedFormula.semen * volumePerMix,
+        };
 
         if (action === 'START') {
             resetStateForNewJob();
@@ -268,12 +260,12 @@ export function Dashboard() {
             const endTime = new Date();
 
             const simulationWeights = {
-                pasir1: generateSimulatedWeight(targetWeights.pasir1, 'aggregate'),
-                pasir2: generateSimulatedWeight(targetWeights.pasir2, 'aggregate'),
-                batu1: generateSimulatedWeight(targetWeights.batu1, 'aggregate'),
-                batu2: generateSimulatedWeight(targetWeights.batu2, 'aggregate'),
-                air: generateSimulatedWeight(targetWeights.air, 'cement_water'),
-                semen: generateSimulatedWeight(targetWeights.semen, 'cement_water'),
+                pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
+                pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
+                batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
+                batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
+                air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
+                semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
             };
 
             const finalData = {
@@ -282,7 +274,7 @@ export function Dashboard() {
                 mutuBeton: selectedFormula.mutuBeton,
                 startTime: batchStartTime,
                 endTime: endTime,
-                targetWeights: targetWeights,
+                targetWeights: currentTargetWeights,
                 actualWeights: simulationWeights
             };
             setCompletedBatchData(finalData);
@@ -299,6 +291,22 @@ export function Dashboard() {
         resetStateForNewJob();
     }
   };
+  
+  const currentTargetWeights = useMemo(() => {
+    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+    if (selectedFormula && jobInfo.jumlahMixing > 0 && jobInfo.targetVolume > 0) {
+      const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
+      return {
+        pasir1: selectedFormula.pasir1 * volumePerMix,
+        pasir2: selectedFormula.pasir2 * volumePerMix,
+        batu1: selectedFormula.batu1 * volumePerMix,
+        batu2: selectedFormula.batu2 * volumePerMix,
+        air: selectedFormula.air * volumePerMix,
+        semen: selectedFormula.semen * volumePerMix,
+      };
+    }
+    return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 };
+  }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
 
   const [joggingValues, setJoggingValues] = useState({
     aggregate: 200,
@@ -323,9 +331,9 @@ export function Dashboard() {
                 aggregateWeight={aggregateWeight}
                 airWeight={airWeight}
                 semenWeight={semenWeight}
-                targetAggregate={targetWeights.pasir1 + targetWeights.pasir2 + targetWeights.batu1 + targetWeights.batu2}
-                targetAir={targetWeights.air}
-                targetSemen={targetWeights.semen}
+                targetAggregate={currentTargetWeights.pasir1 + currentTargetWeights.pasir2 + currentTargetWeights.batu1 + currentTargetWeights.batu2}
+                targetAir={currentTargetWeights.air}
+                targetSemen={currentTargetWeights.semen}
                 joggingValues={joggingValues}
                 onJoggingChange={handleJoggingChange}
                 disabled={!powerOn || isManualProcessRunning || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
