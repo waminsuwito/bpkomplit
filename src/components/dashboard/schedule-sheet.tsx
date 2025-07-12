@@ -163,15 +163,21 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                         {data.map((row, rowIndex) => (
                             <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0 hover:bg-gray-100">
                                 {fieldKeys.map((key, colIndex) => (
-                                    <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300 align-top">
-                                        <Textarea
-                                            id={`${key}-${rowIndex}`}
-                                            value={row[key] || ''}
-                                            onChange={e => handleInputChange(rowIndex, key, e.target.value)}
-                                            onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
-                                            className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none"
-                                            style={{ textTransform: 'uppercase' }}
-                                        />
+                                    <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300 align-top h-[40px]">
+                                        {isOperatorView ? (
+                                             <div className="w-full min-h-[40px] text-center bg-transparent text-black flex items-center justify-center p-2">
+                                                <p className="whitespace-pre-wrap break-words">{row[key] || ''}</p>
+                                             </div>
+                                        ) : (
+                                            <Textarea
+                                                id={`${key}-${rowIndex}`}
+                                                value={row[key] || ''}
+                                                onChange={e => handleInputChange(rowIndex, key, e.target.value)}
+                                                onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
+                                                className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none p-2"
+                                                style={{ textTransform: 'uppercase' }}
+                                            />
+                                        )}
                                     </TableCell>
                                 ))}
                             </TableRow>
