@@ -44,8 +44,6 @@ export function Dashboard() {
 
   const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
   const [targetWeights, setTargetWeights] = useState({ pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 });
-  const [totalTargetWeights, setTotalTargetWeights] = useState({ pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, semen: 0, air: 0 });
-  const [totalActualWeights, setTotalActualWeights] = useState({ pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, semen: 0, air: 0 });
   
   const [jobInfo, setJobInfo] = useState({
     selectedFormulaId: '',
@@ -66,14 +64,25 @@ export function Dashboard() {
   const [completedBatchData, setCompletedBatchData] = useState<any>(null);
   const [batchStartTime, setBatchStartTime] = useState<Date | null>(null);
 
+  const addLog = (message: string, color: string = 'text-foreground') => {
+      setActivityLog(prev => {
+          const newLog = { 
+              message, 
+              color, 
+              id: Date.now() + Math.random(), 
+              timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit'}) 
+          };
+          const updatedLogs = [...prev, newLog];
+          return updatedLogs.slice(-10); // Keep only the last 10 logs
+      });
+  };
+
   useEffect(() => {
-    if (!powerOn) return; // Don't connect if power is off
+    if (!powerOn) return;
 
     const db = getDatabase(app);
     const weightsRef = ref(db, 'realtime/weights');
-    const statusRef = ref(db, 'realtime/status');
 
-    // Listener for weights
     const unsubscribeWeights = onValue(weightsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -86,33 +95,14 @@ export function Dashboard() {
       toast({
         variant: 'destructive',
         title: 'Koneksi Timbangan Gagal',
-        description: 'Tidak dapat terhubung ke Realtime Database untuk data timbangan. Cek aturan keamanan Anda.'
-      });
-    });
-
-    // Listener for status changes from the agent
-    const unsubscribeStatus = onValue(statusRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            setAutoProcessStep(data.autoProcessStep || 'idle');
-            setTimerDisplay(data.timerDisplay || { value: mixingTime, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-primary' });
-            setActivityLog(prev => [...prev, ...(data.newLogs || [])].slice(-5));
-            setCurrentMixNumber(data.currentMixNumber || 0);
-        }
-    }, (error) => {
-      console.error("Firebase status listener error:", error);
-       toast({
-        variant: 'destructive',
-        title: 'Koneksi Status Gagal',
-        description: 'Tidak dapat terhubung ke Realtime Database untuk status proses. Cek aturan keamanan Anda.'
+        description: 'Tidak dapat terhubung ke Realtime Database untuk data timbangan.'
       });
     });
 
     return () => {
       unsubscribeWeights();
-      unsubscribeStatus();
     };
-  }, [powerOn, app, mixingTime, toast]);
+  }, [powerOn, toast]);
 
   useEffect(() => {
     setFormulas(getFormulas());
@@ -135,14 +125,6 @@ export function Dashboard() {
         batu2: selectedFormula.batu2 * volumePerMix,
         air: selectedFormula.air * volumePerMix,
         semen: selectedFormula.semen * volumePerMix,
-      });
-      setTotalTargetWeights({
-        pasir1: selectedFormula.pasir1 * jobInfo.targetVolume,
-        pasir2: selectedFormula.pasir2 * jobInfo.targetVolume,
-        batu1: selectedFormula.batu1 * jobInfo.targetVolume,
-        batu2: selectedFormula.batu2 * jobInfo.targetVolume,
-        air: selectedFormula.air * jobInfo.targetVolume,
-        semen: selectedFormula.semen * jobInfo.targetVolume,
       });
     } else {
        setTargetWeights({ pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 });
@@ -173,69 +155,96 @@ export function Dashboard() {
 
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
     if (!powerOn) return;
-    
-    const db = getDatabase(app);
-    const commandRef = ref(db, 'realtime/command');
 
-    if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
-        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-        
-        if (!selectedFormula) {
-            toast({
-                variant: 'destructive',
-                title: 'Gagal Memulai',
-                description: 'Formula mutu beton belum dipilih. Mohon pilih formula terlebih dahulu.',
-            });
-            return;
-        }
+    if (operasiMode === 'AUTO') {
+        const db = getDatabase(app);
+        const commandRef = ref(db, 'realtime/command');
 
-        if (!(jobInfo.targetVolume > 0) || !(jobInfo.jumlahMixing > 0)) {
-            toast({
-                variant: 'destructive',
-                title: 'Gagal Memulai',
-                description: 'Target Volume dan Jumlah Mixing harus lebih besar dari 0.',
-            });
-            return;
-        }
-
-        // Re-calculate and validate target weights just before sending
-        const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
-        const calculatedTargetWeights = {
-            pasir1: selectedFormula.pasir1 * volumePerMix,
-            pasir2: selectedFormula.pasir2 * volumePerMix,
-            batu1: selectedFormula.batu1 * volumePerMix,
-            batu2: selectedFormula.batu2 * volumePerMix,
-            air: selectedFormula.air * volumePerMix,
-            semen: selectedFormula.semen * volumePerMix,
-        };
-        
-        for (const [key, value] of Object.entries(calculatedTargetWeights)) {
-            if (isNaN(value)) {
+        if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
+            const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+            
+            if (!selectedFormula) {
                 toast({
                     variant: 'destructive',
-                    title: 'Error Perhitungan',
-                    description: `Nilai target untuk ${key} tidak valid. Periksa kembali input Anda.`
+                    title: 'Gagal Memulai',
+                    description: 'Formula mutu beton belum dipilih.',
                 });
                 return;
             }
-        }
 
-        resetStateForNewJob();
-        set(commandRef, {
-            action: 'START',
-            timestamp: Date.now(),
-            jobDetails: {
-                ...jobInfo,
-                targetWeights: calculatedTargetWeights, // Send validated weights
-                mixingTime,
-                mixingProcessConfig,
-                mixerTimerConfig,
-                mutuBeton: selectedFormula.mutuBeton
+            if (!(jobInfo.targetVolume > 0) || !(jobInfo.jumlahMixing > 0)) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Gagal Memulai',
+                    description: 'Target Volume dan Jumlah Mixing harus lebih besar dari 0.',
+                });
+                return;
             }
-        });
-        setBatchStartTime(new Date());
-    } else {
-        set(commandRef, { action, timestamp: Date.now() });
+            
+            resetStateForNewJob();
+            set(commandRef, {
+                action: 'START',
+                timestamp: Date.now(),
+                jobDetails: {
+                    ...jobInfo,
+                    targetWeights,
+                    mixingTime,
+                    mixingProcessConfig,
+                    mixerTimerConfig,
+                    mutuBeton: selectedFormula.mutuBeton
+                }
+            });
+            setBatchStartTime(new Date());
+        } else {
+            set(commandRef, { action, timestamp: Date.now() });
+        }
+    } else { // MANUAL MODE
+        if (action === 'START') {
+            resetStateForNewJob();
+            setIsManualProcessRunning(true);
+            setBatchStartTime(new Date());
+            addLog('Sesi pencatatan manual dimulai.', 'text-green-500');
+        } else if (action === 'STOP' && isManualProcessRunning) {
+            setIsManualProcessRunning(false);
+            const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+            const endTime = new Date();
+
+            const volumePerMix = jobInfo.jumlahMixing > 0 ? jobInfo.targetVolume / jobInfo.jumlahMixing : 0;
+            const manualTargetWeights = selectedFormula ? {
+                pasir1: selectedFormula.pasir1 * volumePerMix,
+                pasir2: selectedFormula.pasir2 * volumePerMix,
+                batu1: selectedFormula.batu1 * volumePerMix,
+                batu2: selectedFormula.batu2 * volumePerMix,
+                air: selectedFormula.air * volumePerMix,
+                semen: selectedFormula.semen * volumePerMix,
+            } : targetWeights; // fallback to whatever is there
+            
+            const totalActualAggregate = aggregateWeight;
+            const actualPasir1 = (manualTargetWeights.pasir1 / (manualTargetWeights.pasir1 + manualTargetWeights.pasir2)) * totalActualAggregate || 0;
+            const actualPasir2 = (manualTargetWeights.pasir2 / (manualTargetWeights.pasir1 + manualTargetWeights.pasir2)) * totalActualAggregate || 0;
+            const actualBatu1 = (manualTargetWeights.batu1 / (manualTargetWeights.batu1 + manualTargetWeights.batu2)) * totalActualAggregate || 0;
+            const actualBatu2 = (manualTargetWeights.batu2 / (manualTargetWeights.batu1 + manualTargetWeights.batu2)) * totalActualAggregate || 0;
+
+            const finalData = {
+                ...jobInfo,
+                jobId: `MANUAL-${Date.now().toString().slice(-6)}`,
+                mutuBeton: selectedFormula?.mutuBeton || 'N/A',
+                startTime: batchStartTime,
+                endTime: endTime,
+                targetWeights: manualTargetWeights,
+                actualWeights: {
+                    pasir1: actualPasir1,
+                    pasir2: actualPasir2,
+                    batu1: actualBatu1,
+                    batu2: actualBatu2,
+                    air: airWeight,
+                    semen: semenWeight,
+                }
+            };
+            setCompletedBatchData(finalData);
+            setShowPrintPreview(true);
+            addLog('Sesi manual selesai. Menampilkan pratinjau cetak.', 'text-primary');
+        }
     }
   };
 
@@ -275,7 +284,7 @@ export function Dashboard() {
                 targetSemen={targetWeights.semen}
                 joggingValues={joggingValues}
                 onJoggingChange={handleJoggingChange}
-                disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
+                disabled={!powerOn || isManualProcessRunning || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
               />
             </div>
 

@@ -19,7 +19,6 @@ interface ControlPanelProps {
   setOperasiMode: (mode: 'MANUAL' | 'AUTO') => void;
   handleProcessControl: (action: 'START' | 'PAUSE' | 'STOP') => void;
   
-  // Lifted state
   jobInfo: {
     selectedFormulaId: string;
     namaPelanggan: string;
