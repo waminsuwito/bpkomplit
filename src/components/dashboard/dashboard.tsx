@@ -210,6 +210,17 @@ export function Dashboard() {
             });
             return;
         }
+
+        // Calculate target weights right before sending
+        const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
+        const currentTargetWeights = {
+            pasir1: selectedFormula.pasir1 * volumePerMix,
+            pasir2: selectedFormula.pasir2 * volumePerMix,
+            batu1: selectedFormula.batu1 * volumePerMix,
+            batu2: selectedFormula.batu2 * volumePerMix,
+            air: selectedFormula.air * volumePerMix,
+            semen: selectedFormula.semen * volumePerMix,
+        };
         
         resetStateForNewJob();
         set(commandRef, {
@@ -217,7 +228,7 @@ export function Dashboard() {
             timestamp: Date.now(),
             jobDetails: {
                 ...jobInfo,
-                targetWeights,
+                targetWeights: currentTargetWeights,
                 mixingTime,
                 mixingProcessConfig,
                 mixerTimerConfig,
