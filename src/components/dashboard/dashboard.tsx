@@ -24,30 +24,28 @@ type AutoProcessStep =
 
 // Helper function to generate simulated weights with realistic deviation and specific rounding rules
 const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'cement_water'): number => {
-  const deviation = 0.015; // 1.5%
+  const deviation = 0.02; // 2%
   const min = target * (1 - deviation);
   const max = target * (1 + deviation);
   const randomWeight = Math.random() * (max - min) + min;
 
   let finalWeight;
   let roundedTarget;
+  let roundingUnit;
 
   if (materialType === 'aggregate') {
-    // Round to the nearest multiple of 5 for sand and stone
-    finalWeight = Math.round(randomWeight / 5) * 5;
-    roundedTarget = Math.round(target / 5) * 5;
-    // Ensure the final weight is not exactly the target
-    if (finalWeight === roundedTarget) {
-      finalWeight += (Math.random() < 0.5 ? -5 : 5);
-    }
+    roundingUnit = 5;
+    finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
+    roundedTarget = Math.round(target / roundingUnit) * roundingUnit;
   } else {
-    // Round to the nearest integer (multiple of 1) for cement and water
+    roundingUnit = 1;
     finalWeight = Math.round(randomWeight);
     roundedTarget = Math.round(target);
-     // Ensure the final weight is not exactly the target
-    if (finalWeight === roundedTarget) {
-      finalWeight += (Math.random() < 0.5 ? -1 : 1);
-    }
+  }
+  
+  // Ensure the final weight is not exactly the target
+  if (finalWeight === roundedTarget) {
+    finalWeight += (Math.random() < 0.5 ? -roundingUnit : roundingUnit);
   }
   
   return finalWeight;
