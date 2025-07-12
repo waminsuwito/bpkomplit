@@ -52,7 +52,7 @@ export function Header() {
             
              {user?.jabatan === 'OPRATOR BP' && (
               <Button asChild variant="outline" size="sm">
-                <Link href="/karyawan">
+                <Link href="/karyawan/absensi-harian">
                   <Fingerprint className="mr-2 h-4 w-4" />
                   Absen & Kegiatan
                 </Link>
