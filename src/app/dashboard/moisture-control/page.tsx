@@ -170,7 +170,7 @@ export default function MoistureControlPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-1/5">Material</TableHead>
-                <TableHead className="text-center">Job Mix Asli (Kg)</TableHead>
+                <TableHead className="text-center">Job Mix (Kg)</TableHead>
                 <TableHead className="text-center">MC (%)</TableHead>
                 <TableHead className="text-center">Koreksi MC (Kg)</TableHead>
                 <TableHead className="text-center font-bold text-primary">Job Mix Setelah Koreksi (Kg)</TableHead>
@@ -182,7 +182,7 @@ export default function MoistureControlPage() {
                   {aggregateMaterials.map(({ key, label }) => (
                     <TableRow key={key}>
                       <TableCell className="font-medium">{label}</TableCell>
-                      <TableCell className="text-center">{selectedFormula[key]?.toFixed(2)}</TableCell>
+                      <TableCell className="text-center">{selectedFormula[key].toFixed(2)}</TableCell>
                       <TableCell>
                         <Input
                           type="number"
@@ -196,7 +196,7 @@ export default function MoistureControlPage() {
                         + {calculationResults[`koreksi_${key}` as keyof typeof calculationResults].toFixed(2)}
                       </TableCell>
                       <TableCell className="text-center font-bold text-lg text-primary">
-                        {calculationResults[`${key}_koreksi` as keyof typeof calculationResults].toFixed(2)}
+                        {(calculationResults[`${key}_koreksi` as keyof typeof calculationResults] as number).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
