@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -67,7 +68,7 @@ export function printElement(elementId: string) {
   `);
 
   printWindow.document.write('</head><body>');
-  printWindow.document.write(printContent.innerHTML);
+  printWindow.document.write(printContent.innerHTML.replace('https://i.ibb.co/VvZPq6k/logo-frp-Indonesia-1.png', 'https://iili.io/FGZubdx.png'));
   printWindow.document.write('</body></html>');
   
   printWindow.document.close();

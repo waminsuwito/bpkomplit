@@ -29,7 +29,7 @@ export function Header() {
       <header className="sticky top-0 flex h-20 items-center justify-between gap-4 border-b border-primary/20 bg-background px-6 z-10 no-print">
         <div className="flex items-center gap-4">
           <Image
-            src="https://i.ibb.co/VvZPq6k/logo-frp-Indonesia-1.png"
+            src="https://iili.io/FGZubdx.png"
             alt="PT. FARIKA RIAU PERKASA Logo"
             width={45}
             height={45}
