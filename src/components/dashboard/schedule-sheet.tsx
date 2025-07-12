@@ -1,0 +1,117 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Save, CalendarDays, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+
+const SCHEDULE_SHEET_STORAGE_KEY = 'app-schedule-sheet-data';
+const TOTAL_ROWS = 15;
+
+const headers = [
+    'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 
+    'VOLUME M3', 'TM KE', 'TEKIRIM M3', 'SISA M3', 'VOL LOADING'
+];
+const fieldKeys = [
+    'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 
+    'volume', 'tmKe', 'terkirim', 'sisa', 'volLoading'
+];
+
+type ScheduleRow = {
+    [key in typeof fieldKeys[number]]: string;
+};
+
+export function ScheduleSheet() {
+  const [data, setData] = useState<ScheduleRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleRow)));
+  const [date, setDate] = useState(format(new Date(), 'dd MMMM yyyy'));
+  const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      const storedData = localStorage.getItem(SCHEDULE_SHEET_STORAGE_KEY);
+      if (storedData) {
+        setData(JSON.parse(storedData));
+      }
+    } catch (error) {
+        console.error("Failed to load schedule sheet data", error);
+    }
+  }, []);
+
+  const handleInputChange = (rowIndex: number, key: string, value: string) => {
+    const updatedData = [...data];
+    updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
+    setData(updatedData);
+  };
+
+  const handleSave = () => {
+    try {
+      localStorage.setItem(SCHEDULE_SHEET_STORAGE_KEY, JSON.stringify(data));
+      toast({ title: "Berhasil", description: "Data schedule berhasil disimpan." });
+    } catch (error) {
+        toast({ variant: 'destructive', title: "Gagal", description: "Tidak dapat menyimpan data schedule." });
+    }
+  };
+
+  const handleClearRow = (rowIndex: number) => {
+    const updatedData = [...data];
+    updatedData[rowIndex] = {} as ScheduleRow;
+    setData(updatedData);
+  }
+
+  return (
+    <Card>
+        <CardHeader>
+            <div className="flex justify-between items-center">
+                <div>
+                    <CardTitle className="flex items-center gap-2">
+                        <CalendarDays className="h-6 w-6 text-primary" />
+                        SCHEDULE COR HARI INI
+                    </CardTitle>
+                    <CardDescription>Tanggal: {date}</CardDescription>
+                </div>
+                <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Simpan Data</Button>
+            </div>
+        </CardHeader>
+        <CardContent>
+            <div className="border rounded-lg overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {headers.map(header => (
+                                <TableHead key={header} className="text-center font-bold whitespace-nowrap px-2">{header}</TableHead>
+                            ))}
+                             <TableHead className="text-center font-bold">Aksi</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {data.map((row, rowIndex) => (
+                            <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0">
+                                {fieldKeys.map(key => (
+                                    <TableCell key={`${key}-${rowIndex}`} className="border-t">
+                                        <Input
+                                            value={row[key] || ''}
+                                            onChange={e => handleInputChange(rowIndex, key, e.target.value)}
+                                            className="w-full h-full border-none rounded-none text-center"
+                                            style={{ textTransform: 'uppercase' }}
+                                        />
+                                    </TableCell>
+                                ))}
+                                <TableCell className="border-t text-center">
+                                    <Button variant="ghost" size="icon" onClick={() => handleClearRow(rowIndex)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </CardContent>
+    </Card>
+  );
+}

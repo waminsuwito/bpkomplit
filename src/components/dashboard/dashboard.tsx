@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
 import { WeightDisplayPanel } from './material-inventory';
 import { ControlPanel } from './control-panel';
 import { StatusPanel, type TimerDisplayState } from './status-panel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PrintPreview } from './print-preview';
+import { ScheduleSheet } from './schedule-sheet';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess, MIXER_TIMER_CONFIG_KEY, defaultMixerTimerConfig } from '@/lib/config';
 import type { MixingProcessConfig, MixerTimerConfig } from '@/lib/config';
@@ -349,6 +350,9 @@ export function Dashboard() {
                   total: jobInfo.jumlahMixing
                 } : undefined}
               />
+            </div>
+             <div className="col-span-12">
+                <ScheduleSheet />
             </div>
           </div>
           
