@@ -44,8 +44,6 @@ const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'ce
   return finalWeight;
 };
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -224,99 +222,6 @@ export function Dashboard() {
     return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 };
   }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
   
-  const runAutoSimulation = async () => {
-    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-    if (!selectedFormula) return;
-
-    resetStateForNewJob();
-    setBatchStartTime(new Date());
-    setAutoProcessStep('weighing');
-
-    let allMixesActualWeights = [];
-
-    for (let i = 1; i <= jobInfo.jumlahMixing; i++) {
-        setCurrentMixNumber(i);
-        addLog(`Memulai Mix ${i} dari ${jobInfo.jumlahMixing}`, 'text-primary');
-
-        const targetAggregate = currentTargetWeights.pasir1 + currentTargetWeights.pasir2 + currentTargetWeights.batu1 + currentTargetWeights.batu2;
-        
-        await simulateWeighing('aggregate', targetAggregate, setAggregateWeight);
-        addLog('Timbangan Agregat Selesai', 'text-green-500');
-        await sleep(1000);
-        await simulateWeighing('semen', currentTargetWeights.semen, setSemenWeight);
-        addLog('Timbangan Semen Selesai', 'text-green-500');
-        await sleep(1000);
-        await simulateWeighing('air', currentTargetWeights.air, setAirWeight);
-        addLog('Timbangan Air Selesai', 'text-green-500');
-        
-        allMixesActualWeights.push({
-            aggregate: aggregateWeight,
-            semen: semenWeight,
-            air: airWeight,
-        });
-
-        await sleep(1000);
-        addLog(`Mixing Mix ${i}...`, 'text-accent');
-        setAutoProcessStep('mixing');
-
-        for (let t = mixingTime; t >= 0; t--) {
-            setTimerDisplay({ value: t, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-accent' });
-            await sleep(1000);
-        }
-
-        addLog(`Mix ${i} selesai. Discharge...`, 'text-blue-500');
-        setAutoProcessStep('discharging');
-        await sleep(2000);
-
-        setAggregateWeight(0);
-        setSemenWeight(0);
-        setAirWeight(0);
-    }
-    
-    setAutoProcessStep('complete');
-    addLog('Semua proses mixing selesai.', 'text-primary font-bold');
-    
-    // For simplicity, the print preview will use the last mix's weights.
-    // A real implementation might aggregate them.
-    const finalActualWeights = {
-        pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
-        pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
-        batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
-        batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
-        air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
-        semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
-    };
-    
-    const finalData = {
-        ...jobInfo,
-        jobId: `AUTO-${Date.now().toString().slice(-6)}`,
-        mutuBeton: selectedFormula.mutuBeton,
-        startTime: batchStartTime,
-        endTime: new Date(),
-        targetWeights: currentTargetWeights,
-        actualWeights: finalActualWeights,
-    };
-    
-    setCompletedBatchData(finalData);
-    setShowPrintPreview(true);
-  };
-
-  const simulateWeighing = (material: 'aggregate' | 'semen' | 'air', target: number, setWeight: (w: number) => void) => {
-    return new Promise<void>(resolve => {
-      let currentWeight = 0;
-      const increment = target / 50; // Reach target in 50 steps
-      const interval = setInterval(() => {
-        currentWeight += increment;
-        if (currentWeight >= target) {
-          clearInterval(interval);
-          setWeight(target); // Ensure it ends on the exact target for display
-          resolve();
-        } else {
-          setWeight(currentWeight);
-        }
-      }, 50); // Update every 50ms
-    });
-  };
 
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
     if (!powerOn) return;
@@ -327,9 +232,9 @@ export function Dashboard() {
                 toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Pastikan Formula, Target Volume, dan Jumlah Mixing sudah terisi.' });
                 return;
             }
-            runAutoSimulation();
+             setAutoProcessStep('weighing');
+             addLog('Proses AUTO dimulai.', 'text-primary');
         } else {
-            // For now, STOP just resets the simulation. Pause is not implemented in this simulation.
             setAutoProcessStep('idle');
             resetStateForNewJob();
             addLog('Proses AUTO dihentikan.', 'text-destructive');
