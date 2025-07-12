@@ -78,30 +78,30 @@ export function ScheduleSheet() {
             </div>
         </CardHeader>
         <CardContent>
-            <div className="border rounded-lg overflow-x-auto">
+            <div className="border rounded-lg overflow-x-auto bg-white text-black p-2">
                 <Table>
                     <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-gray-200 hover:bg-gray-200">
                             {headers.map(header => (
-                                <TableHead key={header} className="text-center font-bold whitespace-nowrap px-2">{header}</TableHead>
+                                <TableHead key={header} className="text-center font-bold whitespace-nowrap px-2 text-black">{header}</TableHead>
                             ))}
-                             <TableHead className="text-center font-bold">Aksi</TableHead>
+                             <TableHead className="text-center font-bold text-black">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {data.map((row, rowIndex) => (
-                            <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0">
+                            <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0 hover:bg-gray-100">
                                 {fieldKeys.map(key => (
-                                    <TableCell key={`${key}-${rowIndex}`} className="border-t">
+                                    <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300">
                                         <Input
                                             value={row[key] || ''}
                                             onChange={e => handleInputChange(rowIndex, key, e.target.value)}
-                                            className="w-full h-full border-none rounded-none text-center"
+                                            className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
                                             style={{ textTransform: 'uppercase' }}
                                         />
                                     </TableCell>
                                 ))}
-                                <TableCell className="border-t text-center">
+                                <TableCell className="border-t border-gray-300 text-center">
                                     <Button variant="ghost" size="icon" onClick={() => handleClearRow(rowIndex)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
