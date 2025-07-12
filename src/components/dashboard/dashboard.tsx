@@ -24,37 +24,32 @@ import { XCircle } from 'lucide-react';
 
 type AutoProcessStep =
   | 'idle'
+  | 'weighing'
+  | 'mixing'
+  | 'discharging'
   | 'paused'
   | 'complete';
 
-// Helper function to generate simulated weights with realistic deviation and specific rounding rules
 const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'cement_water'): number => {
   const deviation = 0.02; // 2%
   const roundingUnit = materialType === 'aggregate' ? 5 : 1;
-
-  // Calculate random weight
   const min = target * (1 - deviation);
   const max = target * (1 + deviation);
   const randomWeight = Math.random() * (max - min) + min;
-
-  // Round the weight and target to the same unit
   let finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
   const roundedTarget = Math.round(target / roundingUnit) * roundingUnit;
-  
-  // Ensure the final weight is not exactly the target
   if (finalWeight === roundedTarget) {
     finalWeight += (Math.random() < 0.5 ? -roundingUnit : roundingUnit);
   }
-  
   return finalWeight;
 };
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Real-time weights from Firebase
   const [aggregateWeight, setAggregateWeight] = useState(0);
   const [airWeight, setAirWeight] = useState(0);
   const [semenWeight, setSemenWeight] = useState(0);
@@ -138,7 +133,6 @@ export function Dashboard() {
     };
   }, [powerOn, toast]);
 
-  // Load static data on mount
   useEffect(() => {
     const loadedFormulas = getFormulas();
     setFormulas(loadedFormulas);
@@ -146,7 +140,6 @@ export function Dashboard() {
     setScheduleData(loadedSchedule);
   }, []);
 
-  // Effect to auto-fill job info when REQ NO changes
   useEffect(() => {
     if (!jobInfo.reqNo.trim()) {
         if (isJobInfoLocked) {
@@ -171,16 +164,14 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        // Keep volume and mixing count separate as they need to be manually entered by operator
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
     } else {
-      // If no matching schedule, reset fields but keep the reqNo
       if (isJobInfoLocked) {
         setJobInfo(prev => ({
           ...initialJobInfo,
-          reqNo: prev.reqNo, // keep the entered req no
+          reqNo: prev.reqNo,
         }));
         setIsJobInfoLocked(false);
       }
@@ -216,64 +207,133 @@ export function Dashboard() {
     resetStateForNewJob();
     toast({ title: 'Formulir Direset', description: 'Anda sekarang dapat memasukkan data pekerjaan manual.' });
   };
+  
+  const currentTargetWeights = useMemo(() => {
+    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+    if (selectedFormula && jobInfo.jumlahMixing > 0 && jobInfo.targetVolume > 0) {
+      const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
+      return {
+        pasir1: selectedFormula.pasir1 * volumePerMix,
+        pasir2: selectedFormula.pasir2 * volumePerMix,
+        batu1: selectedFormula.batu1 * volumePerMix,
+        batu2: selectedFormula.batu2 * volumePerMix,
+        air: selectedFormula.air * volumePerMix,
+        semen: selectedFormula.semen * volumePerMix,
+      };
+    }
+    return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 };
+  }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
+  
+  const runAutoSimulation = async () => {
+    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
+    if (!selectedFormula) return;
+
+    resetStateForNewJob();
+    setBatchStartTime(new Date());
+    setAutoProcessStep('weighing');
+
+    let allMixesActualWeights = [];
+
+    for (let i = 1; i <= jobInfo.jumlahMixing; i++) {
+        setCurrentMixNumber(i);
+        addLog(`Memulai Mix ${i} dari ${jobInfo.jumlahMixing}`, 'text-primary');
+
+        const targetAggregate = currentTargetWeights.pasir1 + currentTargetWeights.pasir2 + currentTargetWeights.batu1 + currentTargetWeights.batu2;
+        
+        await simulateWeighing('aggregate', targetAggregate, setAggregateWeight);
+        addLog('Timbangan Agregat Selesai', 'text-green-500');
+        await sleep(1000);
+        await simulateWeighing('semen', currentTargetWeights.semen, setSemenWeight);
+        addLog('Timbangan Semen Selesai', 'text-green-500');
+        await sleep(1000);
+        await simulateWeighing('air', currentTargetWeights.air, setAirWeight);
+        addLog('Timbangan Air Selesai', 'text-green-500');
+        
+        allMixesActualWeights.push({
+            aggregate: aggregateWeight,
+            semen: semenWeight,
+            air: airWeight,
+        });
+
+        await sleep(1000);
+        addLog(`Mixing Mix ${i}...`, 'text-accent');
+        setAutoProcessStep('mixing');
+
+        for (let t = mixingTime; t >= 0; t--) {
+            setTimerDisplay({ value: t, total: mixingTime, label: 'Waktu Mixing', colorClass: 'text-accent' });
+            await sleep(1000);
+        }
+
+        addLog(`Mix ${i} selesai. Discharge...`, 'text-blue-500');
+        setAutoProcessStep('discharging');
+        await sleep(2000);
+
+        setAggregateWeight(0);
+        setSemenWeight(0);
+        setAirWeight(0);
+    }
+    
+    setAutoProcessStep('complete');
+    addLog('Semua proses mixing selesai.', 'text-primary font-bold');
+    
+    // For simplicity, the print preview will use the last mix's weights.
+    // A real implementation might aggregate them.
+    const finalActualWeights = {
+        pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
+        pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
+        batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
+        batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
+        air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
+        semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
+    };
+    
+    const finalData = {
+        ...jobInfo,
+        jobId: `AUTO-${Date.now().toString().slice(-6)}`,
+        mutuBeton: selectedFormula.mutuBeton,
+        startTime: batchStartTime,
+        endTime: new Date(),
+        targetWeights: currentTargetWeights,
+        actualWeights: finalActualWeights,
+    };
+    
+    setCompletedBatchData(finalData);
+    setShowPrintPreview(true);
+  };
+
+  const simulateWeighing = (material: 'aggregate' | 'semen' | 'air', target: number, setWeight: (w: number) => void) => {
+    return new Promise<void>(resolve => {
+      let currentWeight = 0;
+      const increment = target / 50; // Reach target in 50 steps
+      const interval = setInterval(() => {
+        currentWeight += increment;
+        if (currentWeight >= target) {
+          clearInterval(interval);
+          setWeight(target); // Ensure it ends on the exact target for display
+          resolve();
+        } else {
+          setWeight(currentWeight);
+        }
+      }, 50); // Update every 50ms
+    });
+  };
 
   const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
     if (!powerOn) return;
 
     if (operasiMode === 'AUTO') {
-      const db = getDatabase(app);
-      const commandRef = ref(db, 'realtime/command');
-
-      if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
-        // --- START OF VALIDATION ---
-        if (!jobInfo.selectedFormulaId) {
-            toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Formula mutu beton belum dipilih.' });
-            return;
-        }
-        const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-        if (!selectedFormula) {
-            toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Formula yang dipilih tidak valid.' });
-            return;
-        }
-        if (!jobInfo.targetVolume || jobInfo.targetVolume <= 0) {
-          toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Target Volume harus lebih besar dari 0.' });
-          return;
-        }
-        if (!jobInfo.jumlahMixing || jobInfo.jumlahMixing <= 0) {
-          toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Jumlah Mixing harus lebih besar dari 0.' });
-          return;
-        }
-        // --- END OF VALIDATION ---
-
-        // Calculate target weights right before sending
-        const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
-        const currentTargetWeights = {
-            pasir1: selectedFormula.pasir1 * volumePerMix,
-            pasir2: selectedFormula.pasir2 * volumePerMix,
-            batu1: selectedFormula.batu1 * volumePerMix,
-            batu2: selectedFormula.batu2 * volumePerMix,
-            air: selectedFormula.air * volumePerMix,
-            semen: selectedFormula.semen * volumePerMix,
-        };
-        
-        resetStateForNewJob();
-        set(commandRef, {
-            action: 'START',
-            timestamp: Date.now(),
-            jobDetails: {
-                ...jobInfo,
-                targetWeights: currentTargetWeights,
-                mixingTime,
-                mixingProcessConfig,
-                mixerTimerConfig,
-                mutuBeton: selectedFormula.mutuBeton
+        if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
+            if (!jobInfo.selectedFormulaId || !jobInfo.targetVolume || !jobInfo.jumlahMixing) {
+                toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Pastikan Formula, Target Volume, dan Jumlah Mixing sudah terisi.' });
+                return;
             }
-        });
-        setBatchStartTime(new Date());
-      } else {
-          // For any other action (STOP, PAUSE, or START to resume) in AUTO mode
-          set(commandRef, { action, timestamp: Date.now() });
-      }
+            runAutoSimulation();
+        } else {
+            // For now, STOP just resets the simulation. Pause is not implemented in this simulation.
+            setAutoProcessStep('idle');
+            resetStateForNewJob();
+            addLog('Proses AUTO dihentikan.', 'text-destructive');
+        }
     } else { // MANUAL MODE - Print Simulation
         const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
         if (!selectedFormula) {
@@ -281,16 +341,6 @@ export function Dashboard() {
           return;
         }
         
-        const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
-        const currentTargetWeights = {
-            pasir1: selectedFormula.pasir1 * volumePerMix,
-            pasir2: selectedFormula.pasir2 * volumePerMix,
-            batu1: selectedFormula.batu1 * volumePerMix,
-            batu2: selectedFormula.batu2 * volumePerMix,
-            air: selectedFormula.air * volumePerMix,
-            semen: selectedFormula.semen * volumePerMix,
-        };
-
         if (action === 'START') {
             resetStateForNewJob();
             setIsManualProcessRunning(true);
@@ -332,22 +382,6 @@ export function Dashboard() {
         resetStateForNewJob();
     }
   };
-  
-  const currentTargetWeights = useMemo(() => {
-    const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-    if (selectedFormula && jobInfo.jumlahMixing > 0 && jobInfo.targetVolume > 0) {
-      const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
-      return {
-        pasir1: selectedFormula.pasir1 * volumePerMix,
-        pasir2: selectedFormula.pasir2 * volumePerMix,
-        batu1: selectedFormula.batu1 * volumePerMix,
-        batu2: selectedFormula.batu2 * volumePerMix,
-        air: selectedFormula.air * volumePerMix,
-        semen: selectedFormula.semen * volumePerMix,
-      };
-    }
-    return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 };
-  }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
 
   const [joggingValues, setJoggingValues] = useState({
     aggregate: 200,
@@ -411,7 +445,7 @@ export function Dashboard() {
                 timerDisplay={timerDisplay}
                 mixingTime={mixingTime}
                 setMixingTime={setMixingTime}
-                disabled={!powerOn || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
+                disabled={!powerOn || isManualProcessRunning || (operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete')}
                 currentMixInfo={ operasiMode === 'AUTO' && autoProcessStep !== 'idle' && autoProcessStep !== 'complete' ? {
                   current: currentMixNumber,
                   total: jobInfo.jumlahMixing
