@@ -226,7 +226,7 @@ export function Dashboard() {
             resetStateForNewJob();
             setIsManualProcessRunning(true);
             setBatchStartTime(new Date());
-            addLog('Sesi simulasi cetak dimulai.', 'text-green-500');
+            addLog('Loading manual dimulai', 'text-green-500');
         } else if (action === 'STOP' && isManualProcessRunning) {
             setIsManualProcessRunning(false);
             const endTime = new Date();
@@ -251,7 +251,7 @@ export function Dashboard() {
             };
             setCompletedBatchData(finalData);
             setShowPrintPreview(true);
-            addLog('Simulasi selesai. Menampilkan pratinjau cetak.', 'text-primary');
+            addLog('Loading manual selesai', 'text-primary');
         }
     }
   };
