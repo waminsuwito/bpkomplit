@@ -149,22 +149,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                     </CardTitle>
                     <CardDescription>Tanggal: {date}</CardDescription>
                 </div>
-                {isOperatorView ? (
-                    <div className="flex items-end gap-4">
-                        <div className="space-y-1">
-                            <Label htmlFor="request-no">REQUEST NO</Label>
-                            <Input id="request-no" value={requestNo} onChange={e => setRequestNo(e.target.value)} placeholder="Masukkan No Request" />
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="request-vol">VOL</Label>
-                            <Input id="request-vol" type="number" value={requestVol} onChange={e => setRequestVol(e.target.value)} placeholder="M³" className="w-24" />
-                        </div>
-                        <Button onClick={handleOperatorSave}>
-                            <Save className="mr-2 h-4 w-4" />
-                            Simpan
-                        </Button>
-                    </div>
-                ) : (
+                {!isOperatorView && (
                     <Button onClick={handleSave}>
                         <Save className="mr-2 h-4 w-4" />
                         Simpan
