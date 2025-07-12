@@ -51,44 +51,46 @@ export function Header() {
             </div>
             
              {user?.jabatan === 'OPRATOR BP' && (
-              <Button asChild variant="outline" size="sm">
-                <Link href="/karyawan/absensi-harian">
-                  <Fingerprint className="mr-2 h-4 w-4" />
-                  Absen & Kegiatan
-                </Link>
-              </Button>
-            )}
-
-             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Setting
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/karyawan/absensi-harian">
+                    <Fingerprint className="mr-2 h-4 w-4" />
+                    Absen & Kegiatan
+                  </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/tombol-manual">Tombol Manual</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/job-mix-formula">Job Mix Formula</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/mixing-settings">Pengaturan Lanjutan</Link>
-                  </DropdownMenuItem>
-                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/mixer-timer-settings">Timer Pintu Mixer</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                     <Link href="/dashboard/relay-settings">Setting Relay</Link>
-                  </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => setPasswordDialogOpen(true)}>
-                  <Lock className="mr-2 h-4 w-4" />
-                  <span>Ubah Password</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Setting
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/tombol-manual">Tombol Manual</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/job-mix-formula">Job Mix Formula</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/mixing-settings">Pengaturan Lanjutan</Link>
+                      </DropdownMenuItem>
+                       <DropdownMenuItem asChild>
+                        <Link href="/dashboard/mixer-timer-settings">Timer Pintu Mixer</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                         <Link href="/dashboard/relay-settings">Setting Relay</Link>
+                      </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => setPasswordDialogOpen(true)}>
+                      <Lock className="mr-2 h-4 w-4" />
+                      <span>Ubah Password</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
 
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
