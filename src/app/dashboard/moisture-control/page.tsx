@@ -181,7 +181,7 @@ export default function MoistureControlPage() {
                   {aggregateMaterials.map(({ key, label }) => (
                     <TableRow key={key}>
                       <TableCell className="font-medium">{label}</TableCell>
-                      <TableCell className="text-center">{selectedFormula[key].toFixed(2)}</TableCell>
+                      <TableCell className="text-center">{selectedFormula[key]?.toFixed(2)}</TableCell>
                       <TableCell>
                         <Input
                           type="number"
