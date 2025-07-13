@@ -95,10 +95,6 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         const updatedData = [...currentData];
         const currentRow = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
 
-        if (key === 'volume' && value.trim() !== '' && (!currentRow.penambahanVol || currentRow.penambahanVol.trim() === '')) {
-            currentRow.penambahanVol = '0';
-        }
-        
         updatedData[rowIndex] = recalculateRow(currentRow);
         return updatedData;
     });
@@ -176,11 +172,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
             displayValue = row.terkirim ?? '';
         }
     } else if (key === 'penambahanVol') {
-         if (isScheduledRow && (!row.penambahanVol || row.penambahanVol.trim() === '')) {
-            displayValue = '0';
-        } else {
-            displayValue = row.penambahanVol ?? '';
-        }
+        displayValue = row.penambahanVol ?? '';
     }
     else if (key === 'status') {
        if (!isScheduledRow) return null;
