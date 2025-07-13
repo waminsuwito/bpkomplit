@@ -113,7 +113,7 @@ export default function DatabaseProduksiPage() {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, 'PPP') : <span>Pilih tanggal</span>}
+                            {date ? format(date, 'PPP') : <span>Cari berdasarkan tanggal</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -155,8 +155,8 @@ export default function DatabaseProduksiPage() {
                                     <TableRow key={item.jobId}>
                                         <TableCell>{new Date(item.startTime).toLocaleDateString('id-ID')}</TableCell>
                                         <TableCell>{new Date(item.endTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</TableCell>
-                                        <TableCell>{item.namaPelanggan}</TableCell>
-                                        <TableCell>{item.lokasiProyek}</TableCell>
+                                        <TableCell className="whitespace-pre-wrap break-words">{item.namaPelanggan}</TableCell>
+                                        <TableCell className="whitespace-pre-wrap break-words">{item.lokasiProyek}</TableCell>
                                         <TableCell>{item.mutuBeton}</TableCell>
                                         <TableCell>{item.slump}</TableCell>
                                         <TableCell>{Number(item.targetVolume).toFixed(2)}</TableCell>
