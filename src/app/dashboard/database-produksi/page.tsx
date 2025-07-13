@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Printer, Search, Inbox, CalendarIcon, Database } from 'lucide-react';
 import Link from 'next/link';
@@ -28,6 +28,13 @@ export default function DatabaseProduksiPage() {
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [filterType, setFilterType] = useState<'today' | 'all'>('today');
     const { toast } = useToast();
+
+    const backUrl = useMemo(() => {
+      if (user?.jabatan === 'ADMIN BP') {
+        return '/admin-bp/schedule-cor-hari-ini';
+      }
+      return '/dashboard';
+    }, [user]);
 
     useEffect(() => {
         try {
@@ -105,7 +112,7 @@ export default function DatabaseProduksiPage() {
                     </div>
                     <div className="flex items-center gap-2">
                         <Button asChild variant="outline">
-                            <Link href="/dashboard">
+                            <Link href={backUrl}>
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Kembali
                             </Link>
