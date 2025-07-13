@@ -100,9 +100,10 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
 
   const handleStatusToggle = (rowIndex: number) => {
     const updatedData = [...data];
-    const currentStatus = updatedData[rowIndex].status;
-    updatedData[rowIndex].status = currentStatus === 'Selesai' ? 'Proses' : 'Selesai';
-    setData(updatedData);
+    if (updatedData[rowIndex].status !== 'Selesai') {
+        updatedData[rowIndex].status = 'Selesai';
+        setData(updatedData);
+    }
   }
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, rowIndex: number, colIndex: number) => {
@@ -174,6 +175,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                 variant={row.status === 'Selesai' ? 'default' : 'secondary'} 
                 className={cn('w-full h-full rounded-none', row.status === 'Selesai' && 'bg-green-600 hover:bg-green-700')}
                 onClick={() => handleStatusToggle(rowIndex)}
+                disabled={row.status === 'Selesai'}
             >
                 {row.status === 'Selesai' && <CheckCircle className="mr-2 h-4 w-4" />}
                 {row.status === 'Selesai' ? 'Selesai' : 'Tandai Selesai'}
