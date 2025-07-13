@@ -18,7 +18,7 @@ const TOTAL_ROWS = 15;
 
 const headers = [
     'NO', 'NO PO', 'NAMA', 'LOKASI', 'GRADE', 'SLUMP (CM)', 'CP/M',
-    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³', 'TOTAL', 'SELESAI'
+    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³', 'TOTAL M³', 'SELESAI'
 ];
 const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 'mediaCor',
@@ -73,16 +73,12 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     const terkirim = parseFloat(updatedData[rowIndex].terkirim || '0');
     const penambahan = parseFloat(updatedData[rowIndex].penambahanVol || '0');
     
-    if (key === 'volume' || key === 'terkirim') {
-        if (!isNaN(volume) && !isNaN(terkirim)) {
-            updatedData[rowIndex].sisa = (volume - terkirim).toFixed(2);
-        }
+    if (!isNaN(volume) && !isNaN(terkirim)) {
+        updatedData[rowIndex].sisa = (volume - terkirim).toFixed(2);
     }
     
-    if (key === 'volume' || key === 'penambahanVol') {
-        if (!isNaN(volume) && !isNaN(penambahan)) {
-            updatedData[rowIndex].totalVol = (volume + penambahan).toFixed(2);
-        }
+    if (!isNaN(volume) && !isNaN(penambahan)) {
+        updatedData[rowIndex].totalVol = (volume + penambahan).toFixed(2);
     }
 
     setData(updatedData);
