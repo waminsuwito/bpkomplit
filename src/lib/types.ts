@@ -245,4 +245,6 @@ export type ScheduleSheetRow = {
   terkirim: string;
   sisa: string;
   penambahanVol: string;
+  totalVol: string;
+  status: 'Selesai' | 'Proses';
 };

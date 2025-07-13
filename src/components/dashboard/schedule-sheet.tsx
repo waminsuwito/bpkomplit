@@ -1,28 +1,28 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays, Save } from 'lucide-react';
+import { CalendarDays, Save, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { getScheduleSheetData, saveScheduleSheetData, SCHEDULE_SHEET_STORAGE_KEY } from '@/lib/schedule';
 import type { ScheduleSheetRow } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 
 const TOTAL_ROWS = 15;
 
 const headers = [
     'NO', 'NO PO', 'NAMA', 'LOKASI', 'GRADE', 'SLUMP (CM)', 'CP/M',
-    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³'
+    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³', 'TOTAL', 'SELESAI'
 ];
 const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 'mediaCor',
-    'volume', 'terkirim', 'sisa', 'penambahanVol'
+    'volume', 'terkirim', 'sisa', 'penambahanVol', 'totalVol', 'status'
 ];
 
 
@@ -68,12 +68,20 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     const updatedData = [...data];
     updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
     
-    // Auto-calculate 'sisa'
+    // Auto-calculate 'sisa' and 'total'
+    const volume = parseFloat(updatedData[rowIndex].volume || '0');
+    const terkirim = parseFloat(updatedData[rowIndex].terkirim || '0');
+    const penambahan = parseFloat(updatedData[rowIndex].penambahanVol || '0');
+    
     if (key === 'volume' || key === 'terkirim') {
-        const volume = parseFloat(updatedData[rowIndex].volume || '0');
-        const terkirim = parseFloat(updatedData[rowIndex].terkirim || '0');
         if (!isNaN(volume) && !isNaN(terkirim)) {
             updatedData[rowIndex].sisa = (volume - terkirim).toFixed(2);
+        }
+    }
+    
+    if (key === 'volume' || key === 'penambahanVol') {
+        if (!isNaN(volume) && !isNaN(penambahan)) {
+            updatedData[rowIndex].totalVol = (volume + penambahan).toFixed(2);
         }
     }
 
@@ -88,6 +96,13 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         console.error("Failed to save schedule sheet data", error);
         toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal menyimpan data schedule.' });
     }
+  }
+
+  const handleStatusToggle = (rowIndex: number) => {
+    const updatedData = [...data];
+    const currentStatus = updatedData[rowIndex].status;
+    updatedData[rowIndex].status = currentStatus === 'Selesai' ? 'Proses' : 'Selesai';
+    setData(updatedData);
   }
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, rowIndex: number, colIndex: number) => {
@@ -131,7 +146,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   };
 
   const renderCellContent = (row: ScheduleSheetRow, key: keyof ScheduleSheetRow, rowIndex: number, colIndex: number) => {
-    const isReadOnlyForAdmin = !isOperatorView && (key === 'terkirim' || key === 'sisa');
+    const isReadOnlyForAdmin = !isOperatorView && ['terkirim', 'sisa', 'totalVol', 'status'].includes(key);
     
     let displayValue;
     const isScheduledRow = row.volume && row.volume.trim() !== '';
@@ -142,14 +157,35 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         } else {
             displayValue = row.terkirim || '';
         }
+    } else if (key === 'status') {
+       if (!isScheduledRow) return null;
+       
+       if (isOperatorView) {
+         return (
+            <div className={`w-full min-h-[40px] text-center flex items-center justify-center p-2 font-semibold ${row.status === 'Selesai' ? 'text-green-600' : 'text-amber-600'}`}>
+                {row.status || 'Proses'}
+            </div>
+         );
+       }
+
+       return (
+            <Button 
+                size="sm" 
+                variant={row.status === 'Selesai' ? 'default' : 'secondary'} 
+                className={cn('w-full h-full rounded-none', row.status === 'Selesai' && 'bg-green-600 hover:bg-green-700')}
+                onClick={() => handleStatusToggle(rowIndex)}
+            >
+                {row.status === 'Selesai' && <CheckCircle className="mr-2 h-4 w-4" />}
+                {row.status === 'Selesai' ? 'Selesai' : 'Tandai Selesai'}
+            </Button>
+       );
     } else {
         displayValue = row[key] || '';
     }
 
-
     if (isOperatorView || isReadOnlyForAdmin) {
       return (
-        <div className="w-full min-h-[40px] text-center bg-transparent text-black flex items-center justify-center p-2">
+        <div className="w-full min-h-[40px] text-center bg-transparent flex items-center justify-center p-2">
           <p className="whitespace-pre-wrap break-words">{displayValue}</p>
         </div>
       );
@@ -199,7 +235,13 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                     </TableHeader>
                     <TableBody>
                         {data.map((row, rowIndex) => (
-                            <TableRow key={`row-${rowIndex}`} className="[&_td]:p-0 hover:bg-gray-100">
+                            <TableRow 
+                                key={`row-${rowIndex}`} 
+                                className={cn(
+                                    "[&_td]:p-0 hover:bg-gray-100",
+                                    row.status === 'Selesai' && 'bg-green-100 hover:bg-green-200/50'
+                                )}
+                            >
                                 {fieldKeys.map((key, colIndex) => (
                                     <TableCell key={`${key}-${rowIndex}`} className="border-t border-gray-300 align-top h-[40px]">
                                         {renderCellContent(row, key, rowIndex, colIndex)}
