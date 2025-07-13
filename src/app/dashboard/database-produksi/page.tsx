@@ -80,6 +80,16 @@ export default function DatabaseProduksiPage() {
         setFilteredHistory(filtered);
     }, [searchTerm, date, history, filterType]);
     
+    const getPeriodeText = () => {
+      if (filterType === 'today') {
+        return format(new Date(), 'd MMMM yyyy');
+      }
+      if (date) {
+        return format(date, 'd MMMM yyyy');
+      }
+      return 'Semua Tanggal';
+    };
+
     return (
         <Card id="database-produksi-content">
             <CardHeader className="no-print">
@@ -155,9 +165,7 @@ export default function DatabaseProduksiPage() {
                 <div className="print-only text-center mb-4">
                     <h2 className="text-xl font-bold">LAPORAN PRODUKSI</h2>
                     {user?.location && <p className="text-sm font-semibold">{user.location}</p>}
-                    <p className="text-xs text-muted-foreground">Tanggal Cetak: {new Date().toLocaleDateString('id-ID')}</p>
-                    {filterType === 'today' && <p className="text-xs">Menampilkan Data Hari Ini ({format(new Date(), 'd MMMM yyyy')})</p>}
-                    {filterType === 'all' && date && <p className="text-xs">Filter Tanggal: {format(date, 'd MMMM yyyy')}</p>}
+                    <p className="text-xs">PERIODE: {getPeriodeText()}</p>
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <Table>
