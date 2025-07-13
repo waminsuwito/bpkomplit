@@ -167,7 +167,6 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
@@ -182,7 +181,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas]);
+  }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast]);
 
   useEffect(() => {
     const targetVolumeNum = Number(jobInfo.targetVolume);
@@ -196,12 +195,11 @@ export function Dashboard() {
         const alreadySentVolume = parseFloat(matchingSchedule.terkirim) || 0;
         const remainingVolume = scheduledVolume - alreadySentVolume;
   
-        if (targetVolumeNum > remainingVolume && remainingVolume > 0) {
-          setVolumeWarning(`Volume melebihi sisa schedule (${remainingVolume.toFixed(2)} M³).`);
-        } else if (remainingVolume <= 0 && scheduledVolume > 0) {
+        if (remainingVolume <= 0 && scheduledVolume > 0) {
           setVolumeWarning(`Schedule untuk REQ NO ${jobInfo.reqNo} sudah terpenuhi.`);
-        }
-        else {
+        } else if (targetVolumeNum > remainingVolume) {
+          setVolumeWarning(`Volume melebihi sisa schedule (${remainingVolume.toFixed(2)} M³).`);
+        } else {
           setVolumeWarning('');
         }
       } else {
