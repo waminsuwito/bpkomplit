@@ -158,6 +158,30 @@ export function Dashboard() {
     const matchingSchedule = scheduleData.find(row => parseInt(row.no, 10) === reqNoAsNumber);
 
     if (matchingSchedule) {
+      if (matchingSchedule.status === 'Menunggu' || !matchingSchedule.status) {
+        toast({
+          variant: 'destructive',
+          title: 'Jadwal Ditahan',
+          description: 'Jadwal ini masih menunggu, belum diijinkan untuk loading.',
+        });
+        if (isJobInfoLocked) {
+          setIsJobInfoLocked(false);
+        }
+        return;
+      }
+
+      if (matchingSchedule.status === 'Selesai' || matchingSchedule.status === 'Batal') {
+        toast({
+          variant: 'destructive',
+          title: 'Jadwal Tidak Aktif',
+          description: `Jadwal ini sudah berstatus "${matchingSchedule.status}".`,
+        });
+        if (isJobInfoLocked) {
+          setIsJobInfoLocked(false);
+        }
+        return;
+      }
+      
       const matchingFormula = formulas.find(f => f.mutuBeton === matchingSchedule.mutuBeton);
       
       setJobInfo(prev => ({
