@@ -175,7 +175,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, toast, isJobInfoLocked]);
+  }, [jobInfo.reqNo, scheduleData, formulas, toast]);
 
 
   useEffect(() => {
@@ -225,7 +225,7 @@ export function Dashboard() {
   
   const finishAndPrintBatch = () => {
         const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-        if (!selectedFormula) return;
+        if (!selectedFormula || !batchStartTime) return;
 
         const simulationWeights = {
             pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
@@ -248,17 +248,16 @@ export function Dashboard() {
         setCompletedBatchData(finalData);
         setShowPrintPreview(true);
 
-        // Update schedule sheet
-        if (jobInfo.reqNo) {
+        if (jobInfo.reqNo.trim()) {
             const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
             if (!isNaN(reqNoAsNumber)) {
-                const updatedSchedule = getScheduleSheetData().map(row => {
+                const updatedScheduleData = getScheduleSheetData().map(row => {
                     if (parseInt(row.no, 10) === reqNoAsNumber) {
                         const currentTerkirim = parseFloat(row.terkirim) || 0;
-                        const newTerkirim = currentTerkirim + (jobInfo.targetVolume || 0);
+                        const addedVolume = jobInfo.targetVolume || 0;
+                        const newTerkirim = currentTerkirim + addedVolume;
                         const originalVolume = parseFloat(row.volume) || 0;
                         const newSisa = originalVolume - newTerkirim;
-
                         return {
                             ...row,
                             terkirim: newTerkirim.toFixed(2),
@@ -267,8 +266,8 @@ export function Dashboard() {
                     }
                     return row;
                 });
-                setScheduleData(updatedSchedule);
-                saveScheduleSheetData(updatedSchedule);
+                setScheduleData(updatedScheduleData);
+                saveScheduleSheetData(updatedScheduleData);
                 toast({ title: "Schedule Updated", description: `Volume terkirim untuk REQ NO ${jobInfo.reqNo} telah diperbarui.`});
             }
         }
@@ -283,11 +282,9 @@ export function Dashboard() {
                 toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Pastikan Formula, Target Volume, dan Jumlah Mixing sudah terisi.' });
                 return;
             }
-            // This is where hardware control would start. We just log it for now.
              setAutoProcessStep('weighing');
              addLog('Proses AUTO dimulai.', 'text-primary');
         } else {
-             // This is where hardware control would stop.
             setAutoProcessStep('idle');
             resetStateForNewJob();
             finishAndPrintBatch();
@@ -303,7 +300,6 @@ export function Dashboard() {
             setIsManualProcessRunning(false);
             setIsJobInfoLocked(false);
             finishAndPrintBatch();
-            handleResetJob();
             addLog('Loading manual selesai', 'text-primary');
         }
     }
