@@ -175,7 +175,6 @@ export function Dashboard() {
 
         if (warningMsg) {
             setScheduleStatusWarning(warningMsg);
-            toast({ variant: 'destructive', title: 'Jadwal Tidak Bisa Diproses', description: warningMsg });
             if (isJobInfoLocked) setIsJobInfoLocked(false);
             return;
         }
@@ -345,7 +344,9 @@ export function Dashboard() {
             setShowPrintPreview(true);
         } else if (printMode === 'direct') {
             // Need a moment for the hidden print content to render with the new data
-            setTimeout(() => printElement('direct-print-content'), 100);
+            setTimeout(() => {
+                printElement('direct-print-content');
+            }, 100);
         } else { // 'save' mode
             toast({
                 title: 'Data Disimpan',
@@ -467,7 +468,7 @@ export function Dashboard() {
           {/* Hidden container for direct printing */}
           <div className="hidden">
               <div id="direct-print-content">
-                  <PrintPreview data={completedBatchData} onClose={() => {}} />
+                  {completedBatchData && <PrintPreview data={completedBatchData} onClose={() => {}} />}
               </div>
           </div>
         </>
