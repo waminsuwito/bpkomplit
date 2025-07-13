@@ -31,9 +31,8 @@ type AutoProcessStep =
   | 'paused'
   | 'complete';
 
-const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'cement_water'): number => {
+const generateSimulatedWeight = (target: number, roundingUnit: 1 | 5): number => {
   const deviation = 0.02; // 2%
-  const roundingUnit = materialType === 'aggregate' ? 5 : 1;
   const min = target * (1 - deviation);
   const max = target * (1 + deviation);
   const randomWeight = Math.random() * (max - min) + min;
@@ -167,6 +166,7 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
+        targetVolume: parseFloat(matchingSchedule.volume) || prev.targetVolume,
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
@@ -181,7 +181,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, toast, isJobInfoLocked]);
+  }, [jobInfo.reqNo, scheduleData, formulas]);
 
 
   useEffect(() => {
@@ -237,12 +237,12 @@ export function Dashboard() {
         }
 
         const finalActualWeights = {
-            pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
-            pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
-            batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
-            batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
-            air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
-            semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
+            pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 5),
+            pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 5),
+            batu1: generateSimulatedWeight(currentTargetWeights.batu1, 5),
+            batu2: generateSimulatedWeight(currentTargetWeights.batu2, 5),
+            air: generateSimulatedWeight(currentTargetWeights.air, 1),
+            semen: generateSimulatedWeight(currentTargetWeights.semen, 1),
         };
 
         const finalData = {
