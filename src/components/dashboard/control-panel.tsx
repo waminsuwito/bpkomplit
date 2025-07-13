@@ -25,7 +25,7 @@ interface ControlPanelProps {
     reqNo: string;
     namaPelanggan: string;
     lokasiProyek: string;
-    targetVolume: number;
+    targetVolume: number | '';
     jumlahMixing: number;
     slump: number;
     mediaCor: string;
@@ -57,7 +57,8 @@ export function ControlPanel({
   };
 
   useEffect(() => {
-      const volumePerMix = jobInfo.jumlahMixing > 0 ? jobInfo.targetVolume / jobInfo.jumlahMixing : 0;
+      const targetVolumeNum = Number(jobInfo.targetVolume);
+      const volumePerMix = jobInfo.jumlahMixing > 0 ? targetVolumeNum / jobInfo.jumlahMixing : 0;
       if (volumePerMix > 3.5) {
           setMixWarning(`Volume per mix (${volumePerMix.toFixed(2)} M³) melebihi kapasitas mixer (3.5 M³).`);
       } else {
@@ -71,7 +72,7 @@ export function ControlPanel({
     }
   }
 
-  const isStartDisabled = !powerOn || jobInfo.targetVolume <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning;
+  const isStartDisabled = !powerOn || Number(jobInfo.targetVolume) <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning;
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
   const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
 
@@ -142,10 +143,11 @@ export function ControlPanel({
                 id="target-volume" 
                 type="number" 
                 value={jobInfo.targetVolume} 
-                onChange={(e) => handleJobInfoChange('targetVolume', Number(e.target.value))}
+                onChange={(e) => handleJobInfoChange('targetVolume', e.target.value === '' ? '' : Number(e.target.value))}
                 min="0"
                 step="0.1"
                 disabled={!powerOn || isJobInfoLocked} 
+                placeholder="0.0"
             />
              {volumeWarning && (
                 <div className="text-xs text-destructive mt-1 flex items-center gap-1 p-2 bg-destructive/10 rounded-md">

@@ -67,7 +67,7 @@ export function Dashboard() {
     reqNo: '',
     namaPelanggan: '',
     lokasiProyek: '',
-    targetVolume: 0,
+    targetVolume: '' as number | '',
     jumlahMixing: 1,
     slump: 12,
     mediaCor: '',
@@ -185,7 +185,9 @@ export function Dashboard() {
   }, [jobInfo.reqNo, scheduleData, formulas]);
 
   useEffect(() => {
-    if (isJobInfoLocked && jobInfo.reqNo) {
+    const targetVolumeNum = Number(jobInfo.targetVolume);
+
+    if (isJobInfoLocked && jobInfo.reqNo && targetVolumeNum > 0) {
       const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
       const matchingSchedule = scheduleData.find(row => parseInt(row.no, 10) === reqNoAsNumber);
   
@@ -194,7 +196,7 @@ export function Dashboard() {
         const alreadySentVolume = parseFloat(matchingSchedule.terkirim) || 0;
         const remainingVolume = scheduledVolume - alreadySentVolume;
   
-        if (jobInfo.targetVolume > remainingVolume && remainingVolume > 0) {
+        if (targetVolumeNum > remainingVolume && remainingVolume > 0) {
           setVolumeWarning(`Volume melebihi sisa schedule (${remainingVolume.toFixed(2)} M³).`);
         } else if (remainingVolume <= 0 && scheduledVolume > 0) {
           setVolumeWarning(`Schedule untuk REQ NO ${jobInfo.reqNo} sudah terpenuhi.`);
@@ -243,8 +245,9 @@ export function Dashboard() {
   
   const currentTargetWeights = useMemo(() => {
     const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-    if (selectedFormula && jobInfo.jumlahMixing > 0 && jobInfo.targetVolume > 0) {
-      const volumePerMix = jobInfo.targetVolume / jobInfo.jumlahMixing;
+    const targetVolumeNum = Number(jobInfo.targetVolume);
+    if (selectedFormula && jobInfo.jumlahMixing > 0 && targetVolumeNum > 0) {
+      const volumePerMix = targetVolumeNum / jobInfo.jumlahMixing;
       return {
         pasir1: selectedFormula.pasir1 * volumePerMix,
         pasir2: selectedFormula.pasir2 * volumePerMix,
@@ -275,6 +278,7 @@ export function Dashboard() {
 
         const finalData = {
             ...jobInfo,
+            targetVolume: Number(jobInfo.targetVolume),
             jobId: `SIM-${Date.now().toString().slice(-6)}`,
             mutuBeton: selectedFormula?.mutuBeton || 'N/A',
             startTime: batchStartTime,
@@ -294,7 +298,7 @@ export function Dashboard() {
                     if (parseInt(row.no, 10) === reqNoAsNumber) {
                         foundAndUpdate = true;
                         const currentTerkirim = parseFloat(row.terkirim) || 0;
-                        const addedVolume = jobInfo.targetVolume || 0;
+                        const addedVolume = Number(jobInfo.targetVolume) || 0;
                         const newTerkirim = currentTerkirim + addedVolume;
                         const originalVolume = parseFloat(row.volume) || 0;
                         const newSisa = originalVolume - newTerkirim;
