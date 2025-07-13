@@ -139,9 +139,15 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
+    // This effect should only depend on the raw inputs, not the state it sets.
     if (!jobInfo.reqNo.trim()) {
+      // If reqNo is cleared, unlock the form for manual entry.
       if (isJobInfoLocked) {
-        setJobInfo(initialJobInfo);
+        setJobInfo(prev => ({
+          ...initialJobInfo,
+          targetVolume: prev.targetVolume, // Keep manually entered volume
+          jumlahMixing: prev.jumlahMixing,
+        }));
         setIsJobInfoLocked(false);
       }
       return;
@@ -162,20 +168,23 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        targetVolume: prev.targetVolume,
+        // Do not update targetVolume here
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
     } else {
+      // If no match is found, ensure the form is unlocked
       if (isJobInfoLocked) {
         setJobInfo(prev => ({
           ...initialJobInfo,
-          reqNo: prev.reqNo,
+          reqNo: prev.reqNo, // Keep the entered reqNo
+          targetVolume: prev.targetVolume,
+          jumlahMixing: prev.jumlahMixing,
         }));
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, toast]);
+  }, [jobInfo.reqNo, scheduleData, formulas, toast]); // Dependency array is crucial
 
 
   useEffect(() => {
@@ -225,26 +234,30 @@ export function Dashboard() {
   
   const finishAndPrintBatch = () => {
         const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
-        if (!selectedFormula || !batchStartTime) return;
+        if (!batchStartTime) {
+            toast({ variant: 'destructive', title: 'Error Cetak', description: 'Waktu mulai batch tidak ditemukan.' });
+            return;
+        }
 
         const simulationWeights = {
             pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
             pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
             batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
             batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
-            air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
-            semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
+            air: generateSimulatedWeight(airWeight, 'cement_water'),
+            semen: generateSimulatedWeight(semenWeight, 'cement_water'),
         };
 
         const finalData = {
             ...jobInfo,
             jobId: `SIM-${Date.now().toString().slice(-6)}`,
-            mutuBeton: selectedFormula.mutuBeton,
+            mutuBeton: selectedFormula?.mutuBeton || 'N/A',
             startTime: batchStartTime,
             endTime: new Date(),
             targetWeights: currentTargetWeights,
             actualWeights: simulationWeights
         };
+        
         setCompletedBatchData(finalData);
         setShowPrintPreview(true);
 
@@ -277,19 +290,9 @@ export function Dashboard() {
     if (!powerOn) return;
 
     if (operasiMode === 'AUTO') {
-        if (action === 'START' && (autoProcessStep === 'idle' || autoProcessStep === 'complete')) {
-            if (!jobInfo.selectedFormulaId || !jobInfo.targetVolume || !jobInfo.jumlahMixing) {
-                toast({ variant: 'destructive', title: 'Gagal Memulai', description: 'Pastikan Formula, Target Volume, dan Jumlah Mixing sudah terisi.' });
-                return;
-            }
-             setAutoProcessStep('weighing');
-             addLog('Proses AUTO dimulai.', 'text-primary');
-        } else {
-            setAutoProcessStep('idle');
-            resetStateForNewJob();
-            finishAndPrintBatch();
-            addLog('Proses AUTO dihentikan.', 'text-destructive');
-        }
+        setAutoProcessStep('idle');
+        resetStateForNewJob();
+        addLog('Proses AUTO dihentikan.', 'text-destructive');
     } else { // MANUAL MODE
         if (action === 'START') {
             resetStateForNewJob();
