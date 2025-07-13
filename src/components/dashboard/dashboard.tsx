@@ -171,6 +171,7 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
+        // Do NOT set targetVolume from schedule as per user request
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
