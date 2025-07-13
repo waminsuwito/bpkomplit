@@ -86,7 +86,7 @@ export function ControlPanel({
                 value={jobInfo.reqNo} 
                 onChange={e => handleJobInfoChange('reqNo', e.target.value.toUpperCase())} 
                 style={{ textTransform: 'uppercase' }}
-                disabled={!powerOn || isJobInfoLocked} 
+                disabled={!powerOn} 
             />
           </div>
           <div>
