@@ -76,16 +76,13 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         updatedData[rowIndex].sisa = (volume - terkirim).toFixed(2);
     }
 
-    // Default 'penambahanVol' to '0' if 'volume' is being entered for the first time
-    if (key === 'volume' && !updatedData[rowIndex].penambahanVol) {
-        updatedData[rowIndex].penambahanVol = '0';
+    if (key === 'volume' && (!updatedData[rowIndex].penambahanVol || updatedData[rowIndex].penambahanVol.trim() === '')) {
+      updatedData[rowIndex].penambahanVol = '0';
     }
     
-    if (!isNaN(volume)) { // Check only for volume
-        const penambahanVol = parseFloat(updatedData[rowIndex].penambahanVol || '0'); // Treat empty as 0
-        if (!isNaN(penambahanVol)) {
-            updatedData[rowIndex].totalVol = (volume + penambahanVol).toFixed(2);
-        }
+    const penambahanVol = parseFloat(updatedData[rowIndex].penambahanVol || '0');
+    if (!isNaN(volume) && !isNaN(penambahanVol)) {
+      updatedData[rowIndex].totalVol = (volume + penambahanVol).toFixed(2);
     }
 
     setData(updatedData);
