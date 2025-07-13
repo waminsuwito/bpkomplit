@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -170,7 +171,6 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        // targetVolume is NOT set automatically
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
@@ -185,7 +185,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast]);
+  }, [jobInfo.reqNo, scheduleData, formulas, toast]);
 
 
   useEffect(() => {
@@ -242,19 +242,18 @@ export function Dashboard() {
 
         const totalTargetAggregate = currentTargetWeights.pasir1 + currentTargetWeights.pasir2 + currentTargetWeights.batu1 + currentTargetWeights.batu2;
         
-        // Distribute the final aggregate weight back to individual components based on their target proportions
-        const actualPasir1 = totalTargetAggregate > 0 ? (currentTargetWeights.pasir1 / totalTargetAggregate) * aggregateWeight : 0;
-        const actualPasir2 = totalTargetAggregate > 0 ? (currentTargetWeights.pasir2 / totalTargetAggregate) * aggregateWeight : 0;
-        const actualBatu1 = totalTargetAggregate > 0 ? (currentTargetWeights.batu1 / totalTargetAggregate) * aggregateWeight : 0;
-        const actualBatu2 = totalTargetAggregate > 0 ? (currentTargetWeights.batu2 / totalTargetAggregate) * aggregateWeight : 0;
+        // Use the final state of the scales for actual weights
+        const simulatedAggregate = generateSimulatedWeight(totalTargetAggregate, 'aggregate');
+        const simulatedSemen = generateSimulatedWeight(currentTargetWeights.semen, 'cement_water');
+        const simulatedAir = generateSimulatedWeight(currentTargetWeights.air, 'cement_water');
 
         const finalActualWeights = {
-            pasir1: actualPasir1,
-            pasir2: actualPasir2,
-            batu1: actualBatu1,
-            batu2: actualBatu2,
-            air: airWeight,
-            semen: semenWeight,
+            pasir1: totalTargetAggregate > 0 ? (currentTargetWeights.pasir1 / totalTargetAggregate) * simulatedAggregate : 0,
+            pasir2: totalTargetAggregate > 0 ? (currentTargetWeights.pasir2 / totalTargetAggregate) * simulatedAggregate : 0,
+            batu1: totalTargetAggregate > 0 ? (currentTargetWeights.batu1 / totalTargetAggregate) * simulatedAggregate : 0,
+            batu2: totalTargetAggregate > 0 ? (currentTargetWeights.batu2 / totalTargetAggregate) * simulatedAggregate : 0,
+            air: simulatedAir,
+            semen: simulatedSemen,
         };
 
         const finalData = {
