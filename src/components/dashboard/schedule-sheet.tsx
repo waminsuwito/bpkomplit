@@ -100,10 +100,6 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     setData(currentData => {
       let updatedData = [...currentData];
       let currentRow = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
-
-      if (key === 'volume' && currentRow.penambahanVol === undefined) {
-          currentRow.penambahanVol = '';
-      }
       
       currentRow = recalculateRow(currentRow);
       updatedData[rowIndex] = currentRow;
@@ -181,13 +177,10 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     const isReadOnlyForAdmin = !isOperatorView && ['terkirim', 'sisa', 'totalVol', 'status'].includes(key);
     
     let displayValue;
-    const isScheduledRow = row.volume && row.volume.trim() !== '';
+    const isRowActive = (row.no && row.no.trim() !== '') || (row.noPo && row.noPo.trim() !== '') || (row.nama && row.nama.trim() !== '');
 
-    if (key === 'penambahanVol') {
-        displayValue = row.penambahanVol; // Show even if it is an empty string
-    }
-    else if (key === 'status') {
-       if (!isScheduledRow) return null;
+    if (key === 'status') {
+       if (!isRowActive) return null;
        
        const currentStatus = row.status || 'Menunggu';
        const isFinalStatus = currentStatus === 'Selesai' || currentStatus === 'Batal';
@@ -223,6 +216,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
             </Select>
        );
     } else if (key === 'mutuBeton' && !isOperatorView) {
+      if (!isRowActive) return null;
       return (
         <Select
           value={row.mutuBeton || ''}
