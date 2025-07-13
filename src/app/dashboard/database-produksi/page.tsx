@@ -140,6 +140,7 @@ export default function DatabaseProduksiPage() {
                             <TableRow>
                                 <TableHead>Tanggal</TableHead>
                                 <TableHead>Jam</TableHead>
+                                <TableHead>Nama Pelanggan</TableHead>
                                 <TableHead>Lokasi Cor</TableHead>
                                 <TableHead>Mutu Beton</TableHead>
                                 <TableHead>Slump</TableHead>
@@ -154,6 +155,7 @@ export default function DatabaseProduksiPage() {
                                     <TableRow key={item.jobId}>
                                         <TableCell>{new Date(item.startTime).toLocaleDateString('id-ID')}</TableCell>
                                         <TableCell>{new Date(item.endTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                                        <TableCell>{item.namaPelanggan}</TableCell>
                                         <TableCell>{item.lokasiProyek}</TableCell>
                                         <TableCell>{item.mutuBeton}</TableCell>
                                         <TableCell>{item.slump}</TableCell>
@@ -164,7 +166,7 @@ export default function DatabaseProduksiPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                                         <div className="flex flex-col items-center gap-2">
                                             <Inbox className="h-8 w-8"/>
                                             <span>
