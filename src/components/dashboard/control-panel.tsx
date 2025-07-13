@@ -18,7 +18,7 @@ interface ControlPanelProps {
   formulas: JobMixFormula[];
   operasiMode: 'MANUAL' | 'AUTO';
   setOperasiMode: (mode: 'MANUAL' | 'AUTO') => void;
-  handleProcessControl: (action: 'START' | 'PAUSE' | 'STOP') => void;
+  handleProcessControl: (action: 'START' | 'STOP') => void;
   
   jobInfo: {
     selectedFormulaId: string;
@@ -78,7 +78,6 @@ export function ControlPanel({
 
   const isStartDisabled = !powerOn || !jobInfo.reqNo.trim() || Number(jobInfo.targetVolume) <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning || !!scheduleStatusWarning;
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
-  const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
   
   const isFormDisabled = !powerOn || (jobInfo.reqNo.trim() !== '' && !isJobInfoLocked);
 
@@ -105,50 +104,28 @@ export function ControlPanel({
                 </div>
              )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="no-polisi" className="text-xs text-muted-foreground">NO. POLISI</Label>
-              <Input 
-                  id="no-polisi" 
-                  placeholder="e.g., BM 1234 XY" 
-                  value={jobInfo.noPolisi} 
-                  onChange={e => handleJobInfoChange('noPolisi', e.target.value.toUpperCase())}
-                  style={{ textTransform: 'uppercase' }}
-                  disabled={isFormDisabled}
-              />
-            </div>
-            <div>
-              <Label htmlFor="nama-sopir" className="text-xs text-muted-foreground">NAMA SOPIR</Label>
-              <Input 
-                  id="nama-sopir" 
-                  placeholder="e.g., Budi" 
-                  value={jobInfo.namaSopir} 
-                  onChange={e => handleJobInfoChange('namaSopir', e.target.value.toUpperCase())}
-                  style={{ textTransform: 'uppercase' }}
-                  disabled={isFormDisabled}
-              />
-            </div>
-          </div>
           <div>
             <Label htmlFor="nama-pelanggan" className="text-xs text-muted-foreground">NAMA PELANGGAN</Label>
              <Input 
                 id="nama-pelanggan" 
-                placeholder="Masukkan nama pelanggan" 
+                placeholder="Data dari schedule" 
                 value={jobInfo.namaPelanggan} 
                 onChange={e => handleJobInfoChange('namaPelanggan', e.target.value.toUpperCase())} 
                 style={{ textTransform: 'uppercase' }}
                 disabled={isFormDisabled || isJobInfoLocked} 
+                readOnly
             />
           </div>
           <div>
             <Label htmlFor="lokasi-proyek" className="text-xs text-muted-foreground">LOKASI PROYEK</Label>
              <Input 
                 id="lokasi-proyek" 
-                placeholder="Masukkan lokasi proyek" 
+                placeholder="Data dari schedule" 
                 value={jobInfo.lokasiProyek} 
                 onChange={e => handleJobInfoChange('lokasiProyek', e.target.value.toUpperCase())} 
                 style={{ textTransform: 'uppercase' }}
                 disabled={isFormDisabled || isJobInfoLocked}
+                readOnly
             />
           </div>
         </CardContent>
@@ -243,10 +220,9 @@ export function ControlPanel({
               <Button onClick={() => setOperasiMode('AUTO')} variant={operasiMode === 'AUTO' ? 'default' : 'secondary'} className="font-bold" disabled={!powerOn}>AUTO</Button>
            </div>
            <div className="text-center text-primary uppercase text-sm tracking-wider font-semibold pt-4 mb-2">Kontrol Proses</div>
-           <div className="grid grid-cols-3 gap-2">
-             <Button onClick={() => handleProcessControl('START')} className="font-bold text-xs col-span-1" disabled={isStartDisabled}>START</Button>
-             <Button onClick={() => handleProcessControl('PAUSE')} className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-xs col-span-1" disabled={isPauseDisabled}>PAUSE</Button>
-             <Button onClick={() => handleProcessControl('STOP')} variant="destructive" className="font-bold text-xs col-span-1" disabled={isStopDisabled}>STOP</Button>
+           <div className="grid grid-cols-2 gap-2">
+             <Button onClick={() => handleProcessControl('START')} className="font-bold text-lg col-span-1 py-6" disabled={isStartDisabled}>START</Button>
+             <Button onClick={() => handleProcessControl('STOP')} variant="destructive" className="font-bold text-lg col-span-1 py-6" disabled={isStopDisabled}>STOP</Button>
            </div>
             <Button 
               onMouseDown={() => handleKlaksonPress(true)} 

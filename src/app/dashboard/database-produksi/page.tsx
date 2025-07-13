@@ -141,7 +141,7 @@ export default function DatabaseProduksiPage() {
                                 filteredHistory.map(item => (
                                     <TableRow key={item.jobId}>
                                         <TableCell>{new Date(item.startTime).toLocaleDateString('id-ID')}</TableCell>
-                                        <TableCell>{new Date(item.startTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                                        <TableCell>{new Date(item.endTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</TableCell>
                                         <TableCell>{item.lokasiProyek}</TableCell>
                                         <TableCell>{item.mutuBeton}</TableCell>
                                         <TableCell>{item.slump}</TableCell>

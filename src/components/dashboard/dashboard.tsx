@@ -299,6 +299,8 @@ export function Dashboard() {
 
         const finalData: ProductionHistoryEntry = {
             ...jobInfo,
+            noPolisi: '', // Kosongkan sesuai permintaan
+            namaSopir: '', // Kosongkan sesuai permintaan
             targetVolume: Number(jobInfo.targetVolume),
             jobId: `SIM-${Date.now().toString().slice(-6)}`,
             mutuBeton: selectedFormula?.mutuBeton || 'N/A',
@@ -367,7 +369,7 @@ export function Dashboard() {
         }
     }
 
-  const handleProcessControl = (action: 'START' | 'PAUSE' | 'STOP') => {
+  const handleProcessControl = (action: 'START' | 'STOP') => {
     if (!powerOn) return;
 
     if (operasiMode === 'AUTO') {
