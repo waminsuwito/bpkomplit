@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Printer, Search, Inbox, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Printer, Search, Inbox, CalendarIcon, Database } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
