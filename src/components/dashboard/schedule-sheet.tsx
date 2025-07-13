@@ -117,10 +117,15 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   const renderCellContent = (row: ScheduleSheetRow, key: keyof ScheduleSheetRow, rowIndex: number, colIndex: number) => {
     const isReadOnlyForAdmin = !isOperatorView && (key === 'terkirim' || key === 'sisa');
     
+    let displayValue = row[key] || '';
+    if (key === 'terkirim' && (!row[key] || row[key].trim() === '')) {
+      displayValue = '0';
+    }
+
     if (isOperatorView || isReadOnlyForAdmin) {
       return (
         <div className="w-full min-h-[40px] text-center bg-transparent text-black flex items-center justify-center p-2">
-          <p className="whitespace-pre-wrap break-words">{row[key] || ''}</p>
+          <p className="whitespace-pre-wrap break-words">{displayValue}</p>
         </div>
       );
     }
