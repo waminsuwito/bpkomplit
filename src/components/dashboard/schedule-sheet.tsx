@@ -19,7 +19,7 @@ import { Input } from '../ui/input';
 const TOTAL_ROWS = 15;
 
 const headers = [
-    'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 'MEDIA COR CP/M',
+    'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 'CP/M',
     'VOLUME M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³'
 ];
 const fieldKeys: (keyof ScheduleSheetRow)[] = [
