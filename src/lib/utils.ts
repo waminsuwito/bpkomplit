@@ -32,7 +32,10 @@ export function printElement(elementId: string) {
     <style>
       @media print {
         html, body {
+          width: 100%;
+          height: auto;
           overflow: visible !important;
+          background-color: #fff !important;
         }
         body { 
           margin: 1.5rem;
@@ -47,6 +50,24 @@ export function printElement(elementId: string) {
         }
         .break-inside-avoid {
           break-inside: avoid;
+        }
+        div, .border, .rounded-lg, .overflow-x-auto {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+        table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+        th, td {
+            border: 1px solid #ccc !important;
+            padding: 8px !important;
+            color: #000 !important;
+        }
+        thead {
+            background-color: #f2f2f2 !important;
         }
         body::after {
           content: "PT FARIKA RIAU PERKASA";
