@@ -72,7 +72,7 @@ export function ControlPanel({
     }
   }
 
-  const isStartDisabled = !powerOn || Number(jobInfo.targetVolume) <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning;
+  const isStartDisabled = !powerOn || !jobInfo.reqNo.trim() || Number(jobInfo.targetVolume) <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning;
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
   const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
 
