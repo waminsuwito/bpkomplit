@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { getFormulas } from '@/lib/formula';
 
 
-const TOTAL_ROWS = 15;
+const TOTAL_ROWS = 30;
 
 const headers = [
     'NO', 'NO P.O', 'NAMA', 'LOKASI', 'GRADE', 'SLUMP (CM)', 'CP/M',
