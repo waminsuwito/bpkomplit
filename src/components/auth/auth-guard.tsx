@@ -34,11 +34,13 @@ const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
 export function AuthGuard({ 
   children, 
   requiredRoles,
-  requiredJabatan
+  requiredJabatan,
+  requiredJabatans
 }: { 
   children: React.ReactNode, 
   requiredRoles?: UserRole[],
-  requiredJabatan?: UserJabatan
+  requiredJabatan?: UserJabatan,
+  requiredJabatans?: UserJabatan[]
 }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -68,6 +70,12 @@ export function AuthGuard({
         isAuthorized = false;
       }
     }
+    if (requiredJabatans && requiredJabatans.length > 0) {
+        if (!user.jabatan || !requiredJabatans.includes(user.jabatan)) {
+            isAuthorized = false;
+        }
+    }
+
 
     if (!isAuthorized) {
       // If the user is logged in but not authorized for THIS specific page,
@@ -76,7 +84,7 @@ export function AuthGuard({
       router.replace(defaultRoute);
     }
 
-  }, [user, isLoading, router, requiredRoles, requiredJabatan, pathname]);
+  }, [user, isLoading, router, requiredRoles, requiredJabatan, requiredJabatans, pathname]);
 
   // Determine if the user is allowed to see the content.
   // This prevents flashing unauthorized content before a redirect can happen.
@@ -88,6 +96,9 @@ export function AuthGuard({
      }
      if (requiredJabatan) {
         canRenderContent = canRenderContent && user.jabatan === requiredJabatan;
+     }
+     if (requiredJabatans && requiredJabatans.length > 0) {
+        canRenderContent = canRenderContent && !!user.jabatan && requiredJabatans.includes(user.jabatan);
      }
   }
   

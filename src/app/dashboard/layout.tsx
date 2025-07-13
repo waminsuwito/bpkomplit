@@ -8,7 +8,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard requiredJabatan='OPRATOR BP'>
+    <AuthGuard requiredJabatans={['OPRATOR BP', 'ADMIN BP']}>
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <main className="flex-1 p-4 md:p-6">
