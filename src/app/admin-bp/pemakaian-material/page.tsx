@@ -97,6 +97,22 @@ export default function PemakaianMaterialPage() {
       return 'Semua Tanggal';
     };
 
+    const materialTotals = useMemo(() => {
+        const totals = {
+            pasir: 0,
+            batu: 0,
+            semen: 0,
+            air: 0
+        };
+        filteredHistory.forEach(item => {
+            totals.pasir += (item.actualWeights?.pasir1 || 0) + (item.actualWeights?.pasir2 || 0);
+            totals.batu += (item.actualWeights?.batu1 || 0) + (item.actualWeights?.batu2 || 0);
+            totals.semen += item.actualWeights?.semen || 0;
+            totals.air += item.actualWeights?.air || 0;
+        });
+        return totals;
+    }, [filteredHistory]);
+
     return (
         <Card id="pemakaian-material-content">
             <CardHeader className="no-print">
@@ -223,6 +239,29 @@ export default function PemakaianMaterialPage() {
                         </TableBody>
                     </Table>
                 </div>
+                {filteredHistory.length > 0 && (
+                    <div className="print-only mt-8 border-t-2 border-black pt-4 break-inside-avoid">
+                        <h3 className="text-base font-bold mb-2">Total Pemakaian Material</h3>
+                        <div className="text-sm space-y-1 max-w-sm">
+                            <div className="flex justify-between">
+                                <span className="font-semibold">Total Pasir:</span>
+                                <span className="font-mono">{Math.round(materialTotals.pasir).toLocaleString('id-ID')} Kg</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-semibold">Total Batu:</span>
+                                <span className="font-mono">{Math.round(materialTotals.batu).toLocaleString('id-ID')} Kg</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-semibold">Total Semen:</span>
+                                <span className="font-mono">{Math.round(materialTotals.semen).toLocaleString('id-ID')} Kg</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="font-semibold">Total Air:</span>
+                                <span className="font-mono">{Math.round(materialTotals.air).toLocaleString('id-ID')} Kg</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
