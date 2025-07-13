@@ -37,11 +37,7 @@ const generateSimulatedWeight = (target: number, materialType: 'aggregate' | 'ce
   const min = target * (1 - deviation);
   const max = target * (1 + deviation);
   const randomWeight = Math.random() * (max - min) + min;
-  let finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
-  const roundedTarget = Math.round(target / roundingUnit) * roundingUnit;
-  if (finalWeight === roundedTarget) {
-    finalWeight += (Math.random() < 0.5 ? -roundingUnit : roundingUnit);
-  }
+  const finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
   return finalWeight;
 };
 
@@ -171,7 +167,6 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        // Do NOT set targetVolume from schedule as per user request
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
@@ -186,7 +181,7 @@ export function Dashboard() {
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, toast]);
+  }, [jobInfo.reqNo, scheduleData, formulas, toast, isJobInfoLocked]);
 
 
   useEffect(() => {
@@ -241,19 +236,13 @@ export function Dashboard() {
             return;
         }
 
-        const totalTargetAggregate = currentTargetWeights.pasir1 + currentTargetWeights.pasir2 + currentTargetWeights.batu1 + currentTargetWeights.batu2;
-
-        const simulatedAggregate = generateSimulatedWeight(totalTargetAggregate, 'aggregate');
-        const simulatedSemen = generateSimulatedWeight(currentTargetWeights.semen, 'cement_water');
-        const simulatedAir = generateSimulatedWeight(currentTargetWeights.air, 'cement_water');
-
         const finalActualWeights = {
-            pasir1: totalTargetAggregate > 0 ? (currentTargetWeights.pasir1 / totalTargetAggregate) * simulatedAggregate : 0,
-            pasir2: totalTargetAggregate > 0 ? (currentTargetWeights.pasir2 / totalTargetAggregate) * simulatedAggregate : 0,
-            batu1: totalTargetAggregate > 0 ? (currentTargetWeights.batu1 / totalTargetAggregate) * simulatedAggregate : 0,
-            batu2: totalTargetAggregate > 0 ? (currentTargetWeights.batu2 / totalTargetAggregate) * simulatedAggregate : 0,
-            air: simulatedAir,
-            semen: simulatedSemen,
+            pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
+            pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
+            batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
+            batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
+            air: generateSimulatedWeight(currentTargetWeights.air, 'cement_water'),
+            semen: generateSimulatedWeight(currentTargetWeights.semen, 'cement_water'),
         };
 
         const finalData = {
@@ -269,7 +258,6 @@ export function Dashboard() {
         setCompletedBatchData(finalData);
         setShowPrintPreview(true);
 
-        // Update the schedule sheet
         if (jobInfo.reqNo.trim()) {
             const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
             if (!isNaN(reqNoAsNumber)) {
@@ -317,7 +305,6 @@ export function Dashboard() {
             addLog('Loading manual dimulai', 'text-green-500');
         } else if (action === 'STOP' && isManualProcessRunning) {
             setIsManualProcessRunning(false);
-            setIsJobInfoLocked(false);
             finishAndPrintBatch();
             addLog('Loading manual selesai', 'text-primary');
         }
