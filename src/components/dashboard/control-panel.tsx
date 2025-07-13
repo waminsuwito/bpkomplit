@@ -68,7 +68,7 @@ export function ControlPanel({
     }
   }
 
-  const isStartDisabled = !powerOn || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning);
+  const isStartDisabled = !powerOn || jobInfo.targetVolume <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning);
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
   const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
 
