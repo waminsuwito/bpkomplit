@@ -11,8 +11,9 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { getScheduleSheetData, saveScheduleSheetData } from '@/lib/schedule';
-import type { ScheduleSheetRow, ScheduleStatus } from '@/lib/types';
+import type { ScheduleSheetRow, ScheduleStatus, JobMixFormula } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { getFormulas } from '@/lib/formula';
 
 
 const TOTAL_ROWS = 15;
@@ -53,11 +54,13 @@ const recalculateRow = (row: ScheduleSheetRow): ScheduleSheetRow => {
 
 export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) {
   const [data, setData] = useState<ScheduleSheetRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleSheetRow)));
+  const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
   const [date, setDate] = useState(format(new Date(), 'dd MMMM yyyy'));
   const { toast } = useToast();
 
   const loadDataFromStorage = () => {
     try {
+      setFormulas(getFormulas());
       const storedData = getScheduleSheetData();
       let fullData;
       if (storedData.length > 0) {
@@ -192,8 +195,8 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
        if (isOperatorView) {
          return (
             <div className={cn(
-                "w-full min-h-[40px] text-center flex items-center justify-center p-2 font-semibold",
-                currentStatus === 'Proses' && 'text-green-600'
+                "w-full min-h-[40px] text-center flex items-center justify-center p-2",
+                currentStatus === 'Proses' && 'font-bold text-green-600'
             )}>
                 {currentStatus}
             </div>
@@ -219,7 +222,26 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                 </SelectContent>
             </Select>
        );
-    } else {
+    } else if (key === 'mutuBeton' && !isOperatorView) {
+      return (
+        <Select
+          value={row.mutuBeton || ''}
+          onValueChange={(value) => handleInputChange(rowIndex, 'mutuBeton', value)}
+        >
+          <SelectTrigger className="w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0 uppercase">
+            <SelectValue placeholder="Pilih Mutu" />
+          </SelectTrigger>
+          <SelectContent>
+            {formulas.map((formula) => (
+              <SelectItem key={formula.id} value={formula.mutuBeton}>
+                {formula.mutuBeton}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    else {
         displayValue = row[key] ?? '';
     }
 
