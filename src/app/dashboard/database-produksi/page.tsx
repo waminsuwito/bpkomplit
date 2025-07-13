@@ -3,15 +3,18 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Database, ArrowLeft, Printer, Trash2, Search, Inbox } from 'lucide-react';
+import { ArrowLeft, Printer, Search, Inbox, CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { printElement } from '@/lib/utils';
+import { printElement, cn } from '@/lib/utils';
 import type { ProductionHistoryEntry } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+
 
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
 
@@ -19,6 +22,7 @@ export default function DatabaseProduksiPage() {
     const [history, setHistory] = useState<ProductionHistoryEntry[]>([]);
     const [filteredHistory, setFilteredHistory] = useState<ProductionHistoryEntry[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [date, setDate] = useState<Date | undefined>(undefined);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -29,7 +33,6 @@ export default function DatabaseProduksiPage() {
                 // Sort by most recent first
                 parsedHistory.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
                 setHistory(parsedHistory);
-                setFilteredHistory(parsedHistory);
             }
         } catch (error) {
             console.error("Failed to load production history:", error);
@@ -38,28 +41,31 @@ export default function DatabaseProduksiPage() {
     }, [toast]);
 
     useEffect(() => {
-        const lowercasedFilter = searchTerm.toLowerCase();
-        const filtered = history.filter(item =>
-            item.namaPelanggan.toLowerCase().includes(lowercasedFilter) ||
-            item.lokasiProyek.toLowerCase().includes(lowercasedFilter) ||
-            item.mutuBeton.toLowerCase().includes(lowercasedFilter) ||
-            item.noPolisi.toLowerCase().includes(lowercasedFilter) ||
-            item.namaSopir.toLowerCase().includes(lowercasedFilter)
-        );
-        setFilteredHistory(filtered);
-    }, [searchTerm, history]);
+        let filtered = history;
 
-    const handleDeleteAll = () => {
-        try {
-            localStorage.removeItem(PRODUCTION_HISTORY_KEY);
-            setHistory([]);
-            setFilteredHistory([]);
-            toast({ variant: 'destructive', title: 'Riwayat Dihapus', description: 'Semua data produksi telah dihapus.' });
-        } catch (error) {
-            console.error("Failed to delete production history:", error);
-            toast({ variant: 'destructive', title: 'Gagal Menghapus', description: 'Tidak dapat menghapus riwayat produksi.' });
+        // Filter by search term
+        if (searchTerm) {
+            const lowercasedFilter = searchTerm.toLowerCase();
+            filtered = filtered.filter(item =>
+                item.namaPelanggan.toLowerCase().includes(lowercasedFilter) ||
+                item.lokasiProyek.toLowerCase().includes(lowercasedFilter) ||
+                item.mutuBeton.toLowerCase().includes(lowercasedFilter) ||
+                item.noPolisi.toLowerCase().includes(lowercasedFilter) ||
+                item.namaSopir.toLowerCase().includes(lowercasedFilter)
+            );
         }
-    };
+        
+        // Filter by date
+        if (date) {
+            const selectedDateStr = format(date, 'yyyy-MM-dd');
+            filtered = filtered.filter(item => {
+                const itemDateStr = format(new Date(item.startTime), 'yyyy-MM-dd');
+                return itemDateStr === selectedDateStr;
+            });
+        }
+
+        setFilteredHistory(filtered);
+    }, [searchTerm, date, history]);
     
     return (
         <Card id="database-produksi-content">
@@ -81,46 +87,52 @@ export default function DatabaseProduksiPage() {
                                 Kembali
                             </Link>
                         </Button>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Hapus Semua
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Apakah Anda yakin ingin menghapus semua riwayat produksi? Tindakan ini tidak dapat dibatalkan.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteAll}>Ya, Hapus Semua</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
                          <Button onClick={() => printElement('database-produksi-content')}>
                             <Printer className="mr-2 h-4 w-4" /> Cetak
                         </Button>
                     </div>
                 </div>
-                 <div className="relative mt-4">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Cari berdasarkan pelanggan, lokasi, mutu, sopir..."
-                        className="pl-8 w-full"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                 <div className="flex flex-wrap gap-2 mt-4">
+                    <div className="relative flex-grow">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Cari berdasarkan pelanggan, lokasi, mutu, sopir..."
+                            className="pl-8 w-full"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                     <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={'outline'}
+                            className={cn(
+                            'w-[280px] justify-start text-left font-normal',
+                            !date && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, 'PPP') : <span>Pilih tanggal</span>}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    {date && <Button variant="ghost" onClick={() => setDate(undefined)}>Reset Tanggal</Button>}
                 </div>
             </CardHeader>
             <CardContent>
                 <div className="print-only text-center mb-4">
                     <h2 className="text-xl font-bold">Laporan Database Produksi</h2>
                     <p className="text-sm">Tanggal Cetak: {new Date().toLocaleDateString('id-ID')}</p>
+                    {date && <p className="text-sm">Filter Tanggal: {format(date, 'd MMMM yyyy')}</p>}
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <Table>
@@ -145,7 +157,7 @@ export default function DatabaseProduksiPage() {
                                         <TableCell>{item.lokasiProyek}</TableCell>
                                         <TableCell>{item.mutuBeton}</TableCell>
                                         <TableCell>{item.slump}</TableCell>
-                                        <TableCell>{item.targetVolume.toFixed(2)}</TableCell>
+                                        <TableCell>{Number(item.targetVolume).toFixed(2)}</TableCell>
                                         <TableCell>{item.noPolisi}</TableCell>
                                         <TableCell>{item.namaSopir}</TableCell>
                                     </TableRow>
@@ -156,7 +168,7 @@ export default function DatabaseProduksiPage() {
                                         <div className="flex flex-col items-center gap-2">
                                             <Inbox className="h-8 w-8"/>
                                             <span>
-                                                {history.length === 0 ? "Belum ada riwayat produksi." : "Tidak ada data yang cocok dengan pencarian Anda."}
+                                                {history.length === 0 ? "Belum ada riwayat produksi." : "Tidak ada data yang cocok dengan filter Anda."}
                                             </span>
                                         </div>
                                     </TableCell>
