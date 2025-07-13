@@ -12,6 +12,12 @@ interface PrintPreviewProps {
   onClose: () => void;
 }
 
+// Helper function to round to the nearest multiple
+const roundToNearest = (value: number, multiple: number) => {
+  return Math.round(value / multiple) * multiple;
+};
+
+
 export function PrintPreview({ data, onClose }: PrintPreviewProps) {
   
   if (!data || !data.startTime || !data.endTime) return null;
@@ -31,11 +37,21 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
   
   const totalTargetPasir = (targetWeights.pasir1 || 0) + (targetWeights.pasir2 || 0);
   const totalTargetBatu = (targetWeights.batu1 || 0) + (targetWeights.batu2 || 0);
-  const totalActualPasir = (actualWeights.pasir1 || 0) + (actualWeights.pasir2 || 0);
-  const totalActualBatu = (actualWeights.batu1 || 0) + (actualWeights.batu2 || 0);
   
+  // Apply rounding logic directly here for display
+  const totalActualPasir = roundToNearest((actualWeights.pasir1 || 0) + (actualWeights.pasir2 || 0), 5);
+  const totalActualBatu = roundToNearest((actualWeights.batu1 || 0) + (actualWeights.batu2 || 0), 5);
+  const actualSemen = roundToNearest(actualWeights.semen || 0, 1);
+  const actualAir = roundToNearest(actualWeights.air || 0, 1);
+
   const totalTarget = totalTargetPasir + totalTargetBatu + targetWeights.semen + targetWeights.air;
-  const totalActual = totalActualPasir + totalActualBatu + actualWeights.semen + actualWeights.air;
+  const totalActual = totalActualPasir + totalActualBatu + actualSemen + actualAir;
+
+  const deviasiPasir = totalActualPasir - totalTargetPasir;
+  const deviasiBatu = totalActualBatu - totalTargetBatu;
+  const deviasiSemen = actualSemen - targetWeights.semen;
+  const deviasiAir = actualAir - targetWeights.air;
+  const totalDeviasi = totalActual - totalTarget;
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
@@ -96,26 +112,26 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
                   <TableRow>
                     <TableCell className="border py-1">Pasir</TableCell>
                     <TableCell className="text-right border py-1 font-mono">{Math.round(totalTargetPasir)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualPasir)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualPasir - totalTargetPasir)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{totalActualPasir}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(deviasiPasir)}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="border py-1">Batu</TableCell>
                     <TableCell className="text-right border py-1 font-mono">{Math.round(totalTargetBatu)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualBatu)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActualBatu - totalTargetBatu)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{totalActualBatu}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(deviasiBatu)}</TableCell>
                   </TableRow>
                    <TableRow>
                     <TableCell className="border py-1">Semen</TableCell>
                     <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.semen)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.semen)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.semen - targetWeights.semen)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{actualSemen}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(deviasiSemen)}</TableCell>
                   </TableRow>
                    <TableRow>
                     <TableCell className="border py-1">Air</TableCell>
                     <TableCell className="text-right border py-1 font-mono">{Math.round(targetWeights.air)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.air)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(actualWeights.air - targetWeights.air)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{actualAir}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(deviasiAir)}</TableCell>
                   </TableRow>
                 </TableBody>
                 <TableFooter>
@@ -123,7 +139,7 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
                     <TableCell className="border py-1">Total</TableCell>
                     <TableCell className="text-right border py-1 font-mono">{Math.round(totalTarget)}</TableCell>
                     <TableCell className="text-right border py-1 font-mono">{Math.round(totalActual)}</TableCell>
-                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalActual - totalTarget)}</TableCell>
+                    <TableCell className="text-right border py-1 font-mono">{Math.round(totalDeviasi)}</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
