@@ -15,11 +15,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/context/auth-provider';
 
 
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
 
 export default function DatabaseProduksiPage() {
+    const { user } = useAuth();
     const [history, setHistory] = useState<ProductionHistoryEntry[]>([]);
     const [filteredHistory, setFilteredHistory] = useState<ProductionHistoryEntry[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -151,10 +153,11 @@ export default function DatabaseProduksiPage() {
             </CardHeader>
             <CardContent>
                 <div className="print-only text-center mb-4">
-                    <h2 className="text-xl font-bold">Laporan Database Produksi</h2>
-                    <p className="text-sm">Tanggal Cetak: {new Date().toLocaleDateString('id-ID')}</p>
-                    {filterType === 'today' && <p className="text-sm font-semibold">Menampilkan Data Hari Ini ({format(new Date(), 'd MMMM yyyy')})</p>}
-                    {filterType === 'all' && date && <p className="text-sm">Filter Tanggal: {format(date, 'd MMMM yyyy')}</p>}
+                    <h2 className="text-xl font-bold">LAPORAN PRODUKSI</h2>
+                    {user?.location && <p className="text-sm font-semibold">{user.location}</p>}
+                    <p className="text-xs text-muted-foreground">Tanggal Cetak: {new Date().toLocaleDateString('id-ID')}</p>
+                    {filterType === 'today' && <p className="text-xs">Menampilkan Data Hari Ini ({format(new Date(), 'd MMMM yyyy')})</p>}
+                    {filterType === 'all' && date && <p className="text-xs">Filter Tanggal: {format(date, 'd MMMM yyyy')}</p>}
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <Table>

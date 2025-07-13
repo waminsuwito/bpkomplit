@@ -19,7 +19,7 @@ export function printElement(elementId: string) {
     return;
   }
 
-  printWindow.document.write('<html><head><title>Print</title>');
+  printWindow.document.write('<html><head><title></title>');
 
   // Copy all style and link tags from the main document
   const styles = document.head.querySelectorAll('style, link[rel="stylesheet"]');
