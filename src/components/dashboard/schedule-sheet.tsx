@@ -182,7 +182,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
             </Button>
        );
     } else {
-        displayValue = row[key] || '';
+        displayValue = row[key] ?? '';
     }
 
     if (isOperatorView || isReadOnlyForAdmin) {
@@ -196,7 +196,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     return (
       <Textarea
         id={`${key}-${rowIndex}`}
-        value={row[key] || ''}
+        value={displayValue}
         onChange={e => handleInputChange(rowIndex, key, e.target.value)}
         onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
         className="w-full min-h-[40px] border-none rounded-none text-center bg-transparent text-black resize-none p-2"
