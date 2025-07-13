@@ -5,12 +5,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays, Save, CheckCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CalendarDays, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { getScheduleSheetData, saveScheduleSheetData, SCHEDULE_SHEET_STORAGE_KEY } from '@/lib/schedule';
-import type { ScheduleSheetRow } from '@/lib/types';
+import { getScheduleSheetData, saveScheduleSheetData } from '@/lib/schedule';
+import type { ScheduleSheetRow, ScheduleStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 
@@ -18,12 +19,13 @@ const TOTAL_ROWS = 15;
 
 const headers = [
     'NO', 'NO PO', 'NAMA', 'LOKASI', 'GRADE', 'SLUMP (CM)', 'CP/M',
-    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³', 'TOTAL M³', 'SELESAI'
+    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³', 'TOTAL M³', 'STATUS'
 ];
 const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 'mediaCor',
     'volume', 'terkirim', 'sisa', 'penambahanVol', 'totalVol', 'status'
 ];
+const statusOptions: ScheduleStatus[] = ['Proses', 'Selesai', 'Tunda', 'Batal'];
 
 const recalculateRow = (row: ScheduleSheetRow): ScheduleSheetRow => {
   const newRow = { ...row };
@@ -31,15 +33,17 @@ const recalculateRow = (row: ScheduleSheetRow): ScheduleSheetRow => {
   const terkirim = parseFloat(newRow.terkirim || '0');
   const penambahanVol = parseFloat(newRow.penambahanVol || '0');
 
-  if (!isNaN(volume) && !isNaN(terkirim)) {
-    newRow.sisa = (volume - terkirim).toFixed(2);
+  if (!isNaN(volume)) {
+     if (!isNaN(terkirim)) {
+       newRow.sisa = (volume - terkirim).toFixed(2);
+     }
+     if (!isNaN(penambahanVol)) {
+       newRow.totalVol = (volume + penambahanVol).toFixed(2);
+     } else {
+       newRow.totalVol = volume.toFixed(2);
+     }
   } else {
     newRow.sisa = '';
-  }
-
-  if (!isNaN(volume) && !isNaN(penambahanVol)) {
-    newRow.totalVol = (volume + penambahanVol).toFixed(2);
-  } else {
     newRow.totalVol = '';
   }
 
@@ -57,7 +61,6 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
       const storedData = getScheduleSheetData();
       let fullData;
       if (storedData.length > 0) {
-        // Recalculate each row upon loading
         const recalculatedData = storedData.map(recalculateRow);
         fullData = [...recalculatedData];
       } else {
@@ -78,7 +81,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     loadDataFromStorage();
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === SCHEDULE_SHEET_STORAGE_KEY) {
+      if (e.key === 'app-schedule-sheet-data') {
         loadDataFromStorage();
       }
     };
@@ -94,7 +97,6 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     setData(currentData => {
         const updatedData = [...currentData];
         const currentRow = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
-
         updatedData[rowIndex] = recalculateRow(currentRow);
         return updatedData;
     });
@@ -110,14 +112,11 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     }
   }
 
-  const handleStatusToggle = (rowIndex: number) => {
-    if (data[rowIndex].status === 'Selesai') return;
+  const handleStatusChange = (rowIndex: number, newStatus: ScheduleStatus) => {
     const updatedData = [...data];
-    if (updatedData[rowIndex].status !== 'Selesai') {
-        updatedData[rowIndex].status = 'Selesai';
-        setData(updatedData);
-    }
-  }
+    updatedData[rowIndex] = { ...updatedData[rowIndex], status: newStatus };
+    setData(updatedData);
+  };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, rowIndex: number, colIndex: number) => {
     const { key } = e;
@@ -158,6 +157,15 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         }
     }
   };
+  
+  const getStatusColorClass = (status: ScheduleStatus) => {
+      switch (status) {
+          case 'Selesai': return 'bg-green-100 hover:bg-green-200/50';
+          case 'Tunda': return 'bg-amber-100 hover:bg-amber-200/50';
+          case 'Batal': return 'bg-red-100 hover:bg-red-200/50';
+          default: return 'hover:bg-gray-100'; // Proses
+      }
+  };
 
   const renderCellContent = (row: ScheduleSheetRow, key: keyof ScheduleSheetRow, rowIndex: number, colIndex: number) => {
     const isReadOnlyForAdmin = !isOperatorView && ['terkirim', 'sisa', 'totalVol', 'status'].includes(key);
@@ -166,36 +174,34 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     const isScheduledRow = row.volume && row.volume.trim() !== '';
 
     if (key === 'terkirim') {
-        if (isScheduledRow && (!row.terkirim || row.terkirim.trim() === '')) {
-            displayValue = '0';
-        } else {
-            displayValue = row.terkirim ?? '';
-        }
+        displayValue = row.terkirim ?? '';
     } else if (key === 'penambahanVol') {
         displayValue = row.penambahanVol ?? '';
     }
     else if (key === 'status') {
        if (!isScheduledRow) return null;
        
+       const currentStatus = row.status || 'Proses';
+       
        if (isOperatorView) {
          return (
-            <div className={`w-full min-h-[40px] text-center flex items-center justify-center p-2 font-semibold ${row.status === 'Selesai' ? 'text-green-600' : 'text-amber-600'}`}>
-                {row.status || 'Proses'}
+            <div className={`w-full min-h-[40px] text-center flex items-center justify-center p-2 font-semibold`}>
+                {currentStatus}
             </div>
          );
        }
 
        return (
-            <Button 
-                size="sm" 
-                variant={row.status === 'Selesai' ? 'default' : 'secondary'} 
-                className={cn('w-full h-full rounded-none', row.status === 'Selesai' && 'bg-green-600 hover:bg-green-700')}
-                onClick={() => handleStatusToggle(rowIndex)}
-                disabled={row.status === 'Selesai'}
-            >
-                {row.status === 'Selesai' && <CheckCircle className="mr-2 h-4 w-4" />}
-                {row.status === 'Selesai' ? 'Selesai' : 'Tandai Selesai'}
-            </Button>
+            <Select value={currentStatus} onValueChange={(value: ScheduleStatus) => handleStatusChange(rowIndex, value)}>
+                <SelectTrigger className="w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {statusOptions.map(option => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
        );
     } else {
         displayValue = row[key] ?? '';
@@ -256,8 +262,8 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                             <TableRow 
                                 key={`row-${rowIndex}`} 
                                 className={cn(
-                                    "[&_td]:p-0 hover:bg-gray-100",
-                                    row.status === 'Selesai' && 'bg-green-100 hover:bg-green-200/50'
+                                    "[&_td]:p-0",
+                                    getStatusColorClass(row.status || 'Proses')
                                 )}
                             >
                                 {fieldKeys.map((key, colIndex) => (

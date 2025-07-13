@@ -233,6 +233,8 @@ export interface TruckChecklistReport {
   items: TruckChecklistItem[];
 }
 
+export type ScheduleStatus = 'Proses' | 'Selesai' | 'Tunda' | 'Batal';
+
 export type ScheduleSheetRow = {
   no: string;
   noPo: string;
@@ -246,5 +248,5 @@ export type ScheduleSheetRow = {
   sisa: string;
   penambahanVol: string;
   totalVol: string;
-  status: 'Selesai' | 'Proses';
+  status: ScheduleStatus;
 };
