@@ -19,8 +19,8 @@ import { getFormulas } from '@/lib/formula';
 const TOTAL_ROWS = 15;
 
 const headers = [
-    'NO', 'NO PO', 'NAMA', 'LOKASI', 'GRADE', 'SLUMP (CM)', 'CP/M',
-    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³', 'TOTAL M³', 'STATUS'
+    'NO', 'NO P.O', 'NAMA', 'LOKASI', 'GRADE', 'SLUMP (CM)', 'CP/M',
+    'VOL M³', 'TERKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³', 'TOTAL M³', 'STATUS'
 ];
 const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 'mediaCor',
@@ -36,6 +36,8 @@ const recalculateRow = (row: ScheduleSheetRow): ScheduleSheetRow => {
     newRow.sisa = '';
     newRow.totalVol = '';
     newRow.status = undefined; // Reset status as well
+    newRow.terkirim = '';
+    newRow.penambahanVol = '';
     return newRow;
   }
 
