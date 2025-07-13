@@ -25,15 +25,18 @@ const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
         'hse_hrd_lokasi': '/admin/absensi-karyawan-hari-ini'
     };
     
-    if (roleRedirects[user.role]) {
+    if (user.role && roleRedirects[user.role]) {
         return roleRedirects[user.role]!;
     }
     
-    if (user.role.startsWith('karyawan') || user.role === 'operator') {
+    // Fallback for any other 'karyawan' or 'operator' type role
+    if (user.role?.startsWith('karyawan') || user.role === 'operator') {
         return '/karyawan/absensi-harian';
     }
 
-    return '/'; // Default fallback
+    // A safe default fallback to prevent infinite loops.
+    // If a user is logged in but has no specific route, send them here.
+    return '/karyawan/absensi-harian';
 };
 
 
