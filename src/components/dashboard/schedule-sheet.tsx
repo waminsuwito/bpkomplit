@@ -174,15 +174,14 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     let displayValue;
     const isScheduledRow = row.volume && row.volume.trim() !== '';
 
-    if (key === 'terkirim') {
-        displayValue = row.terkirim ?? '';
-    } else if (key === 'penambahanVol') {
-        displayValue = row.penambahanVol ?? '';
+    if (key === 'penambahanVol') {
+        displayValue = row.penambahanVol; // Show even if it is an empty string
     }
     else if (key === 'status') {
        if (!isScheduledRow) return null;
        
        const currentStatus = row.status || 'Menunggu';
+       const isFinalStatus = currentStatus === 'Selesai' || currentStatus === 'Batal';
        
        if (isOperatorView) {
          return (
@@ -193,7 +192,11 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
        }
 
        return (
-            <Select value={currentStatus} onValueChange={(value: ScheduleStatus) => handleStatusChange(rowIndex, value)}>
+            <Select 
+                value={currentStatus} 
+                onValueChange={(value: ScheduleStatus) => handleStatusChange(rowIndex, value)}
+                disabled={isFinalStatus}
+            >
                 <SelectTrigger className="w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0">
                     <SelectValue />
                 </SelectTrigger>
