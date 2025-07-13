@@ -139,13 +139,12 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    // This effect should only depend on the raw inputs, not the state it sets.
     if (!jobInfo.reqNo.trim()) {
-      // If reqNo is cleared, unlock the form for manual entry.
       if (isJobInfoLocked) {
         setJobInfo(prev => ({
           ...initialJobInfo,
-          targetVolume: prev.targetVolume, // Keep manually entered volume
+          reqNo: '',
+          targetVolume: prev.targetVolume,
           jumlahMixing: prev.jumlahMixing,
         }));
         setIsJobInfoLocked(false);
@@ -154,13 +153,16 @@ export function Dashboard() {
     }
 
     const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
-    if (isNaN(reqNoAsNumber)) return;
+    if (isNaN(reqNoAsNumber)) {
+      if (isJobInfoLocked) setIsJobInfoLocked(false);
+      return;
+    }
 
     const matchingSchedule = scheduleData.find(row => parseInt(row.no, 10) === reqNoAsNumber);
 
     if (matchingSchedule) {
       const matchingFormula = formulas.find(f => f.mutuBeton === matchingSchedule.mutuBeton);
-
+      
       setJobInfo(prev => ({
         ...prev,
         selectedFormulaId: matchingFormula ? matchingFormula.id : '',
@@ -168,23 +170,22 @@ export function Dashboard() {
         lokasiProyek: matchingSchedule.lokasi || '',
         slump: parseFloat(matchingSchedule.slump) || prev.slump,
         mediaCor: matchingSchedule.mediaCor || '',
-        // Do not update targetVolume here
+        // targetVolume is NOT set automatically
       }));
       setIsJobInfoLocked(true);
       toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
     } else {
-      // If no match is found, ensure the form is unlocked
       if (isJobInfoLocked) {
-        setJobInfo(prev => ({
+         setJobInfo(prev => ({
           ...initialJobInfo,
-          reqNo: prev.reqNo, // Keep the entered reqNo
+          reqNo: prev.reqNo,
           targetVolume: prev.targetVolume,
           jumlahMixing: prev.jumlahMixing,
         }));
         setIsJobInfoLocked(false);
       }
     }
-  }, [jobInfo.reqNo, scheduleData, formulas, toast]); // Dependency array is crucial
+  }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast]);
 
 
   useEffect(() => {
@@ -239,13 +240,21 @@ export function Dashboard() {
             return;
         }
 
-        const simulationWeights = {
-            pasir1: generateSimulatedWeight(currentTargetWeights.pasir1, 'aggregate'),
-            pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 'aggregate'),
-            batu1: generateSimulatedWeight(currentTargetWeights.batu1, 'aggregate'),
-            batu2: generateSimulatedWeight(currentTargetWeights.batu2, 'aggregate'),
-            air: generateSimulatedWeight(airWeight, 'cement_water'),
-            semen: generateSimulatedWeight(semenWeight, 'cement_water'),
+        const totalTargetAggregate = currentTargetWeights.pasir1 + currentTargetWeights.pasir2 + currentTargetWeights.batu1 + currentTargetWeights.batu2;
+        
+        // Distribute the final aggregate weight back to individual components based on their target proportions
+        const actualPasir1 = totalTargetAggregate > 0 ? (currentTargetWeights.pasir1 / totalTargetAggregate) * aggregateWeight : 0;
+        const actualPasir2 = totalTargetAggregate > 0 ? (currentTargetWeights.pasir2 / totalTargetAggregate) * aggregateWeight : 0;
+        const actualBatu1 = totalTargetAggregate > 0 ? (currentTargetWeights.batu1 / totalTargetAggregate) * aggregateWeight : 0;
+        const actualBatu2 = totalTargetAggregate > 0 ? (currentTargetWeights.batu2 / totalTargetAggregate) * aggregateWeight : 0;
+
+        const finalActualWeights = {
+            pasir1: actualPasir1,
+            pasir2: actualPasir2,
+            batu1: actualBatu1,
+            batu2: actualBatu2,
+            air: airWeight,
+            semen: semenWeight,
         };
 
         const finalData = {
@@ -255,7 +264,7 @@ export function Dashboard() {
             startTime: batchStartTime,
             endTime: new Date(),
             targetWeights: currentTargetWeights,
-            actualWeights: simulationWeights
+            actualWeights: finalActualWeights
         };
         
         setCompletedBatchData(finalData);
