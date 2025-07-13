@@ -67,22 +67,25 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   const handleInputChange = (rowIndex: number, key: keyof ScheduleSheetRow, value: string) => {
     const updatedData = [...data];
     updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
-    
-    // Auto-calculate 'sisa' and 'total'
-    const volume = parseFloat(updatedData[rowIndex].volume || '0');
-    const terkirim = parseFloat(updatedData[rowIndex].terkirim || '0');
-    
-    if (!isNaN(volume) && !isNaN(terkirim)) {
-        updatedData[rowIndex].sisa = (volume - terkirim).toFixed(2);
+
+    const currentRow = updatedData[rowIndex];
+
+    // Ensure 'penambahanVol' is '0' if 'volume' is filled and 'penambahanVol' is empty
+    if (key === 'volume' && value.trim() !== '' && (!currentRow.penambahanVol || currentRow.penambahanVol.trim() === '')) {
+      currentRow.penambahanVol = '0';
     }
 
-    if (key === 'volume' && (!updatedData[rowIndex].penambahanVol || updatedData[rowIndex].penambahanVol.trim() === '')) {
-      updatedData[rowIndex].penambahanVol = '0';
+    // Auto-calculate based on the latest data in the row
+    const volume = parseFloat(currentRow.volume || '0');
+    const terkirim = parseFloat(currentRow.terkirim || '0');
+    const penambahanVol = parseFloat(currentRow.penambahanVol || '0');
+    
+    if (!isNaN(volume) && !isNaN(terkirim)) {
+        currentRow.sisa = (volume - terkirim).toFixed(2);
     }
     
-    const penambahanVol = parseFloat(updatedData[rowIndex].penambahanVol || '0');
     if (!isNaN(volume) && !isNaN(penambahanVol)) {
-      updatedData[rowIndex].totalVol = (volume + penambahanVol).toFixed(2);
+      currentRow.totalVol = (volume + penambahanVol).toFixed(2);
     }
 
     setData(updatedData);
@@ -99,6 +102,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   }
 
   const handleStatusToggle = (rowIndex: number) => {
+    if (data[rowIndex].status === 'Selesai') return;
     const updatedData = [...data];
     if (updatedData[rowIndex].status !== 'Selesai') {
         updatedData[rowIndex].status = 'Selesai';
@@ -156,9 +160,12 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         if (isScheduledRow && (!row.terkirim || row.terkirim.trim() === '')) {
             displayValue = '0';
         } else {
-            displayValue = row.terkirim || '';
+            displayValue = row.terkirim ?? '';
         }
-    } else if (key === 'status') {
+    } else if (key === 'penambahanVol') {
+        displayValue = row.penambahanVol ?? '';
+    }
+    else if (key === 'status') {
        if (!isScheduledRow) return null;
        
        if (isOperatorView) {
