@@ -118,9 +118,18 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     const isReadOnlyForAdmin = !isOperatorView && (key === 'terkirim' || key === 'sisa');
     
     let displayValue = row[key] || '';
-    if (key === 'terkirim' && (!row[key] || row[key].trim() === '')) {
-      displayValue = '0';
+    
+    // If the row is a valid schedule (e.g., has volume) and 'terkirim' is empty, show '0'.
+    // Otherwise, show the value or an empty string.
+    if (key === 'terkirim') {
+        const isScheduledRow = row.volume && row.volume.trim() !== '';
+        if (isScheduledRow && (!row.terkirim || row.terkirim.trim() === '')) {
+            displayValue = '0';
+        } else {
+            displayValue = row.terkirim || '';
+        }
     }
+
 
     if (isOperatorView || isReadOnlyForAdmin) {
       return (
