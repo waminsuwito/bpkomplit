@@ -64,7 +64,7 @@ export default function LoginPage() {
     try {
       const loggedInUser = await verifyLogin(username, password);
       if (loggedInUser) {
-        toast({ title: 'Login Successful', description: `Welcome, ${loggedInUser.username}!` });
+        toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
         login(loggedInUser); // login now handles the redirect
       } else {
         const errorMessage = 'Username, NIK, atau password salah.';
