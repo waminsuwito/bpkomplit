@@ -14,6 +14,7 @@ import type { ProductionHistoryEntry } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
@@ -23,6 +24,7 @@ export default function DatabaseProduksiPage() {
     const [filteredHistory, setFilteredHistory] = useState<ProductionHistoryEntry[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [date, setDate] = useState<Date | undefined>(undefined);
+    const [filterType, setFilterType] = useState<'today' | 'all'>('today');
     const { toast } = useToast();
 
     useEffect(() => {
@@ -43,6 +45,15 @@ export default function DatabaseProduksiPage() {
     useEffect(() => {
         let filtered = history;
 
+        // Filter by view type (today or all)
+        if (filterType === 'today') {
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+            filtered = filtered.filter(item => {
+                const itemDateStr = format(new Date(item.startTime), 'yyyy-MM-dd');
+                return itemDateStr === todayStr;
+            });
+        }
+        
         // Filter by search term
         if (searchTerm) {
             const lowercasedFilter = searchTerm.toLowerCase();
@@ -55,8 +66,8 @@ export default function DatabaseProduksiPage() {
             );
         }
         
-        // Filter by date
-        if (date) {
+        // Filter by date (only if filterType is 'all')
+        if (filterType === 'all' && date) {
             const selectedDateStr = format(date, 'yyyy-MM-dd');
             filtered = filtered.filter(item => {
                 const itemDateStr = format(new Date(item.startTime), 'yyyy-MM-dd');
@@ -65,7 +76,7 @@ export default function DatabaseProduksiPage() {
         }
 
         setFilteredHistory(filtered);
-    }, [searchTerm, date, history]);
+    }, [searchTerm, date, history, filterType]);
     
     return (
         <Card id="database-produksi-content">
@@ -103,36 +114,47 @@ export default function DatabaseProduksiPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                     <Popover>
-                        <PopoverTrigger asChild>
-                        <Button
-                            variant={'outline'}
-                            className={cn(
-                            'w-[280px] justify-start text-left font-normal',
-                            !date && 'text-muted-foreground'
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(date, 'PPP') : <span>Cari berdasarkan tanggal</span>}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            initialFocus
-                        />
-                        </PopoverContent>
-                    </Popover>
-                    {date && <Button variant="ghost" onClick={() => setDate(undefined)}>Reset Tanggal</Button>}
+                    <Tabs value={filterType} onValueChange={(value) => setFilterType(value as 'today' | 'all')}>
+                        <TabsList>
+                            <TabsTrigger value="today">Data Hari Ini</TabsTrigger>
+                            <TabsTrigger value="all">Semua Data</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    {filterType === 'all' && (
+                        <>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    variant={'outline'}
+                                    className={cn(
+                                    'w-[280px] justify-start text-left font-normal',
+                                    !date && 'text-muted-foreground'
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, 'PPP') : <span>Cari berdasarkan tanggal</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={setDate}
+                                    initialFocus
+                                />
+                                </PopoverContent>
+                            </Popover>
+                            {date && <Button variant="ghost" onClick={() => setDate(undefined)}>Reset Tanggal</Button>}
+                        </>
+                    )}
                 </div>
             </CardHeader>
             <CardContent>
                 <div className="print-only text-center mb-4">
                     <h2 className="text-xl font-bold">Laporan Database Produksi</h2>
                     <p className="text-sm">Tanggal Cetak: {new Date().toLocaleDateString('id-ID')}</p>
-                    {date && <p className="text-sm">Filter Tanggal: {format(date, 'd MMMM yyyy')}</p>}
+                    {filterType === 'today' && <p className="text-sm font-semibold">Menampilkan Data Hari Ini ({format(new Date(), 'd MMMM yyyy')})</p>}
+                    {filterType === 'all' && date && <p className="text-sm">Filter Tanggal: {format(date, 'd MMMM yyyy')}</p>}
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <Table>
