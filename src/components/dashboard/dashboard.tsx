@@ -75,6 +75,7 @@ export function Dashboard() {
   
   const [jobInfo, setJobInfo] = useState(initialJobInfo);
   const [isJobInfoLocked, setIsJobInfoLocked] = useState(false);
+  const [volumeWarning, setVolumeWarning] = useState('');
 
 
   const [mixingProcessConfig, setMixingProcessConfig] = useState<MixingProcessConfig>(defaultMixingProcess);
@@ -182,6 +183,33 @@ export function Dashboard() {
       }
     }
   }, [jobInfo.reqNo, scheduleData, formulas]);
+
+  useEffect(() => {
+    if (isJobInfoLocked && jobInfo.reqNo) {
+      const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
+      const matchingSchedule = scheduleData.find(row => parseInt(row.no, 10) === reqNoAsNumber);
+  
+      if (matchingSchedule) {
+        const scheduledVolume = parseFloat(matchingSchedule.volume) || 0;
+        const alreadySentVolume = parseFloat(matchingSchedule.terkirim) || 0;
+        const remainingVolume = scheduledVolume - alreadySentVolume;
+  
+        if (jobInfo.targetVolume > remainingVolume && remainingVolume > 0) {
+          setVolumeWarning(`Volume melebihi sisa schedule (${remainingVolume.toFixed(2)} M³).`);
+        } else if (remainingVolume <= 0 && scheduledVolume > 0) {
+          setVolumeWarning(`Schedule untuk REQ NO ${jobInfo.reqNo} sudah terpenuhi.`);
+        }
+        else {
+          setVolumeWarning('');
+        }
+      } else {
+        setVolumeWarning('');
+      }
+    } else {
+      // If not locked to a schedule, there's no limit from schedule.
+      setVolumeWarning('');
+    }
+  }, [jobInfo.targetVolume, jobInfo.reqNo, isJobInfoLocked, scheduleData]);
 
 
   useEffect(() => {
@@ -373,6 +401,7 @@ export function Dashboard() {
                 setJobInfo={setJobInfo}
                 isManualProcessRunning={isManualProcessRunning}
                 isJobInfoLocked={isJobInfoLocked}
+                volumeWarning={volumeWarning}
               />
             </div>
             <div className="col-span-3">

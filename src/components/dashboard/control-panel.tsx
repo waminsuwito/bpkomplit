@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -32,6 +33,7 @@ interface ControlPanelProps {
   setJobInfo: (info: React.SetStateAction<ControlPanelProps['jobInfo']>) => void;
   isManualProcessRunning: boolean;
   isJobInfoLocked: boolean;
+  volumeWarning: string;
 }
 
 export function ControlPanel({
@@ -45,6 +47,7 @@ export function ControlPanel({
   setJobInfo,
   isManualProcessRunning,
   isJobInfoLocked,
+  volumeWarning
 }: ControlPanelProps) {
 
   const [mixWarning, setMixWarning] = useState('');
@@ -68,7 +71,7 @@ export function ControlPanel({
     }
   }
 
-  const isStartDisabled = !powerOn || jobInfo.targetVolume <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning);
+  const isStartDisabled = !powerOn || jobInfo.targetVolume <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning;
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
   const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
 
@@ -142,8 +145,14 @@ export function ControlPanel({
                 onChange={(e) => handleJobInfoChange('targetVolume', Number(e.target.value))}
                 min="0"
                 step="0.1"
-                disabled={!powerOn} 
+                disabled={!powerOn || isJobInfoLocked} 
             />
+             {volumeWarning && (
+                <div className="text-xs text-destructive mt-1 flex items-center gap-1 p-2 bg-destructive/10 rounded-md">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>{volumeWarning}</span>
+                </div>
+             )}
           </div>
            <div>
             <Label htmlFor="jumlah-mixing" className="text-xs text-muted-foreground">JUMLAH MIXING</Label>
@@ -156,7 +165,7 @@ export function ControlPanel({
                 disabled={!powerOn} 
             />
              <p className="text-xs text-muted-foreground mt-1">Kapasitas mixer: 3.5 M³ per mix</p>
-             {mixWarning && (
+             {mixWarning && !volumeWarning && (
                 <div className="text-xs text-destructive mt-1 flex items-center gap-1 p-2 bg-destructive/10 rounded-md">
                     <AlertTriangle className="h-4 w-4" />
                     <span>{mixWarning}</span>
