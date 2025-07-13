@@ -65,30 +65,37 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   }, []);
 
   const handleInputChange = (rowIndex: number, key: keyof ScheduleSheetRow, value: string) => {
-    const updatedData = [...data];
-    updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
+    setData(currentData => {
+        const updatedData = [...currentData];
+        const currentRow = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
 
-    const currentRow = updatedData[rowIndex];
+        // Ensure 'penambahanVol' is '0' if 'volume' is filled and 'penambahanVol' is empty
+        if (key === 'volume' && value.trim() !== '' && (!currentRow.penambahanVol || currentRow.penambahanVol.trim() === '')) {
+            currentRow.penambahanVol = '0';
+        }
 
-    // Ensure 'penambahanVol' is '0' if 'volume' is filled and 'penambahanVol' is empty
-    if (key === 'volume' && value.trim() !== '' && (!currentRow.penambahanVol || currentRow.penambahanVol.trim() === '')) {
-      currentRow.penambahanVol = '0';
-    }
-
-    // Auto-calculate based on the latest data in the row
-    const volume = parseFloat(currentRow.volume || '0');
-    const terkirim = parseFloat(currentRow.terkirim || '0');
-    const penambahanVol = parseFloat(currentRow.penambahanVol || '0');
-    
-    if (!isNaN(volume) && !isNaN(terkirim)) {
-        currentRow.sisa = (volume - terkirim).toFixed(2);
-    }
-    
-    if (!isNaN(volume) && !isNaN(penambahanVol)) {
-      currentRow.totalVol = (volume + penambahanVol).toFixed(2);
-    }
-
-    setData(updatedData);
+        // Auto-calculate based on the latest data in the row
+        const volume = parseFloat(currentRow.volume || '0');
+        const terkirim = parseFloat(currentRow.terkirim || '0');
+        const penambahanVol = parseFloat(currentRow.penambahanVol || '0');
+        
+        if (!isNaN(volume) && !isNaN(terkirim)) {
+            currentRow.sisa = (volume - terkirim).toFixed(2);
+        } else {
+            // Clear sisa if inputs are not valid numbers
+            currentRow.sisa = '';
+        }
+        
+        if (!isNaN(volume) && !isNaN(penambahanVol)) {
+            currentRow.totalVol = (volume + penambahanVol).toFixed(2);
+        } else {
+            // Clear totalVol if inputs are not valid numbers
+            currentRow.totalVol = '';
+        }
+        
+        updatedData[rowIndex] = currentRow;
+        return updatedData;
+    });
   };
   
   const handleSave = () => {
