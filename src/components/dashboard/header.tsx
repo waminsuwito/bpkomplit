@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer } from 'lucide-react';
+import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,6 +92,12 @@ export function Header() {
                          <Link href="/dashboard/printer-settings">
                             <Printer className="mr-2 h-4 w-4" />
                             Pengaturan Printer
+                         </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                         <Link href="/dashboard/database-produksi">
+                            <Database className="mr-2 h-4 w-4" />
+                            Database Produksi
                          </Link>
                       </DropdownMenuItem>
                     <DropdownMenuSeparator />
