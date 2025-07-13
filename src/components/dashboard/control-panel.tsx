@@ -146,7 +146,7 @@ export function ControlPanel({
                 onChange={(e) => handleJobInfoChange('targetVolume', e.target.value === '' ? '' : Number(e.target.value))}
                 min="0"
                 step="0.1"
-                disabled={!powerOn || isJobInfoLocked} 
+                disabled={!powerOn}
                 placeholder="0.0"
             />
              {volumeWarning && (
