@@ -10,10 +10,8 @@ import { CalendarDays, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { getScheduleSheetData, saveScheduleSheetData } from '@/lib/schedule';
+import { getScheduleSheetData, saveScheduleSheetData, SCHEDULE_SHEET_STORAGE_KEY } from '@/lib/schedule';
 import type { ScheduleSheetRow } from '@/lib/types';
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
 
 
 const TOTAL_ROWS = 15;
@@ -32,10 +30,8 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   const [data, setData] = useState<ScheduleSheetRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleSheetRow)));
   const [date, setDate] = useState(format(new Date(), 'dd MMMM yyyy'));
   const { toast } = useToast();
-  const [requestNo, setRequestNo] = useState('');
-  const [requestVol, setRequestVol] = useState('');
 
-  useEffect(() => {
+  const loadDataFromStorage = () => {
     try {
       const storedData = getScheduleSheetData();
       if (storedData.length > 0) {
@@ -44,15 +40,43 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
             fullData.push({} as ScheduleSheetRow);
         }
         setData(fullData);
+      } else {
+         setData(Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleSheetRow)));
       }
     } catch (error) {
         console.error("Failed to load schedule sheet data", error);
     }
+  };
+
+  useEffect(() => {
+    loadDataFromStorage();
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === SCHEDULE_SHEET_STORAGE_KEY) {
+        loadDataFromStorage();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const handleInputChange = (rowIndex: number, key: keyof ScheduleSheetRow, value: string) => {
     const updatedData = [...data];
     updatedData[rowIndex] = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
+    
+    // Auto-calculate 'sisa'
+    if (key === 'volume' || key === 'terkirim') {
+        const volume = parseFloat(updatedData[rowIndex].volume || '0');
+        const terkirim = parseFloat(updatedData[rowIndex].terkirim || '0');
+        if (!isNaN(volume) && !isNaN(terkirim)) {
+            updatedData[rowIndex].sisa = (volume - terkirim).toFixed(2);
+        }
+    }
+
     setData(updatedData);
   };
   
@@ -66,14 +90,6 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     }
   }
   
-  const handleOperatorSave = () => {
-    // Logic for operator saving Request No and Vol
-    toast({
-        title: 'Tersimpan (Operator)',
-        description: `Request No: ${requestNo}, Vol: ${requestVol} M³`
-    });
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, rowIndex: number, colIndex: number) => {
     const { key } = e;
     let nextRowIndex = rowIndex;
@@ -117,10 +133,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   const renderCellContent = (row: ScheduleSheetRow, key: keyof ScheduleSheetRow, rowIndex: number, colIndex: number) => {
     const isReadOnlyForAdmin = !isOperatorView && (key === 'terkirim' || key === 'sisa');
     
-    let displayValue = row[key] || '';
-    
-    // If the row is a valid schedule (e.g., has volume) and 'terkirim' is empty, show '0'.
-    // Otherwise, show the value or an empty string.
+    let displayValue;
     if (key === 'terkirim') {
         const isScheduledRow = row.volume && row.volume.trim() !== '';
         if (isScheduledRow && (!row.terkirim || row.terkirim.trim() === '')) {
@@ -128,6 +141,8 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         } else {
             displayValue = row.terkirim || '';
         }
+    } else {
+        displayValue = row[key] || '';
     }
 
 

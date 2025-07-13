@@ -3,7 +3,7 @@
 import type { Schedule, ScheduleSheetRow } from '@/lib/types';
 
 const SCHEDULES_STORAGE_KEY = 'app-schedules';
-const SCHEDULE_SHEET_STORAGE_KEY = 'app-schedule-sheet-data';
+export const SCHEDULE_SHEET_STORAGE_KEY = 'app-schedule-sheet-data';
 
 
 // For the form-based schedule on the /admin/schedule-cor page
