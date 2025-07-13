@@ -9,7 +9,7 @@ import { StatusPanel, type TimerDisplayState } from './status-panel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PrintPreview } from './print-preview';
 import { ScheduleSheet } from './schedule-sheet';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess, MIXER_TIMER_CONFIG_KEY, defaultMixerTimerConfig } from '@/lib/config';
 import type { MixingProcessConfig, MixerTimerConfig } from '@/lib/config';
 import { useAuth } from '@/context/auth-provider';
@@ -450,7 +450,13 @@ export function Dashboard() {
           </div>
           
           <Sheet open={showPrintPreview} onOpenChange={setShowPrintPreview}>
-            <SheetContent className="w-full sm:max-w-4xl p-0">
+            <SheetContent className="w-full sm:max-w-4xl p-0 flex flex-col">
+                <SheetHeader className="p-6 bg-background border-b">
+                    <SheetTitle>Print Preview</SheetTitle>
+                    <SheetDescription>
+                    Review the batch details below. Use the print button to get a physical copy.
+                    </SheetDescription>
+                </SheetHeader>
                 <PrintPreview 
                     data={completedBatchData}
                     onClose={() => setShowPrintPreview(false)} 
@@ -468,4 +474,3 @@ export function Dashboard() {
     </div>
   );
 }
-

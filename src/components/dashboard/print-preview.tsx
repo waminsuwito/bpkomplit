@@ -2,7 +2,6 @@
 'use client';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import Image from 'next/image';
 import { printElement } from '@/lib/utils';
 
@@ -55,13 +54,6 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
-      <SheetHeader className="p-6 bg-background border-b no-print">
-        <SheetTitle>Print Preview</SheetTitle>
-        <SheetDescription>
-          Review the batch details below. Use the print button to get a physical copy.
-        </SheetDescription>
-      </SheetHeader>
-      
       <div className="flex-grow overflow-y-auto p-4">
         <div id="print-preview-content" className="bg-white text-black p-8 rounded-md shadow-lg max-w-2xl mx-auto font-sans">
           <header className="flex items-center justify-between border-b-2 border-black pb-4">
