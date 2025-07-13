@@ -161,60 +161,52 @@ export function Dashboard() {
     const matchingSchedule = scheduleData.find(row => parseInt(row.no, 10) === reqNoAsNumber);
 
     if (matchingSchedule) {
-      if (matchingSchedule.status === 'Menunggu' || !matchingSchedule.status) {
-        const warningMsg = 'Jadwal ini masih menunggu, belum diijinkan untuk loading.';
-        setScheduleStatusWarning(warningMsg);
-        toast({
-          variant: 'destructive',
-          title: 'Jadwal Ditahan',
-          description: warningMsg,
-        });
-        if (isJobInfoLocked) {
-          setIsJobInfoLocked(false);
-        }
-        return;
-      }
+        const currentStatus = matchingSchedule.status || 'Menunggu';
+        let warningMsg = '';
 
-      if (matchingSchedule.status === 'Selesai' || matchingSchedule.status === 'Batal') {
-        const warningMsg = `Jadwal ini sudah berstatus "${matchingSchedule.status}".`;
-        setScheduleStatusWarning(warningMsg);
-        toast({
-          variant: 'destructive',
-          title: 'Jadwal Tidak Aktif',
-          description: warningMsg,
-        });
-        if (isJobInfoLocked) {
-          setIsJobInfoLocked(false);
+        if (currentStatus === 'Menunggu') {
+            warningMsg = 'Jadwal ini masih menunggu, belum diijinkan untuk loading.';
+        } else if (currentStatus === 'Selesai' || currentStatus === 'Batal') {
+            warningMsg = `Jadwal ini sudah berstatus "${currentStatus}".`;
+        } else if (currentStatus === 'Tunda') {
+            warningMsg = 'Jadwal ini sedang ditunda.';
         }
-        return;
-      }
-      
-      setScheduleStatusWarning('');
-      const matchingFormula = formulas.find(f => f.mutuBeton === matchingSchedule.mutuBeton);
-      
-      setJobInfo(prev => ({
-        ...prev,
-        selectedFormulaId: matchingFormula ? matchingFormula.id : '',
-        namaPelanggan: matchingSchedule.nama || '',
-        lokasiProyek: matchingSchedule.lokasi || '',
-        slump: parseFloat(matchingSchedule.slump) || prev.slump,
-        mediaCor: matchingSchedule.mediaCor || '',
-      }));
-      setIsJobInfoLocked(true);
-      if (!isJobInfoLocked) { // Only toast on initial lock-in
-        toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
-      }
-    } else {
-      setScheduleStatusWarning('');
-      if (isJobInfoLocked) {
-         setJobInfo(prev => ({
-          ...initialJobInfo,
-          reqNo: prev.reqNo,
-          targetVolume: prev.targetVolume,
-          jumlahMixing: prev.jumlahMixing,
+
+        if (warningMsg) {
+            setScheduleStatusWarning(warningMsg);
+            toast({ variant: 'destructive', title: 'Jadwal Tidak Bisa Diproses', description: warningMsg });
+            if (isJobInfoLocked) setIsJobInfoLocked(false);
+            return;
+        }
+
+        // If status is 'Proses'
+        setScheduleStatusWarning('');
+        const matchingFormula = formulas.find(f => f.mutuBeton === matchingSchedule.mutuBeton);
+        
+        setJobInfo(prev => ({
+            ...prev,
+            selectedFormulaId: matchingFormula ? matchingFormula.id : '',
+            namaPelanggan: matchingSchedule.nama || '',
+            lokasiProyek: matchingSchedule.lokasi || '',
+            slump: parseFloat(matchingSchedule.slump) || prev.slump,
+            mediaCor: matchingSchedule.mediaCor || '',
         }));
-        setIsJobInfoLocked(false);
-      }
+        
+        if (!isJobInfoLocked) {
+            setIsJobInfoLocked(true);
+            toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
+        }
+    } else {
+        setScheduleStatusWarning('');
+        if (isJobInfoLocked) {
+            setJobInfo(prev => ({
+                ...initialJobInfo,
+                reqNo: prev.reqNo,
+                targetVolume: prev.targetVolume,
+                jumlahMixing: prev.jumlahMixing,
+            }));
+            setIsJobInfoLocked(false);
+        }
     }
   }, [jobInfo.reqNo, scheduleData, formulas, isJobInfoLocked, toast]);
 
