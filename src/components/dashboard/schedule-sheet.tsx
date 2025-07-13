@@ -30,24 +30,22 @@ const statusOptions: ScheduleStatus[] = ['Menunggu', 'Proses', 'Selesai', 'Tunda
 
 const recalculateRow = (row: ScheduleSheetRow): ScheduleSheetRow => {
   const newRow = { ...row };
+
+  // If the primary identifier 'no' is empty, clear all calculated fields.
+  if (!newRow.no || newRow.no.trim() === '') {
+    newRow.sisa = '';
+    newRow.totalVol = '';
+    newRow.status = undefined; // Reset status as well
+    return newRow;
+  }
+
   const volume = parseFloat(newRow.volume || '0');
   const terkirim = parseFloat(newRow.terkirim || '0');
   const penambahanVol = parseFloat(newRow.penambahanVol || '0');
 
-  if (!isNaN(volume)) {
-     if (!isNaN(terkirim)) {
-       newRow.sisa = (volume - terkirim).toFixed(2);
-     }
-     if (!isNaN(penambahanVol)) {
-       newRow.totalVol = (volume + penambahanVol).toFixed(2);
-     } else {
-       newRow.totalVol = volume.toFixed(2);
-     }
-  } else {
-    newRow.sisa = '';
-    newRow.totalVol = '';
-  }
-
+  newRow.sisa = (volume - terkirim).toFixed(2);
+  newRow.totalVol = (volume + penambahanVol).toFixed(2);
+  
   return newRow;
 };
 
