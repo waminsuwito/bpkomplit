@@ -17,8 +17,8 @@ import type { ScheduleSheetRow } from '@/lib/types';
 const TOTAL_ROWS = 15;
 
 const headers = [
-    'NO', 'NO PO', 'NAMA', 'LOKASI', 'MUTU BETON', 'SLUMP (CM)', 'CP/M',
-    'VOLUME M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³'
+    'NO', 'NO PO', 'NAMA', 'LOKASI', 'GRADE', 'SLUMP (CM)', 'CP/M',
+    'VOL M³', 'TEKIRIM M³', 'SISA M³', 'PENAMBAHAN VOL M³'
 ];
 const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 'mediaCor',
@@ -134,8 +134,9 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     const isReadOnlyForAdmin = !isOperatorView && (key === 'terkirim' || key === 'sisa');
     
     let displayValue;
+    const isScheduledRow = row.volume && row.volume.trim() !== '';
+
     if (key === 'terkirim') {
-        const isScheduledRow = row.volume && row.volume.trim() !== '';
         if (isScheduledRow && (!row.terkirim || row.terkirim.trim() === '')) {
             displayValue = '0';
         } else {
