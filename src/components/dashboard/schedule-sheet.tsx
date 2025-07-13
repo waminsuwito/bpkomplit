@@ -95,10 +95,16 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
 
   const handleInputChange = (rowIndex: number, key: keyof ScheduleSheetRow, value: string) => {
     setData(currentData => {
-        const updatedData = [...currentData];
-        const currentRow = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
-        updatedData[rowIndex] = recalculateRow(currentRow);
-        return updatedData;
+      let updatedData = [...currentData];
+      let currentRow = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
+
+      if (key === 'volume' && currentRow.penambahanVol === undefined) {
+          currentRow.penambahanVol = '';
+      }
+      
+      currentRow = recalculateRow(currentRow);
+      updatedData[rowIndex] = currentRow;
+      return updatedData;
     });
   };
   
@@ -185,7 +191,10 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
        
        if (isOperatorView) {
          return (
-            <div className={`w-full min-h-[40px] text-center flex items-center justify-center p-2 font-semibold`}>
+            <div className={cn(
+                "w-full min-h-[40px] text-center flex items-center justify-center p-2 font-semibold",
+                currentStatus === 'Proses' && 'text-green-600'
+            )}>
                 {currentStatus}
             </div>
          );
@@ -197,7 +206,10 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                 onValueChange={(value: ScheduleStatus) => handleStatusChange(rowIndex, value)}
                 disabled={isFinalStatus}
             >
-                <SelectTrigger className="w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0">
+                <SelectTrigger className={cn(
+                    "w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0",
+                    currentStatus === 'Proses' && 'font-bold text-green-600'
+                )}>
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
