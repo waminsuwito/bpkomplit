@@ -77,6 +77,9 @@ export function ControlPanel({
   const isStartDisabled = !powerOn || !jobInfo.reqNo.trim() || Number(jobInfo.targetVolume) <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning || !!scheduleStatusWarning;
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
   const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
+  
+  // This is the new logic to disable form fields if a job is loaded and not in 'Proses' state.
+  const isFormDisabled = !powerOn || (jobInfo.reqNo.trim() !== '' && !isJobInfoLocked);
 
 
   return (
@@ -106,7 +109,7 @@ export function ControlPanel({
             <Select 
               value={jobInfo.selectedFormulaId} 
               onValueChange={(value) => handleJobInfoChange('selectedFormulaId', value)} 
-              disabled={!powerOn || isJobInfoLocked}
+              disabled={isFormDisabled || isJobInfoLocked}
             >
               <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
               <SelectContent>
@@ -126,7 +129,7 @@ export function ControlPanel({
                 value={jobInfo.namaPelanggan} 
                 onChange={e => handleJobInfoChange('namaPelanggan', e.target.value.toUpperCase())} 
                 style={{ textTransform: 'uppercase' }}
-                disabled={!powerOn || isJobInfoLocked} 
+                disabled={isFormDisabled || isJobInfoLocked} 
             />
           </div>
           <div>
@@ -137,7 +140,7 @@ export function ControlPanel({
                 value={jobInfo.lokasiProyek} 
                 onChange={e => handleJobInfoChange('lokasiProyek', e.target.value.toUpperCase())} 
                 style={{ textTransform: 'uppercase' }}
-                disabled={!powerOn || isJobInfoLocked}
+                disabled={isFormDisabled || isJobInfoLocked}
             />
           </div>
         </CardContent>
@@ -154,7 +157,7 @@ export function ControlPanel({
                 onChange={(e) => handleJobInfoChange('targetVolume', e.target.value === '' ? '' : Number(e.target.value))}
                 min="0"
                 step="0.1"
-                disabled={!powerOn}
+                disabled={isFormDisabled}
                 placeholder="0.0"
             />
              {volumeWarning && (
@@ -172,7 +175,7 @@ export function ControlPanel({
                 value={jobInfo.jumlahMixing} 
                 onChange={(e) => handleJobInfoChange('jumlahMixing', Number(e.target.value) > 0 ? Number(e.target.value) : 1)}
                 min="1"
-                disabled={!powerOn} 
+                disabled={isFormDisabled} 
             />
              <p className="text-xs text-muted-foreground mt-1">Kapasitas mixer: 3.5 M³ per mix</p>
              {mixWarning && !volumeWarning && (
@@ -190,7 +193,7 @@ export function ControlPanel({
                     type="number" 
                     value={jobInfo.slump} 
                     onChange={(e) => handleJobInfoChange('slump', Number(e.target.value))} 
-                    disabled={!powerOn || isJobInfoLocked}
+                    disabled={isFormDisabled || isJobInfoLocked}
                 />
               </div>
               <div>
@@ -199,7 +202,7 @@ export function ControlPanel({
                     id="media-cor" 
                     value={jobInfo.mediaCor} 
                     readOnly
-                    disabled={!powerOn || isJobInfoLocked}
+                    disabled={isFormDisabled || isJobInfoLocked}
                 />
               </div>
            </div>
