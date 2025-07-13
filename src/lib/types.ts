@@ -1,4 +1,5 @@
 
+
 import type { LucideIcon } from 'lucide-react';
 
 export interface Material {
@@ -250,3 +251,33 @@ export type ScheduleSheetRow = {
   totalVol: string;
   status: ScheduleStatus;
 };
+
+export interface ProductionHistoryEntry {
+  jobId: string;
+  reqNo: string;
+  namaPelanggan: string;
+  lokasiProyek: string;
+  noPolisi: string;
+  namaSopir: string;
+  mutuBeton: string;
+  targetVolume: number;
+  slump: number;
+  startTime: string; // ISO String
+  endTime: string; // ISO String
+  targetWeights: {
+    pasir1: number;
+    pasir2: number;
+    batu1: number;
+    batu2: number;
+    air: number;
+    semen: number;
+  };
+  actualWeights: {
+    pasir1: number;
+    pasir2: number;
+    batu1: number;
+    batu2: number;
+    air: number;
+    semen: number;
+  };
+}

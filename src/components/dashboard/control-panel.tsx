@@ -29,6 +29,8 @@ interface ControlPanelProps {
     jumlahMixing: number;
     slump: number;
     mediaCor: string;
+    noPolisi: string;
+    namaSopir: string;
   };
   setJobInfo: (info: React.SetStateAction<ControlPanelProps['jobInfo']>) => void;
   isManualProcessRunning: boolean;
@@ -78,7 +80,6 @@ export function ControlPanel({
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
   const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
   
-  // This is the new logic to disable form fields if a job is loaded and not in 'Proses' state.
   const isFormDisabled = !powerOn || (jobInfo.reqNo.trim() !== '' && !isJobInfoLocked);
 
 
@@ -104,22 +105,29 @@ export function ControlPanel({
                 </div>
              )}
           </div>
-          <div>
-            <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
-            <Select 
-              value={jobInfo.selectedFormulaId} 
-              onValueChange={(value) => handleJobInfoChange('selectedFormulaId', value)} 
-              disabled={isFormDisabled || isJobInfoLocked}
-            >
-              <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
-              <SelectContent>
-                {formulas.map((formula) => (
-                  <SelectItem key={formula.id} value={formula.id}>
-                    {formula.mutuBeton}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="no-polisi" className="text-xs text-muted-foreground">NO. POLISI</Label>
+              <Input 
+                  id="no-polisi" 
+                  placeholder="e.g., BM 1234 XY" 
+                  value={jobInfo.noPolisi} 
+                  onChange={e => handleJobInfoChange('noPolisi', e.target.value.toUpperCase())}
+                  style={{ textTransform: 'uppercase' }}
+                  disabled={isFormDisabled}
+              />
+            </div>
+            <div>
+              <Label htmlFor="nama-sopir" className="text-xs text-muted-foreground">NAMA SOPIR</Label>
+              <Input 
+                  id="nama-sopir" 
+                  placeholder="e.g., Budi" 
+                  value={jobInfo.namaSopir} 
+                  onChange={e => handleJobInfoChange('namaSopir', e.target.value.toUpperCase())}
+                  style={{ textTransform: 'uppercase' }}
+                  disabled={isFormDisabled}
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="nama-pelanggan" className="text-xs text-muted-foreground">NAMA PELANGGAN</Label>
@@ -148,6 +156,23 @@ export function ControlPanel({
       {/* Target Volume */}
       <Card className="col-span-1">
         <CardContent className="pt-6 space-y-4">
+          <div>
+            <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
+            <Select 
+              value={jobInfo.selectedFormulaId} 
+              onValueChange={(value) => handleJobInfoChange('selectedFormulaId', value)} 
+              disabled={isFormDisabled || isJobInfoLocked}
+            >
+              <SelectTrigger id="mutu-beton"><SelectValue placeholder="Pilih mutu..." /></SelectTrigger>
+              <SelectContent>
+                {formulas.map((formula) => (
+                  <SelectItem key={formula.id} value={formula.id}>
+                    {formula.mutuBeton}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
            <div>
             <Label htmlFor="target-volume" className="text-xs text-muted-foreground">TARGET VOLUME (M³)</Label>
             <Input 

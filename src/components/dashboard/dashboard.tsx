@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -13,7 +14,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { MIXING_PROCESS_STORAGE_KEY, defaultMixingProcess, MIXER_TIMER_CONFIG_KEY, defaultMixerTimerConfig } from '@/lib/config';
 import type { MixingProcessConfig, MixerTimerConfig } from '@/lib/config';
 import { useAuth } from '@/context/auth-provider';
-import type { JobMixFormula, ScheduleSheetRow } from '@/lib/types';
+import type { JobMixFormula, ScheduleSheetRow, ProductionHistoryEntry } from '@/lib/types';
 import { getFormulas } from '@/lib/formula';
 import { app } from '@/lib/firebase'; // Import Firebase app instance
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +40,7 @@ const generateSimulatedWeight = (target: number, roundingUnit: 1 | 5): number =>
 };
 
 const PRINTER_SETTINGS_KEY = 'app-printer-settings';
+const PRODUCTION_HISTORY_KEY = 'app-production-history';
 type PrintMode = 'preview' | 'direct' | 'save';
 
 export function Dashboard() {
@@ -72,6 +74,8 @@ export function Dashboard() {
     jumlahMixing: 1,
     slump: 12,
     mediaCor: '',
+    noPolisi: '',
+    namaSopir: '',
   };
   
   const [jobInfo, setJobInfo] = useState(initialJobInfo);
@@ -87,7 +91,7 @@ export function Dashboard() {
   const [isManualProcessRunning, setIsManualProcessRunning] = useState(false);
   const [activityLog, setActivityLog] = useState<{ message: string; id: number; color: string; timestamp: string }[]>([]);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
-  const [completedBatchData, setCompletedBatchData] = useState<any>(null);
+  const [completedBatchData, setCompletedBatchData] = useState<ProductionHistoryEntry | null>(null);
   const [batchStartTime, setBatchStartTime] = useState<Date | null>(null);
 
   const addLog = (message: string, color: string = 'text-foreground') => {
@@ -233,7 +237,6 @@ export function Dashboard() {
         setVolumeWarning('');
       }
     } else {
-      // If not locked to a schedule, there's no limit from schedule.
       setVolumeWarning('');
     }
   }, [jobInfo.targetVolume, jobInfo.reqNo, isJobInfoLocked, scheduleData]);
@@ -294,18 +297,28 @@ export function Dashboard() {
             semen: generateSimulatedWeight(currentTargetWeights.semen, 1),
         };
 
-        const finalData = {
+        const finalData: ProductionHistoryEntry = {
             ...jobInfo,
             targetVolume: Number(jobInfo.targetVolume),
             jobId: `SIM-${Date.now().toString().slice(-6)}`,
             mutuBeton: selectedFormula?.mutuBeton || 'N/A',
-            startTime: batchStartTime,
-            endTime: new Date(),
+            startTime: batchStartTime.toISOString(),
+            endTime: new Date().toISOString(),
             targetWeights: currentTargetWeights,
             actualWeights: finalActualWeights,
         };
         
         setCompletedBatchData(finalData);
+
+        // Save to production history
+        try {
+            const storedHistory = localStorage.getItem(PRODUCTION_HISTORY_KEY);
+            const history: ProductionHistoryEntry[] = storedHistory ? JSON.parse(storedHistory) : [];
+            history.push(finalData);
+            localStorage.setItem(PRODUCTION_HISTORY_KEY, JSON.stringify(history));
+        } catch (error) {
+            console.error("Failed to save production history", error);
+        }
 
         if (jobInfo.reqNo.trim()) {
             const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
@@ -343,7 +356,6 @@ export function Dashboard() {
         if (printMode === 'preview') {
             setShowPrintPreview(true);
         } else if (printMode === 'direct') {
-            // Need a moment for the hidden print content to render with the new data
             setTimeout(() => {
                 printElement('direct-print-content');
             }, 100);
@@ -465,7 +477,6 @@ export function Dashboard() {
             </SheetContent>
           </Sheet>
           
-          {/* Hidden container for direct printing */}
           <div className="hidden">
               <div id="direct-print-content">
                   {completedBatchData && <PrintPreview data={completedBatchData} onClose={() => {}} />}
