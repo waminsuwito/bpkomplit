@@ -25,7 +25,7 @@ const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'no', 'noPo', 'nama', 'lokasi', 'mutuBeton', 'slump', 'mediaCor',
     'volume', 'terkirim', 'sisa', 'penambahanVol', 'totalVol', 'status'
 ];
-const statusOptions: ScheduleStatus[] = ['Proses', 'Selesai', 'Tunda', 'Batal'];
+const statusOptions: ScheduleStatus[] = ['Menunggu', 'Proses', 'Selesai', 'Tunda', 'Batal'];
 
 const recalculateRow = (row: ScheduleSheetRow): ScheduleSheetRow => {
   const newRow = { ...row };
@@ -158,12 +158,13 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     }
   };
   
-  const getStatusColorClass = (status: ScheduleStatus) => {
+  const getStatusColorClass = (status?: ScheduleStatus) => {
       switch (status) {
           case 'Selesai': return 'bg-green-100 hover:bg-green-200/50';
           case 'Tunda': return 'bg-amber-100 hover:bg-amber-200/50';
           case 'Batal': return 'bg-red-100 hover:bg-red-200/50';
-          default: return 'hover:bg-gray-100'; // Proses
+          case 'Proses': return 'bg-blue-100 hover:bg-blue-200/50';
+          default: return 'hover:bg-gray-100'; // Menunggu or undefined
       }
   };
 
@@ -181,7 +182,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     else if (key === 'status') {
        if (!isScheduledRow) return null;
        
-       const currentStatus = row.status || 'Proses';
+       const currentStatus = row.status || 'Menunggu';
        
        if (isOperatorView) {
          return (
@@ -263,7 +264,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                                 key={`row-${rowIndex}`} 
                                 className={cn(
                                     "[&_td]:p-0",
-                                    getStatusColorClass(row.status || 'Proses')
+                                    getStatusColorClass(row.status)
                                 )}
                             >
                                 {fieldKeys.map((key, colIndex) => (
