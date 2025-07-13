@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -395,16 +393,6 @@ export function Dashboard() {
     <div className="space-y-4">
       <>
           <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 flex justify-end">
-              <Button
-                variant="outline"
-                onClick={handleResetJob}
-                disabled={!isJobInfoLocked}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Reset Job & Isi Manual
-              </Button>
-            </div>
             <div className="col-span-12">
               <WeightDisplayPanel
                 aggregateWeight={aggregateWeight}
