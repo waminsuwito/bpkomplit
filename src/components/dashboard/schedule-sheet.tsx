@@ -71,14 +71,21 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
     // Auto-calculate 'sisa' and 'total'
     const volume = parseFloat(updatedData[rowIndex].volume || '0');
     const terkirim = parseFloat(updatedData[rowIndex].terkirim || '0');
-    const penambahan = parseFloat(updatedData[rowIndex].penambahanVol || '0');
     
     if (!isNaN(volume) && !isNaN(terkirim)) {
         updatedData[rowIndex].sisa = (volume - terkirim).toFixed(2);
     }
+
+    // Default 'penambahanVol' to '0' if 'volume' is being entered for the first time
+    if (key === 'volume' && !updatedData[rowIndex].penambahanVol) {
+        updatedData[rowIndex].penambahanVol = '0';
+    }
     
-    if (!isNaN(volume) && !isNaN(penambahan)) {
-        updatedData[rowIndex].totalVol = (volume + penambahan).toFixed(2);
+    if (!isNaN(volume)) { // Check only for volume
+        const penambahanVol = parseFloat(updatedData[rowIndex].penambahanVol || '0'); // Treat empty as 0
+        if (!isNaN(penambahanVol)) {
+            updatedData[rowIndex].totalVol = (volume + penambahanVol).toFixed(2);
+        }
     }
 
     setData(updatedData);
