@@ -242,8 +242,7 @@ export function Dashboard() {
         }
 
         const totalTargetAggregate = currentTargetWeights.pasir1 + currentTargetWeights.pasir2 + currentTargetWeights.batu1 + currentTargetWeights.batu2;
-        
-        // Use the final state of the scales for actual weights
+
         const simulatedAggregate = generateSimulatedWeight(totalTargetAggregate, 'aggregate');
         const simulatedSemen = generateSimulatedWeight(currentTargetWeights.semen, 'cement_water');
         const simulatedAir = generateSimulatedWeight(currentTargetWeights.air, 'cement_water');
@@ -264,17 +263,20 @@ export function Dashboard() {
             startTime: batchStartTime,
             endTime: new Date(),
             targetWeights: currentTargetWeights,
-            actualWeights: finalActualWeights
+            actualWeights: finalActualWeights,
         };
         
         setCompletedBatchData(finalData);
         setShowPrintPreview(true);
 
+        // Update the schedule sheet
         if (jobInfo.reqNo.trim()) {
             const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
             if (!isNaN(reqNoAsNumber)) {
+                let foundAndUpdate = false;
                 const updatedScheduleData = getScheduleSheetData().map(row => {
                     if (parseInt(row.no, 10) === reqNoAsNumber) {
+                        foundAndUpdate = true;
                         const currentTerkirim = parseFloat(row.terkirim) || 0;
                         const addedVolume = jobInfo.targetVolume || 0;
                         const newTerkirim = currentTerkirim + addedVolume;
@@ -288,9 +290,14 @@ export function Dashboard() {
                     }
                     return row;
                 });
-                setScheduleData(updatedScheduleData);
-                saveScheduleSheetData(updatedScheduleData);
-                toast({ title: "Schedule Updated", description: `Volume terkirim untuk REQ NO ${jobInfo.reqNo} telah diperbarui.`});
+                
+                if (foundAndUpdate) {
+                    setScheduleData(updatedScheduleData);
+                    saveScheduleSheetData(updatedScheduleData);
+                    toast({ title: "Schedule Diperbarui", description: `Volume terkirim untuk REQ NO ${jobInfo.reqNo} telah diperbarui.`});
+                } else {
+                    toast({ variant: "destructive", title: "Schedule Tidak Ditemukan", description: `REQ NO ${jobInfo.reqNo} tidak ditemukan di schedule.`});
+                }
             }
         }
     }
