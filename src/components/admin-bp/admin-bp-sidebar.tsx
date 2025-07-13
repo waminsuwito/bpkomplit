@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   CalendarCheck,
-  ClipboardCheck,
+  Database,
   GitCompareArrows,
 } from 'lucide-react';
 
@@ -14,7 +14,7 @@ import { buttonVariants } from '@/components/ui/button';
 
 const navItems = [
   { href: '/admin-bp/schedule-cor-hari-ini', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
-  { href: '/admin-bp/realisasi-pengecoran', label: 'Realisasi Pengecoran', icon: ClipboardCheck },
+  { href: '/dashboard/database-produksi', label: 'Database Produksi', icon: Database },
   { href: '/admin-bp/laporan-sinkronisasi', label: 'Laporan Sinkronisasi', icon: GitCompareArrows },
 ];
 
