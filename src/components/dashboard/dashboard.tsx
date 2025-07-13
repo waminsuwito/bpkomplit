@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -17,8 +18,7 @@ import { getFormulas } from '@/lib/formula';
 import { app } from '@/lib/firebase'; // Import Firebase app instance
 import { useToast } from '@/hooks/use-toast';
 import { getScheduleSheetData, saveScheduleSheetData } from '@/lib/schedule';
-import { Button } from '../ui/button';
-import { XCircle } from 'lucide-react';
+import { printElement } from '@/lib/utils';
 
 
 type AutoProcessStep =
@@ -37,6 +37,9 @@ const generateSimulatedWeight = (target: number, roundingUnit: 1 | 5): number =>
   const finalWeight = Math.round(randomWeight / roundingUnit) * roundingUnit;
   return finalWeight;
 };
+
+const PRINTER_SETTINGS_KEY = 'app-printer-settings';
+type PrintMode = 'preview' | 'direct' | 'save';
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -258,14 +261,6 @@ export function Dashboard() {
      setCompletedBatchData(null);
      setBatchStartTime(null);
   }
-
-  const handleResetJob = () => {
-    setJobInfo(initialJobInfo);
-    setIsJobInfoLocked(false);
-    resetStateForNewJob();
-    setScheduleStatusWarning('');
-    toast({ title: 'Formulir Direset', description: 'Anda sekarang dapat memasukkan data pekerjaan manual.' });
-  };
   
   const currentTargetWeights = useMemo(() => {
     const selectedFormula = formulas.find(f => f.id === jobInfo.selectedFormulaId);
@@ -312,7 +307,6 @@ export function Dashboard() {
         };
         
         setCompletedBatchData(finalData);
-        setShowPrintPreview(true);
 
         if (jobInfo.reqNo.trim()) {
             const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
@@ -343,6 +337,20 @@ export function Dashboard() {
                     toast({ variant: "destructive", title: "Schedule Tidak Ditemukan", description: `REQ NO ${jobInfo.reqNo} tidak ditemukan di schedule.`});
                 }
             }
+        }
+        
+        const printMode = localStorage.getItem(PRINTER_SETTINGS_KEY) as PrintMode | null || 'preview';
+
+        if (printMode === 'preview') {
+            setShowPrintPreview(true);
+        } else if (printMode === 'direct') {
+            // Need a moment for the hidden print content to render with the new data
+            setTimeout(() => printElement('direct-print-content'), 100);
+        } else { // 'save' mode
+            toast({
+                title: 'Data Disimpan',
+                description: 'Data batch telah berhasil disimpan tanpa mencetak.',
+            });
         }
     }
 
@@ -449,7 +457,15 @@ export function Dashboard() {
                 />
             </SheetContent>
           </Sheet>
+          
+          {/* Hidden container for direct printing */}
+          <div className="hidden">
+              <div id="direct-print-content">
+                  <PrintPreview data={completedBatchData} onClose={() => {}} />
+              </div>
+          </div>
         </>
     </div>
   );
 }
+
