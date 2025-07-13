@@ -76,6 +76,7 @@ export function Dashboard() {
   const [jobInfo, setJobInfo] = useState(initialJobInfo);
   const [isJobInfoLocked, setIsJobInfoLocked] = useState(false);
   const [volumeWarning, setVolumeWarning] = useState('');
+  const [scheduleStatusWarning, setScheduleStatusWarning] = useState('');
 
 
   const [mixingProcessConfig, setMixingProcessConfig] = useState<MixingProcessConfig>(defaultMixingProcess);
@@ -146,12 +147,14 @@ export function Dashboard() {
         }));
         setIsJobInfoLocked(false);
       }
+      setScheduleStatusWarning('');
       return;
     }
 
     const reqNoAsNumber = parseInt(jobInfo.reqNo, 10);
     if (isNaN(reqNoAsNumber)) {
       if (isJobInfoLocked) setIsJobInfoLocked(false);
+      setScheduleStatusWarning('');
       return;
     }
 
@@ -159,10 +162,12 @@ export function Dashboard() {
 
     if (matchingSchedule) {
       if (matchingSchedule.status === 'Menunggu' || !matchingSchedule.status) {
+        const warningMsg = 'Jadwal ini masih menunggu, belum diijinkan untuk loading.';
+        setScheduleStatusWarning(warningMsg);
         toast({
           variant: 'destructive',
           title: 'Jadwal Ditahan',
-          description: 'Jadwal ini masih menunggu, belum diijinkan untuk loading.',
+          description: warningMsg,
         });
         if (isJobInfoLocked) {
           setIsJobInfoLocked(false);
@@ -171,10 +176,12 @@ export function Dashboard() {
       }
 
       if (matchingSchedule.status === 'Selesai' || matchingSchedule.status === 'Batal') {
+        const warningMsg = `Jadwal ini sudah berstatus "${matchingSchedule.status}".`;
+        setScheduleStatusWarning(warningMsg);
         toast({
           variant: 'destructive',
           title: 'Jadwal Tidak Aktif',
-          description: `Jadwal ini sudah berstatus "${matchingSchedule.status}".`,
+          description: warningMsg,
         });
         if (isJobInfoLocked) {
           setIsJobInfoLocked(false);
@@ -182,6 +189,7 @@ export function Dashboard() {
         return;
       }
       
+      setScheduleStatusWarning('');
       const matchingFormula = formulas.find(f => f.mutuBeton === matchingSchedule.mutuBeton);
       
       setJobInfo(prev => ({
@@ -193,8 +201,11 @@ export function Dashboard() {
         mediaCor: matchingSchedule.mediaCor || '',
       }));
       setIsJobInfoLocked(true);
-      toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
+      if (!isJobInfoLocked) { // Only toast on initial lock-in
+        toast({ title: 'Jadwal Ditemukan', description: `Data untuk No. ${jobInfo.reqNo} telah dimuat.` });
+      }
     } else {
+      setScheduleStatusWarning('');
       if (isJobInfoLocked) {
          setJobInfo(prev => ({
           ...initialJobInfo,
@@ -262,6 +273,7 @@ export function Dashboard() {
     setJobInfo(initialJobInfo);
     setIsJobInfoLocked(false);
     resetStateForNewJob();
+    setScheduleStatusWarning('');
     toast({ title: 'Formulir Direset', description: 'Anda sekarang dapat memasukkan data pekerjaan manual.' });
   };
   
@@ -428,6 +440,7 @@ export function Dashboard() {
                 isManualProcessRunning={isManualProcessRunning}
                 isJobInfoLocked={isJobInfoLocked}
                 volumeWarning={volumeWarning}
+                scheduleStatusWarning={scheduleStatusWarning}
               />
             </div>
             <div className="col-span-3">

@@ -34,6 +34,7 @@ interface ControlPanelProps {
   isManualProcessRunning: boolean;
   isJobInfoLocked: boolean;
   volumeWarning: string;
+  scheduleStatusWarning: string;
 }
 
 export function ControlPanel({
@@ -47,7 +48,8 @@ export function ControlPanel({
   setJobInfo,
   isManualProcessRunning,
   isJobInfoLocked,
-  volumeWarning
+  volumeWarning,
+  scheduleStatusWarning
 }: ControlPanelProps) {
 
   const [mixWarning, setMixWarning] = useState('');
@@ -72,7 +74,7 @@ export function ControlPanel({
     }
   }
 
-  const isStartDisabled = !powerOn || !jobInfo.reqNo.trim() || Number(jobInfo.targetVolume) <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning;
+  const isStartDisabled = !powerOn || !jobInfo.reqNo.trim() || Number(jobInfo.targetVolume) <= 0 || (operasiMode === 'AUTO' && !!mixWarning) || (operasiMode === 'MANUAL' && isManualProcessRunning) || !!volumeWarning || !!scheduleStatusWarning;
   const isStopDisabled = !powerOn || (operasiMode === 'MANUAL' && !isManualProcessRunning);
   const isPauseDisabled = !powerOn || operasiMode === 'MANUAL';
 
@@ -92,6 +94,12 @@ export function ControlPanel({
                 style={{ textTransform: 'uppercase' }}
                 disabled={!powerOn} 
             />
+            {scheduleStatusWarning && (
+                <div className="text-xs text-destructive mt-1 flex items-center gap-1 p-2 bg-destructive/10 rounded-md">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>{scheduleStatusWarning}</span>
+                </div>
+             )}
           </div>
           <div>
             <Label htmlFor="mutu-beton" className="text-xs text-muted-foreground">MUTU BETON</Label>
