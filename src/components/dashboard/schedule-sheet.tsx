@@ -25,6 +25,27 @@ const fieldKeys: (keyof ScheduleSheetRow)[] = [
     'volume', 'terkirim', 'sisa', 'penambahanVol', 'totalVol', 'status'
 ];
 
+const recalculateRow = (row: ScheduleSheetRow): ScheduleSheetRow => {
+  const newRow = { ...row };
+  const volume = parseFloat(newRow.volume || '0');
+  const terkirim = parseFloat(newRow.terkirim || '0');
+  const penambahanVol = parseFloat(newRow.penambahanVol || '0');
+
+  if (!isNaN(volume) && !isNaN(terkirim)) {
+    newRow.sisa = (volume - terkirim).toFixed(2);
+  } else {
+    newRow.sisa = '';
+  }
+
+  if (!isNaN(volume) && !isNaN(penambahanVol)) {
+    newRow.totalVol = (volume + penambahanVol).toFixed(2);
+  } else {
+    newRow.totalVol = '';
+  }
+
+  return newRow;
+};
+
 
 export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) {
   const [data, setData] = useState<ScheduleSheetRow[]>(() => Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleSheetRow)));
@@ -34,15 +55,20 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   const loadDataFromStorage = () => {
     try {
       const storedData = getScheduleSheetData();
+      let fullData;
       if (storedData.length > 0) {
-        const fullData = [...storedData];
-        while (fullData.length < TOTAL_ROWS) {
-            fullData.push({} as ScheduleSheetRow);
-        }
-        setData(fullData);
+        // Recalculate each row upon loading
+        const recalculatedData = storedData.map(recalculateRow);
+        fullData = [...recalculatedData];
       } else {
-         setData(Array(TOTAL_ROWS).fill({}).map(() => ({} as ScheduleSheetRow)));
+        fullData = [];
       }
+      
+      while (fullData.length < TOTAL_ROWS) {
+          fullData.push({} as ScheduleSheetRow);
+      }
+      setData(fullData);
+
     } catch (error) {
         console.error("Failed to load schedule sheet data", error);
     }
@@ -69,31 +95,11 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         const updatedData = [...currentData];
         const currentRow = { ...updatedData[rowIndex], [key]: value.toUpperCase() };
 
-        // Ensure 'penambahanVol' is '0' if 'volume' is filled and 'penambahanVol' is empty
         if (key === 'volume' && value.trim() !== '' && (!currentRow.penambahanVol || currentRow.penambahanVol.trim() === '')) {
             currentRow.penambahanVol = '0';
         }
-
-        // Auto-calculate based on the latest data in the row
-        const volume = parseFloat(currentRow.volume || '0');
-        const terkirim = parseFloat(currentRow.terkirim || '0');
-        const penambahanVol = parseFloat(currentRow.penambahanVol || '0');
         
-        if (!isNaN(volume) && !isNaN(terkirim)) {
-            currentRow.sisa = (volume - terkirim).toFixed(2);
-        } else {
-            // Clear sisa if inputs are not valid numbers
-            currentRow.sisa = '';
-        }
-        
-        if (!isNaN(volume) && !isNaN(penambahanVol)) {
-            currentRow.totalVol = (volume + penambahanVol).toFixed(2);
-        } else {
-            // Clear totalVol if inputs are not valid numbers
-            currentRow.totalVol = '';
-        }
-        
-        updatedData[rowIndex] = currentRow;
+        updatedData[rowIndex] = recalculateRow(currentRow);
         return updatedData;
     });
   };
@@ -170,7 +176,11 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
             displayValue = row.terkirim ?? '';
         }
     } else if (key === 'penambahanVol') {
-        displayValue = row.penambahanVol ?? '';
+         if (isScheduledRow && (!row.penambahanVol || row.penambahanVol.trim() === '')) {
+            displayValue = '0';
+        } else {
+            displayValue = row.penambahanVol ?? '';
+        }
     }
     else if (key === 'status') {
        if (!isScheduledRow) return null;
