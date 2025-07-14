@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { verifyLogin } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,48 +11,50 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
 import { AuthGuard, getDefaultRouteForUser } from '@/components/auth/auth-guard';
-import { type User } from '@/lib/types';
 
 function LoginPageContent() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
     
-    try {
-      const loggedInUser = await verifyLogin(username, password);
-      
-      if (loggedInUser) {
-        // Step 1: Save user to localStorage
-        localStorage.setItem('user', JSON.stringify(loggedInUser));
+    // Simulate a short delay to allow UI to update
+    setTimeout(() => {
+        const loggedInUser = verifyLogin(username, password);
         
-        // Step 2: Determine destination
-        const destination = getDefaultRouteForUser(loggedInUser);
-        
-        // Step 3: Force a full page reload to the destination.
-        // This is the key to fixing the race condition. It ensures AuthProvider
-        // re-reads from localStorage in a clean state.
-        window.location.href = destination;
-        
-      } else {
-        throw new Error('Username, NIK, atau password salah.');
-      }
-    } catch (err: any) {
-      const errorMessage = err.message || 'An unexpected error occurred.';
-      setError(errorMessage);
-      toast({
-        variant: 'destructive',
-        title: 'Login Gagal',
-        description: errorMessage,
-      });
-      setIsLoading(false);
-    }
+        if (loggedInUser) {
+            try {
+                // Step 1: Save user to localStorage
+                localStorage.setItem('user', JSON.stringify(loggedInUser));
+                
+                // Step 2: Determine destination
+                const destination = getDefaultRouteForUser(loggedInUser);
+                
+                // Step 3: Force a full page reload to the destination.
+                // This is the key to fixing the race condition. It ensures AuthProvider
+                // re-reads from localStorage in a clean state.
+                window.location.href = destination;
+            } catch (error) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Login Gagal',
+                    description: 'Gagal menyimpan sesi login. Mohon coba lagi.',
+                });
+                setIsLoading(false);
+            }
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Login Gagal',
+                description: 'Username, NIK, atau password salah.',
+            });
+            setIsLoading(false);
+        }
+    }, 250); // Small delay for better UX
   };
   
   return (
@@ -99,7 +100,6 @@ function LoginPageContent() {
                 disabled={isLoading}
               />
             </div>
-            {error && <p className="text-sm text-destructive text-center">{error}</p>}
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>

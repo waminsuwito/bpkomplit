@@ -10,23 +10,16 @@ import { type User } from '@/lib/types';
 export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     const jabatan = user.jabatan;
     switch (jabatan) {
-      // Admin Roles
       case 'SUPER ADMIN': return '/admin/super-admin';
       case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
       case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
       case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
       case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
-
-      // Operator Role
       case 'OPRATOR BP': return '/dashboard';
-      
-      // Karyawan with special pages
       case 'SOPIR TM': return '/karyawan/checklist-harian-tm';
       case 'KEPALA MEKANIK':
       case 'KEPALA WORKSHOP':
         return '/karyawan/manajemen-alat';
-
-      // Default for all other 'karyawan' roles
       default: return '/karyawan/absensi-harian';
     }
 };
@@ -39,50 +32,54 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading) {
-      return; // Wait until auth state is confirmed
+      return; // Wait until auth state is confirmed from AuthProvider
     }
 
     const isLoginPage = pathname === '/';
-    const isPublicPage = isLoginPage;
 
     // SCENARIO 1: User is NOT logged in
     if (!user) {
-      if (!isPublicPage) {
-        // If trying to access a protected page, redirect to login
+      if (!isLoginPage) {
+        // If not on login page, redirect there.
         router.replace('/');
       }
-      // Otherwise, allow rendering the public page (login page)
+      // Allow rendering the login page
       return;
     }
 
     // SCENARIO 2: User IS logged in
     const defaultRoute = getDefaultRouteForUser(user);
-    const isAdminRoute = defaultRoute.startsWith('/admin') || defaultRoute.startsWith('/admin-bp');
-    const isKaryawanRoute = defaultRoute.startsWith('/karyawan');
-    const isDashboardRoute = defaultRoute.startsWith('/dashboard');
 
-    const accessingAdminPages = pathname.startsWith('/admin') || pathname.startsWith('/admin-bp');
-    const accessingKaryawanPages = pathname.startsWith('/karyawan');
-    const accessingDashboardPage = pathname.startsWith('/dashboard');
-
+    // If logged-in user is on the login page, redirect them to their dashboard.
     if (isLoginPage) {
-      // If on login page, redirect to their default dashboard
       router.replace(defaultRoute);
       return;
     }
 
-    // Authorization checks
-    if (isAdminRoute && !accessingAdminPages) {
-      router.replace(defaultRoute);
-      return;
+    // Authorization check: prevent users from accessing pages not meant for them.
+    const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/admin-bp');
+    const isKaryawanRoute = pathname.startsWith('/karyawan');
+    const isDashboardRoute = pathname.startsWith('/dashboard');
+
+    const userDefaultRoute = getDefaultRouteForUser(user);
+    const userIsAdmin = userDefaultRoute.startsWith('/admin') || userDefaultRoute.startsWith('/admin-bp');
+    const userIsKaryawan = userDefaultRoute.startsWith('/karyawan');
+    const userIsDashboard = userDefaultRoute.startsWith('/dashboard');
+
+    // If an admin is trying to access a non-admin page, redirect them.
+    if (userIsAdmin && !isAdminRoute) {
+        router.replace(defaultRoute);
+        return;
     }
-    if (isKaryawanRoute && !accessingKaryawanPages) {
-      router.replace(defaultRoute);
-      return;
+    // If a karyawan is trying to access a non-karyawan page, redirect them.
+    if (userIsKaryawan && !isKaryawanRoute) {
+        router.replace(defaultRoute);
+        return;
     }
-    if (isDashboardRoute && !accessingDashboardPage) {
-      router.replace(defaultRoute);
-      return;
+    // If an operator is trying to access a non-dashboard page, redirect them.
+    if (userIsDashboard && !isDashboardRoute) {
+        router.replace(defaultRoute);
+        return;
     }
 
   }, [user, isLoading, router, pathname]);
@@ -95,10 +92,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Prevent flashing content:
-  // If user is not logged in, only render the login page.
+  // Prevent flashing content while redirecting
   if (!user && pathname !== '/') return null;
-  // If user is logged in, do not render the login page.
   if (user && pathname === '/') return null;
 
   return <>{children}</>;

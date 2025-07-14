@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { type User } from '@/lib/types';
@@ -55,26 +54,21 @@ export function saveUsers(users: User[]): void {
   }
 }
 
-export function verifyLogin(usernameOrNik: string, password: string): Promise<Omit<User, 'password'> | null> {
-  return new Promise((resolve) => {
-    // getUsers() is safe to call here because this function is only triggered by a user action (form submission).
-    const users = getUsers();
-    const user = users.find(
-      (u) =>
-        (u.username.toLowerCase() === usernameOrNik.toLowerCase() || (u.nik && u.nik.toLowerCase() === usernameOrNik.toLowerCase())) &&
-        u.password === password
-    );
+export function verifyLogin(usernameOrNik: string, password: string): Omit<User, 'password'> | null {
+  const users = getUsers();
+  const user = users.find(
+    (u) =>
+      (u.username.toLowerCase() === usernameOrNik.toLowerCase() || (u.nik && u.nik.toLowerCase() === usernameOrNik.toLowerCase())) &&
+      u.password === password
+  );
 
-    setTimeout(() => {
-        if (user) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { password, ...userWithoutPassword } = user;
-          resolve(userWithoutPassword);
-        } else {
-          resolve(null);
-        }
-    }, 250); // Simulate network delay
-  });
+  if (user) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  } else {
+    return null;
+  }
 }
 
 export function addUser(userData: Omit<User, 'id'>): User {

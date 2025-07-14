@@ -2,9 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import { type User } from '@/lib/types';
-import { getDefaultRouteForUser } from '@/components/auth/auth-guard';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -17,11 +15,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     // This effect runs ONLY ONCE on initial app load.
-    // It's the single source of truth for the user's logged-in state.
+    // Its only job is to check localStorage for an existing session.
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
