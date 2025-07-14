@@ -57,8 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, pass: string): Promise<Omit<User, 'password'>> => {
     const loggedInUser = await verifyLogin(username, pass);
     if (loggedInUser) {
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
+      // This is the key change: update state and localStorage synchronously
       setUser(loggedInUser);
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
       toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
       return loggedInUser;
     } else {
