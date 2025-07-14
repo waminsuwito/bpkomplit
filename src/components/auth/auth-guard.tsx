@@ -18,7 +18,8 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
       case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
       case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
       case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
-      default: return '/karyawan/absensi-harian'; // Default for all other jabatans
+      // Default for all other jabatans
+      default: return '/karyawan/absensi-harian';
     }
 };
 
@@ -77,7 +78,6 @@ export function AuthGuard({
   }
   
   // Render children only if the logic above doesn't redirect
-  // This avoids rendering a page flash before redirecting
   const isLoginPage = pathname === '/';
   if (!user && !isLoginPage) return null; // Don't render protected content if not logged in
   if (user && isLoginPage) return null; // Don't render login page if logged in
