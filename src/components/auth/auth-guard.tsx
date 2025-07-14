@@ -63,6 +63,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const jabatan = user.jabatan;
     let isAuthorized = false;
 
+    // Add a check to ensure `jabatan` is defined before using it.
+    if (!jabatan) {
+        // If for some reason user has no jabatan, redirect them to default.
+        router.replace(defaultRoute);
+        return;
+    }
+
     if (jabatan === 'SUPER ADMIN' && isAdminPage) {
         isAuthorized = true;
     } else if (jabatan === 'ADMIN BP' && isAdminBpPage) {
