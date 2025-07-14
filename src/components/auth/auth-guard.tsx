@@ -32,7 +32,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading) {
-      return; // Wait until auth state is confirmed from AuthProvider
+      return; // Wait until auth state is confirmed
     }
 
     const isLoginPage = pathname === '/';
@@ -40,50 +40,58 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     // SCENARIO 1: User is NOT logged in
     if (!user) {
       if (!isLoginPage) {
-        // If not on login page, redirect there.
         router.replace('/');
       }
-      // Allow rendering the login page
-      return;
+      return; // Allow rendering the login page
     }
 
     // SCENARIO 2: User IS logged in
     const defaultRoute = getDefaultRouteForUser(user);
 
-    // If logged-in user is on the login page, redirect them to their dashboard.
+    // If logged-in user is on the login page, redirect them away.
     if (isLoginPage) {
       router.replace(defaultRoute);
       return;
     }
 
     // Authorization check: prevent users from accessing pages not meant for them.
-    const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/admin-bp');
-    const isKaryawanRoute = pathname.startsWith('/karyawan');
-    const isDashboardRoute = pathname.startsWith('/dashboard');
+    const isAdminPage = pathname.startsWith('/admin');
+    const isAdminBpPage = pathname.startsWith('/admin-bp');
+    const isKaryawanPage = pathname.startsWith('/karyawan');
+    const isDashboardPage = pathname.startsWith('/dashboard');
 
-    const userDefaultRoute = getDefaultRouteForUser(user);
-    const userIsAdmin = userDefaultRoute.startsWith('/admin') || userDefaultRoute.startsWith('/admin-bp');
-    const userIsKaryawan = userDefaultRoute.startsWith('/karyawan');
-    const userIsDashboard = userDefaultRoute.startsWith('/dashboard');
+    const jabatan = user.jabatan;
+    let isAuthorized = false;
 
-    // If an admin is trying to access a non-admin page, redirect them.
-    if (userIsAdmin && !isAdminRoute) {
-        router.replace(defaultRoute);
-        return;
+    if (jabatan === 'SUPER ADMIN' && isAdminPage) {
+        isAuthorized = true;
+    } else if (jabatan === 'ADMIN BP' && isAdminBpPage) {
+        isAuthorized = true;
+    } else if ((jabatan === 'ADMIN LOGISTIK' || jabatan === 'LOGISTIK MATERIAL' || jabatan === 'HSE/K3') && isAdminPage) {
+        isAuthorized = true;
+    } else if (jabatan === 'OPRATOR BP' && isDashboardPage) {
+        isAuthorized = true;
+    } else if (jabatan.includes('SOPIR') || jabatan.includes('HELPER') || jabatan.includes('KEPALA') || jabatan.includes('QC') || jabatan.includes('OPRATOR')) {
+        // This is a broad catch for various employee roles.
+        // OPRATOR BP is handled above, so this will catch the other operators.
+        if (isKaryawanPage) {
+          isAuthorized = true;
+        }
     }
-    // If a karyawan is trying to access a non-karyawan page, redirect them.
-    if (userIsKaryawan && !isKaryawanRoute) {
-        router.replace(defaultRoute);
-        return;
+
+    // A final check for specific employee roles that might have been missed
+    if (!isAuthorized && (jabatan === 'SOPIR TM' || jabatan === 'KEPALA MEKANIK' || jabatan === 'KEPALA WORKSHOP' || jabatan.startsWith('HELPER')) && isKaryawanPage) {
+        isAuthorized = true;
     }
-    // If an operator is trying to access a non-dashboard page, redirect them.
-    if (userIsDashboard && !isDashboardRoute) {
+
+
+    if (!isAuthorized) {
         router.replace(defaultRoute);
-        return;
     }
 
   }, [user, isLoading, router, pathname]);
 
+  // Render a loading indicator while checking auth status.
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -93,8 +101,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   // Prevent flashing content while redirecting
-  if (!user && pathname !== '/') return null;
-  if (user && pathname === '/') return null;
+  if ((!user && pathname !== '/') || (user && pathname === '/')) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
+  }
 
   return <>{children}</>;
 }
