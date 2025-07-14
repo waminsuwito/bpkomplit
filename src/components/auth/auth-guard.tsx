@@ -5,9 +5,54 @@ import { useAuth } from '@/context/auth-provider';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { type User } from '@/lib/types';
 
-export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // If auth state is still being determined, do nothing and wait.
+    if (isLoading) {
+      return; 
+    }
+    
+    const isLoginPage = pathname === '/';
+
+    // If there is no user logged in...
+    if (!user) {
+      // ...and they are not on the login page, redirect them there.
+      if (!isLoginPage) {
+        router.replace('/');
+      }
+      return;
+    }
+
+    // If a user IS logged in and tries to access the login page,
+    // redirect them away from it to their default dashboard.
+    // This is the only redirect this component should handle for logged-in users.
+    if (user && isLoginPage) {
+      const destination = getDefaultRouteForUser(user);
+      router.replace(destination);
+    }
+    
+  }, [user, isLoading, router, pathname]);
+
+  // While loading, or if we are redirecting, show a loader.
+  if (isLoading || (!user && pathname !== '/') || (user && pathname === '/')) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  // If all checks pass, render the children components.
+  return <>{children}</>;
+}
+
+// This function remains the central logic for determining a user's default page.
+export const getDefaultRouteForUser = (user: { jabatan?: string }): string => {
     const jabatan = user.jabatan;
     
     switch (jabatan) {
@@ -23,73 +68,3 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
       default: return '/karyawan/absensi-harian';
     }
 };
-
-const getAllowedPrefix = (jabatan: User['jabatan']): string => {
-    const adminRoles = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
-    if (adminRoles.includes(jabatan)) {
-        return '/admin';
-    }
-    if (jabatan === 'ADMIN BP') {
-        return '/admin-bp';
-    }
-     if (jabatan === 'OPRATOR BP') {
-        return '/dashboard';
-    }
-    
-    // Default for all other employee roles
-    return '/karyawan';
-}
-
-export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (isLoading) {
-      return; 
-    }
-    
-    const isLoginPage = pathname === '/';
-
-    if (!user) {
-      if (!isLoginPage) {
-        router.replace('/');
-      }
-      return;
-    }
-
-    if (isLoginPage) {
-        router.replace(getDefaultRouteForUser(user));
-        return;
-    }
-    
-    if (!user.jabatan) {
-        router.replace('/');
-        return;
-    }
-
-    const allowedPrefix = getAllowedPrefix(user.jabatan);
-    let isAuthorized = pathname.startsWith(allowedPrefix);
-
-    // Special case for OPRATOR BP who can also access /karyawan
-    if (user.jabatan === 'OPRATOR BP' && pathname.startsWith('/karyawan')) {
-        isAuthorized = true;
-    }
-
-    if (!isAuthorized) {
-        router.replace(getDefaultRouteForUser(user));
-    }
-
-  }, [user, isLoading, router, pathname]);
-
-  if (isLoading || (!user && pathname !== '/')) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  return <>{children}</>;
-}
