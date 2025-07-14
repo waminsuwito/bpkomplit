@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { verifyLogin, type User, type Jabatan } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,28 +15,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
-    switch(user.jabatan) {
-      case 'OPRATOR BP': return '/dashboard';
-      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
-      default: // Continue to check role-based routing
-        break;
-    }
-    switch(user.role) {
-      case 'super_admin': return '/admin/super-admin';
-      case 'admin_lokasi': return '/admin/laporan-harian';
-      case 'logistik_material': return '/admin/pemasukan-material';
-      case 'hse_hrd': return '/admin/absensi-karyawan-hari-ini';
-      case 'karyawan': return '/karyawan/absensi-harian';
-      default: return '/';
-    }
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,17 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    // This effect handles redirection after login or on page refresh for a logged-in user.
-    if (!isLoading && user) {
-      const defaultRoute = getDefaultRouteForUser(user);
-      // Redirect from login page to default route if user is already logged in
-      if (pathname === '/') {
-        router.replace(defaultRoute);
-      }
-    }
-  }, [user, isLoading, pathname, router]);
-
   const login = async (username: string, pass: string): Promise<Omit<User, 'password'>> => {
     const loggedInUser = await verifyLogin(username, pass);
     if (loggedInUser) {
@@ -79,7 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    router.replace('/');
+    // Let AuthGuard handle the redirection to '/'
+    router.replace('/'); 
   };
 
   return (

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-provider';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,23 +11,26 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
+import { AuthGuard, getDefaultRouteForUser } from '@/components/auth/auth-guard';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     try {
-      // The login function now only sets the user state.
-      // The redirect will be handled by the AuthProvider's useEffect.
-      await login(username, password);
+      const loggedInUser = await login(username, password);
+      // Let the AuthGuard handle redirection.
+      const destination = getDefaultRouteForUser(loggedInUser);
+      router.replace(destination);
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred.';
       setError(errorMessage);
@@ -94,4 +98,12 @@ export default function LoginPage() {
       </Card>
     </div>
   );
+}
+
+export default function LoginPage() {
+    return (
+        <AuthGuard>
+            <LoginPageContent />
+        </AuthGuard>
+    )
 }
