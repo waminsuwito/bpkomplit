@@ -2,13 +2,6 @@
 import { Header } from '@/components/dashboard/header';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { KaryawanSidebar } from '@/components/karyawan/karyawan-sidebar';
-import { userRoles } from '@/lib/types';
-
-// Define roles that are NOT considered standard 'karyawan' for this layout's purpose.
-const nonKaryawanRoles: string[] = ['SUPER ADMIN', 'ADMIN BP', 'OPRATOR BP'];
-
-// Filter the main userRoles list to get all roles that should use this layout.
-const karyawanRoles = userRoles.filter(role => !nonKaryawanRoles.includes(role));
 
 export default function KaryawanLayout({
   children,
@@ -16,7 +9,7 @@ export default function KaryawanLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard requiredRoles={karyawanRoles}>
+    <AuthGuard requiredRoles={['karyawan']}>
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <div className="flex flex-1">

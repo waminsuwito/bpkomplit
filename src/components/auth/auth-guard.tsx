@@ -2,22 +2,23 @@
 "use client";
 
 import { useAuth } from '@/context/auth-provider';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { type User, type UserRole } from '@/lib/types';
+import { type UserRole, type Jabatan } from '@/lib/types';
 
 
 export function AuthGuard({ 
   children, 
   requiredRoles,
+  requiredJabatans 
 }: { 
   children: React.ReactNode, 
   requiredRoles?: UserRole[],
+  requiredJabatans?: Jabatan[]
 }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (isLoading) {
@@ -33,18 +34,34 @@ export function AuthGuard({
     // Check if the user is authorized for the current page
     let isAuthorized = true;
     if (requiredRoles && requiredRoles.length > 0) {
-      if (!requiredRoles.includes(user.role)) {
-        isAuthorized = false;
-      }
+      isAuthorized = requiredRoles.includes(user.role);
+    } else if (requiredJabatans && requiredJabatans.length > 0) {
+      isAuthorized = requiredJabatans.includes(user.jabatan);
     }
 
     if (!isAuthorized) {
-      // If user is logged in but not authorized, send back to login page.
-      // The login page will then handle redirecting them to their correct default page.
-      router.replace('/');
+      // If user is logged in but not authorized, send them to their default page.
+      // This handles cases where they might try to access a URL they shouldn't.
+      const destination = getDefaultRouteForUser(user);
+      router.replace(destination);
     }
 
-  }, [user, isLoading, router, requiredRoles, pathname]);
+  }, [user, isLoading, router, requiredRoles, requiredJabatans]);
+
+  const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
+    switch(user.jabatan) {
+      case 'OPRATOR BP': return '/dashboard';
+      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
+    }
+    switch(user.role) {
+      case 'super_admin': return '/admin/super-admin';
+      case 'admin_lokasi': return '/admin/laporan-harian';
+      case 'logistik_material': return '/admin/pemasukan-material';
+      case 'hse_hrd': return '/admin/absensi-karyawan-hari-ini';
+      case 'karyawan': return '/karyawan/absensi-harian';
+      default: return '/';
+    }
+  };
 
   // Determine if the user is allowed to see the content.
   let canRenderContent = false;
@@ -52,6 +69,8 @@ export function AuthGuard({
      canRenderContent = true; // Assume allowed by default if logged in
      if (requiredRoles && requiredRoles.length > 0) {
         canRenderContent = requiredRoles.includes(user.role);
+     } else if (requiredJabatans && requiredJabatans.length > 0) {
+        canRenderContent = requiredJabatans.includes(user.jabatan);
      }
   }
   

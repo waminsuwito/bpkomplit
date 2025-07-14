@@ -2,26 +2,47 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { User } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import { verifyLogin, type User } from '@/lib/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
-  login: (userData: Omit<User, 'password'>) => void;
+  login: (username: string, pass: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
+    switch(user.jabatan) {
+      case 'OPRATOR BP': return '/dashboard';
+      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
+    }
+    switch(user.role) {
+      case 'super_admin': return '/admin/super-admin';
+      case 'admin_lokasi': return '/admin/laporan-harian';
+      case 'logistik_material': return '/admin/pemasukan-material';
+      case 'hse_hrd': return '/admin/absensi-karyawan-hari-ini';
+      case 'karyawan': return '/karyawan/absensi-harian';
+      default: return '/';
+    }
+};
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       }
     } catch (e) {
       console.error("Failed to parse user from localStorage", e);
@@ -31,16 +52,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = (userData: Omit<User, 'password'>) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+  const login = async (username: string, pass: string) => {
+    const loggedInUser = await verifyLogin(username, pass);
+    if (loggedInUser) {
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
+      setUser(loggedInUser);
+      toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
+      const destination = getDefaultRouteForUser(loggedInUser);
+      router.push(destination);
+    } else {
+      throw new Error('Username, NIK, atau password salah.');
+    }
   };
 
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    // Force a full reload to clear state and redirect via AuthGuard
-    window.location.href = '/'; 
+    router.push('/');
   };
 
   return (

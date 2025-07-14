@@ -50,6 +50,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
             <TableHead>Username</TableHead>
             <TableHead>NIK</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Jabatan</TableHead>
             <TableHead>Location</TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
@@ -60,8 +61,9 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
               <TableCell className="font-medium">{user.username}</TableCell>
               <TableCell>{user.nik || 'N/A'}</TableCell>
               <TableCell>
-                <Badge variant={user.role === 'SUPER ADMIN' ? 'destructive' : 'secondary'}>{user.role}</Badge>
+                <Badge variant={user.role === 'super_admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
               </TableCell>
+              <TableCell>{user.jabatan}</TableCell>
               <TableCell>{user.location || 'N/A'}</TableCell>
               <TableCell className="flex justify-center items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => onEdit(user.id)} disabled={user.id === 'superadmin-main'}>
@@ -71,7 +73,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon" disabled={user.role === 'SUPER ADMIN'}>
+                    <Button variant="destructive" size="icon" disabled={user.role === 'super_admin'}>
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
                     </Button>

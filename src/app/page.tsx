@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/context/auth-provider';
-import { verifyLogin } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,86 +10,34 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import type { User } from '@/lib/types';
-
-const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
-    switch(user.role) {
-      case 'OPRATOR BP': return '/dashboard';
-      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
-      case 'SUPER ADMIN': return '/admin/super-admin';
-      case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
-      case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
-      case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
-      case 'KEPALA MEKANIK':
-      case 'KEPALA WORKSHOP':
-        return '/karyawan/manajemen-alat';
-      default: return '/karyawan/absensi-harian';
-    }
-};
-
 
 export default function LoginPage() {
-  const { user, login, isLoading: isAuthLoading } = useAuth();
-  const router = useRouter();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsVerifying(true);
+    setIsLoading(true);
     setError('');
     try {
-      const loggedInUser = await verifyLogin(username, password);
-      if (loggedInUser) {
-        toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
-        login(loggedInUser); // Update the user state
-        // The useEffect below will handle the redirect once the state is updated
-      } else {
-        const errorMessage = 'Username, NIK, atau password salah.';
-        setError(errorMessage);
-        toast({
-          variant: 'destructive',
-          title: 'Login Gagal',
-          description: errorMessage,
-        });
-        setIsVerifying(false);
-      }
-    } catch (err) {
-      setError('An unexpected error occurred.');
+      await login(username, password);
+      // The redirect is handled by the AuthProvider now
+    } catch (err: any) {
+      const errorMessage = err.message || 'An unexpected error occurred.';
+      setError(errorMessage);
       toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Could not connect to the server.',
-        });
-      setIsVerifying(false);
+        variant: 'destructive',
+        title: 'Login Gagal',
+        description: errorMessage,
+      });
+      setIsLoading(false);
     }
+    // Don't set isLoading to false here, as the page will redirect on success
   };
-  
-  // This effect will run ONLY after the `user` state has been updated by the `login` function.
-  useEffect(() => {
-    if (user && !isAuthLoading) {
-        const destination = getDefaultRouteForUser(user);
-        router.replace(destination);
-    }
-  }, [user, isAuthLoading, router]);
-
-  const isLoading = isAuthLoading || isVerifying;
-
-  // Show a loading spinner if the user is already authenticated and we're just waiting for the redirect.
-  if (isAuthLoading || user) {
-      return (
-          <div className="flex h-screen w-full items-center justify-center bg-background">
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-muted-foreground">Mengalihkan...</p>
-              </div>
-          </div>
-      );
-  }
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">

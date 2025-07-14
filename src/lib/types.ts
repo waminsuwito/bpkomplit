@@ -23,6 +23,15 @@ export interface Formula {
 }
 
 export const userRoles = [
+  "super_admin",
+  "admin_lokasi",
+  "logistik_material",
+  "hse_hrd",
+  "karyawan",
+] as const;
+export type UserRole = (typeof userRoles)[number];
+
+export const jabatanOptions = [
   "SUPER ADMIN",
   "ADMIN BP",
   "ADMIN LOGISTIK",
@@ -60,8 +69,7 @@ export const userRoles = [
   "TUKANG BOBOK",
   "TUKANG LAS",
 ] as const;
-
-export type UserRole = (typeof userRoles)[number];
+export type Jabatan = (typeof jabatanOptions)[number];
 
 export const userLocations = [
   "BP PEKANBARU",
@@ -69,7 +77,6 @@ export const userLocations = [
   "BP BAUNG",
   "BP IKN",
 ] as const;
-
 export type UserLocation = (typeof userLocations)[number];
 
 export interface User {
@@ -77,6 +84,7 @@ export interface User {
   username: string;
   password?: string;
   role: UserRole;
+  jabatan: Jabatan;
   location?: UserLocation;
   nik?: string;
 }
