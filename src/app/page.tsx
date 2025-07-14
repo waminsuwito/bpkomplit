@@ -2,7 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/context/auth-provider';
+import { useRouter } from 'next/navigation';
+import { useAuth, getDefaultRouteForUser } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { Loader2, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,8 +26,9 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
     try {
-      await login(username, password);
-      // The redirect is handled by the AuthProvider now
+      const loggedInUser = await login(username, password);
+      const destination = getDefaultRouteForUser(loggedInUser);
+      router.push(destination);
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred.';
       setError(errorMessage);
@@ -36,7 +39,6 @@ export default function LoginPage() {
       });
       setIsLoading(false);
     }
-    // Don't set isLoading to false here, as the page will redirect on success
   };
   
   return (

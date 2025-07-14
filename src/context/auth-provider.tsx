@@ -8,17 +8,19 @@ import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
-  login: (username: string, pass: string) => Promise<void>;
+  login: (username: string, pass: string) => Promise<Omit<User, 'password'>>;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
+export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     switch(user.jabatan) {
       case 'OPRATOR BP': return '/dashboard';
       case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
+      default: // Continue to check role-based routing
+        break;
     }
     switch(user.role) {
       case 'super_admin': return '/admin/super-admin';
@@ -52,14 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (username: string, pass: string) => {
+  const login = async (username: string, pass: string): Promise<Omit<User, 'password'>> => {
     const loggedInUser = await verifyLogin(username, pass);
     if (loggedInUser) {
       localStorage.setItem('user', JSON.stringify(loggedInUser));
       setUser(loggedInUser);
       toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
-      const destination = getDefaultRouteForUser(loggedInUser);
-      router.push(destination);
+      return loggedInUser;
     } else {
       throw new Error('Username, NIK, atau password salah.');
     }
