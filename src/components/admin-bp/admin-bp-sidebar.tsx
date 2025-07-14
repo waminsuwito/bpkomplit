@@ -15,7 +15,7 @@ import { buttonVariants } from '@/components/ui/button';
 
 const navItems = [
   { href: '/admin-bp/schedule-cor-hari-ini', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
-  { href: '/dashboard/database-produksi', label: 'Database Produksi', icon: Database },
+  { href: '/admin-bp/database-produksi', label: 'Database Produksi', icon: Database },
   { href: '/admin-bp/pemakaian-material', label: 'Pemakaian Material', icon: ClipboardList },
   { href: '/admin-bp/laporan-sinkronisasi', label: 'Laporan Sinkronisasi', icon: GitCompareArrows },
 ];
