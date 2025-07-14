@@ -8,7 +8,7 @@ import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
 import { type User, type UserRole, type UserLocation, type UserJabatan } from '@/lib/types';
-import { getUsers, addUser, updateUser, deleteUser } from '@/lib/auth';
+import { getUsers, addUser, updateUser, deleteUser, verifyLogin } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -28,11 +28,12 @@ export default function SuperAdminPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
-    const allUsers = getUsers();
-    const nikExists = allUsers.some(
+    // Re-fetch users right before the check to prevent race conditions
+    const currentUsers = getUsers();
+    const nikExists = currentUsers.some(
       (user) => user.nik === data.nik && user.id !== userId
     );
 
@@ -57,7 +58,6 @@ export default function SuperAdminPage() {
         userDataToUpdate.password = data.password;
       }
       updateUser(userId, userDataToUpdate);
-      setUsers(getUsers()); // Re-fetch from storage to reflect changes
       toast({ title: 'User Updated', description: `User "${data.username}" has been updated.` });
     } else { // Add new user
        if (!data.password) {
@@ -77,9 +77,11 @@ export default function SuperAdminPage() {
         jabatan: data.role !== 'super_admin' ? (data.jabatan as UserJabatan) || undefined : undefined,
       };
       addUser(newUser);
-      setUsers(getUsers()); // Re-fetch from storage
       toast({ title: 'User Created', description: `User "${data.username}" has been created.` });
     }
+    
+    // Refresh state from the authoritative source (localStorage) and reset form
+    setUsers(getUsers()); 
     setUserToEdit(null);
   };
   
