@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth-provider';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { type UserRole, type Jabatan } from '@/lib/types';
+import { type User, type UserRole, type Jabatan } from '@/lib/types';
 
 export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     switch(user.jabatan) {
@@ -42,19 +42,29 @@ export function AuthGuard({
 
   useEffect(() => {
     if (isLoading) {
-      return; // Do nothing while loading
+      return; // Wait until the user state is determined
     }
 
-    // If user is NOT logged in
+    const isLoginPage = pathname === '/';
+    const defaultRoute = user ? getDefaultRouteForUser(user) : '/';
+
+    // Case 1: User is not logged in
     if (!user) {
-      // Allow access only to the login page
-      if (pathname !== '/') {
+      if (!isLoginPage) {
+        // If not logged in and not on the login page, redirect to login
         router.replace('/');
       }
       return;
     }
 
-    // If user IS logged in
+    // Case 2: User is logged in
+    if (isLoginPage) {
+      // If logged in and on the login page, redirect to their default route
+      router.replace(defaultRoute);
+      return;
+    }
+
+    // Case 3: User is logged in and on a protected page
     let isAuthorized = false;
     if (requiredRoles?.length) {
       isAuthorized = requiredRoles.includes(user.role);
@@ -62,48 +72,26 @@ export function AuthGuard({
       isAuthorized = requiredJabatans.includes(user.jabatan);
     }
 
-    const defaultRoute = getDefaultRouteForUser(user);
-
-    // If user is on the login page but is already logged in, redirect them
-    if (pathname === '/') {
-      router.replace(defaultRoute);
-      return;
-    }
-    
-    // If user is on a protected page but is not authorized, redirect to their default page
     if ((requiredRoles || requiredJabatans) && !isAuthorized) {
-       router.replace(defaultRoute);
+      // If on a protected page but not authorized, redirect to their default page
+      router.replace(defaultRoute);
     }
 
   }, [user, isLoading, router, pathname, requiredRoles, requiredJabatans]);
 
-  // Determine if the content should be rendered
-  let canRenderContent = false;
-  if (!isLoading) {
-    if (pathname === '/') {
-        // Show login page only if user is not logged in yet.
-        canRenderContent = !user;
-    } else if (user) {
-        // For protected pages, check authorization.
-        if (requiredRoles?.length) {
-            canRenderContent = requiredRoles.includes(user.role);
-        } else if (requiredJabatans?.length) {
-            canRenderContent = requiredJabatans.includes(user.jabatan);
-        } else {
-            // Should not happen on protected pages, but as a fallback.
-            canRenderContent = false; 
-        }
-    }
-  }
-
-
-  if (isLoading || !canRenderContent) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+  
+  // Render children only if the logic above doesn't redirect
+  // This avoids rendering a page flash before redirecting
+  const isLoginPage = pathname === '/';
+  if (!user && !isLoginPage) return null; // Don't render protected content if not logged in
+  if (user && isLoginPage) return null; // Don't render login page if logged in
 
   return <>{children}</>;
 }
