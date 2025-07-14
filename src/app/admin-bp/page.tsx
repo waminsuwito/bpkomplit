@@ -4,5 +4,6 @@
 import { redirect } from 'next/navigation';
 
 export default function AdminBpRootPage() {
+  // Redirect to the default page for this section
   redirect('/admin-bp/schedule-cor-hari-ini');
 }
