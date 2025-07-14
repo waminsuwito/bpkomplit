@@ -45,7 +45,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return; // Allow rendering the login page
     }
 
-    // SCENARIO 2: User IS logged in
+    // SCENARIO 2: User IS logged in.
+    // Ensure user and jabatan are defined before proceeding.
+    if (!user.jabatan) {
+      // If jabatan is missing, logout to be safe
+      localStorage.removeItem('user');
+      router.replace('/');
+      return;
+    }
+    
     const defaultRoute = getDefaultRouteForUser(user);
 
     // If logged-in user is on the login page, redirect them away.
@@ -63,13 +71,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const jabatan = user.jabatan;
     let isAuthorized = false;
 
-    // Add a check to ensure `jabatan` is defined before using it.
-    if (!jabatan) {
-        // If for some reason user has no jabatan, redirect them to default.
-        router.replace(defaultRoute);
-        return;
-    }
-
+    // This check is now safe because we've confirmed user.jabatan exists.
     if (jabatan === 'SUPER ADMIN' && isAdminPage) {
         isAuthorized = true;
     } else if (jabatan === 'ADMIN BP' && isAdminBpPage) {
