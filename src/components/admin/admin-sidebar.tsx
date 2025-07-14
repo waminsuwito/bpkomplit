@@ -83,8 +83,9 @@ export function AdminSidebar() {
 
   useEffect(() => {
     const checkUnread = () => {
+      if (!user) return;
       try {
-        if (user?.jabatan === 'SUPER ADMIN') {
+        if (user.jabatan === 'SUPER ADMIN') {
           const anonData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
           const anonReports: AnonymousReport[] = anonData ? JSON.parse(anonData) : [];
           setHasUnreadAnonymous(anonReports.some(r => r.status === 'new'));
@@ -92,16 +93,16 @@ export function AdminSidebar() {
 
         const suggestionData = localStorage.getItem(SUGGESTIONS_KEY);
         const suggestions: Suggestion[] = suggestionData ? JSON.parse(suggestionData) : [];
-        setHasUnreadSuggestions(suggestions.some(r => r.status === 'new'));
+        setHasUnreadSuggestions(suggestions.some(r => r.status === 'new' && (user.role === 'super_admin' || r.location === user.location)));
 
         const complaintData = localStorage.getItem(COMPLAINTS_KEY);
         const complaints: Complaint[] = complaintData ? JSON.parse(complaintData) : [];
-        setHasUnreadComplaints(complaints.some(r => r.status === 'new'));
+        setHasUnreadComplaints(complaints.some(r => r.status === 'new' && (user.role === 'super_admin' || r.location === user.location)));
         
-        if (user?.jabatan === 'HSE/K3') {
+        if (user.jabatan === 'HSE/K3') {
           const accidentData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
           const accidentReports: AccidentReport[] = accidentData ? JSON.parse(accidentData) : [];
-          setHasUnreadAccidents(accidentReports.some(r => r.status === 'new'));
+          setHasUnreadAccidents(accidentReports.some(r => r.status === 'new' && (user.role === 'super_admin' || r.location === user.location)));
         }
 
       } catch (e) {
