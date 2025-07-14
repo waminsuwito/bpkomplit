@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect } from 'react';
@@ -9,13 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { userRoles, type User, type Jabatan, jabatanOptions, userLocations } from '@/lib/types';
+import { type User, type Jabatan, jabatanOptions, userLocations } from '@/lib/types';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: 'Username must be at least 3 characters long.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }).optional().or(z.literal('')),
   nik: z.string().min(1, { message: 'NIK is required.' }),
-  role: z.enum(userRoles),
   jabatan: z.enum(jabatanOptions),
   location: z.enum(userLocations),
 });
@@ -37,7 +37,6 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
       username: '',
       password: '',
       nik: '',
-      role: 'karyawan',
       jabatan: 'HELPER',
       location: 'BP PEKANBARU',
     },
@@ -48,7 +47,6 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
       form.reset({
         username: userToEdit.username,
         password: '', // Don't pre-fill password
-        role: userToEdit.role,
         jabatan: userToEdit.jabatan,
         location: userToEdit.location || 'BP PEKANBARU',
         nik: userToEdit.nik || '',
@@ -58,7 +56,6 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
         username: '',
         password: '',
         nik: '',
-        role: 'karyawan',
         jabatan: 'HELPER',
         location: 'BP PEKANBARU',
       });
@@ -120,31 +117,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
               </FormItem>
             )}
           />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {userRoles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        
         <FormField
           control={form.control}
           name="jabatan"

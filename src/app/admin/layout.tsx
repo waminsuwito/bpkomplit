@@ -1,3 +1,4 @@
+
 import { Header } from '@/components/dashboard/header';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { AuthGuard } from '@/components/auth/auth-guard';
@@ -8,7 +9,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard requiredRoles={['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3']}>
+    <AuthGuard requiredJabatans={['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3']}>
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <div className="flex flex-1">

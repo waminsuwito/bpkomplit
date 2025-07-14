@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { type User, type UserRole } from '@/lib/types';
+import { type User } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -49,7 +50,6 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
           <TableRow>
             <TableHead>Username</TableHead>
             <TableHead>NIK</TableHead>
-            <TableHead>Role</TableHead>
             <TableHead>Jabatan</TableHead>
             <TableHead>Location</TableHead>
             <TableHead className="text-center">Actions</TableHead>
@@ -61,9 +61,8 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
               <TableCell className="font-medium">{user.username}</TableCell>
               <TableCell>{user.nik || 'N/A'}</TableCell>
               <TableCell>
-                <Badge variant={user.role === 'super_admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
+                <Badge variant={user.jabatan === 'SUPER ADMIN' ? 'destructive' : 'secondary'}>{user.jabatan}</Badge>
               </TableCell>
-              <TableCell>{user.jabatan}</TableCell>
               <TableCell>{user.location || 'N/A'}</TableCell>
               <TableCell className="flex justify-center items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => onEdit(user.id)} disabled={user.id === 'superadmin-main'}>
@@ -73,7 +72,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon" disabled={user.role === 'super_admin'}>
+                    <Button variant="destructive" size="icon" disabled={user.jabatan === 'SUPER ADMIN'}>
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
                     </Button>

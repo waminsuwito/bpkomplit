@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useAuth } from '@/context/auth-provider';
@@ -43,10 +44,10 @@ export function Header() {
                 <UserCircle className="h-4 w-4 text-primary" />
                 {user.username}
               </p>
-              <p className="text-xs text-muted-foreground">{user.role}</p>
+              <p className="text-xs text-muted-foreground">{user.jabatan}</p>
             </div>
             
-             {user?.role === 'OPRATOR BP' && (
+             {user?.jabatan === 'OPRATOR BP' && (
               <>
                 <Button asChild variant="outline" size="sm">
                   <Link href="/karyawan/absensi-harian">

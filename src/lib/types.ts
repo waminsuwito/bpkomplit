@@ -22,15 +22,6 @@ export interface Formula {
   mixingTime: number; // in seconds
 }
 
-export const userRoles = [
-  "super_admin",
-  "admin_lokasi",
-  "logistik_material",
-  "hse_hrd",
-  "karyawan",
-] as const;
-export type UserRole = (typeof userRoles)[number];
-
 export const jabatanOptions = [
   "SUPER ADMIN",
   "ADMIN BP",
@@ -83,7 +74,6 @@ export interface User {
   id: string;
   username: string;
   password?: string;
-  role: UserRole;
   jabatan: Jabatan;
   location?: UserLocation;
   nik?: string;

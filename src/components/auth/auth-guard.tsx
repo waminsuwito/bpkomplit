@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { useAuth } from '@/context/auth-provider';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { type User, type UserRole, type Jabatan } from '@/lib/types';
+import { type User, type Jabatan } from '@/lib/types';
 
 export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     switch(user.jabatan) {
@@ -14,26 +15,21 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
       case 'SOPIR TM': return '/karyawan/checklist-harian-tm';
       case 'KEPALA MEKANIK': return '/karyawan/manajemen-alat';
       case 'KEPALA WORKSHOP': return '/karyawan/manajemen-alat';
-      default: // Continue to check role-based routing
-        break;
-    }
-    switch(user.role) {
-      case 'super_admin': return '/admin/super-admin';
-      case 'admin_lokasi': return '/admin/laporan-harian';
-      case 'logistik_material': return '/admin/pemasukan-material';
-      case 'hse_hrd': return '/admin/absensi-karyawan-hari-ini';
-      case 'karyawan': return '/karyawan/absensi-harian';
-      default: return '/';
+      case 'SUPER ADMIN': return '/admin/super-admin';
+      case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
+      case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
+      case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
+      default: return '/karyawan/absensi-harian'; // Default for all other jabatans
     }
 };
 
+const adminJabatans: Jabatan[] = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
+
 export function AuthGuard({ 
   children, 
-  requiredRoles,
   requiredJabatans 
 }: { 
   children: React.ReactNode, 
-  requiredRoles?: UserRole[],
   requiredJabatans?: Jabatan[]
 }) {
   const { user, isLoading } = useAuth();
@@ -46,7 +42,6 @@ export function AuthGuard({
     }
 
     const isLoginPage = pathname === '/';
-    const defaultRoute = user ? getDefaultRouteForUser(user) : '/';
 
     // Case 1: User is not logged in
     if (!user) {
@@ -58,6 +53,7 @@ export function AuthGuard({
     }
 
     // Case 2: User is logged in
+    const defaultRoute = getDefaultRouteForUser(user);
     if (isLoginPage) {
       // If logged in and on the login page, redirect to their default route
       router.replace(defaultRoute);
@@ -65,19 +61,15 @@ export function AuthGuard({
     }
 
     // Case 3: User is logged in and on a protected page
-    let isAuthorized = false;
-    if (requiredRoles?.length) {
-      isAuthorized = requiredRoles.includes(user.role);
-    } else if (requiredJabatans?.length) {
-      isAuthorized = requiredJabatans.includes(user.jabatan);
+    if (requiredJabatans) {
+      const isAuthorized = requiredJabatans.includes(user.jabatan);
+      if (!isAuthorized) {
+        // If on a protected page but not authorized, redirect to their default page
+        router.replace(defaultRoute);
+      }
     }
 
-    if ((requiredRoles || requiredJabatans) && !isAuthorized) {
-      // If on a protected page but not authorized, redirect to their default page
-      router.replace(defaultRoute);
-    }
-
-  }, [user, isLoading, router, pathname, requiredRoles, requiredJabatans]);
+  }, [user, isLoading, router, pathname, requiredJabatans]);
 
   if (isLoading) {
     return (
