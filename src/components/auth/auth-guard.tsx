@@ -9,24 +9,28 @@ import { type User } from '@/lib/types';
 
 export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     const jabatan = user.jabatan;
+    switch (jabatan) {
+      // Admin Roles
+      case 'SUPER ADMIN': return '/admin/super-admin';
+      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
+      case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
+      case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
+      case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
 
-    // Admin Roles
-    if (jabatan === 'SUPER ADMIN') return '/admin/super-admin';
-    if (jabatan === 'ADMIN BP') return '/admin-bp/schedule-cor-hari-ini';
-    if (jabatan === 'ADMIN LOGISTIK') return '/admin/laporan-harian';
-    if (jabatan === 'LOGISTIK MATERIAL') return '/admin/pemasukan-material';
-    if (jabatan === 'HSE/K3') return '/admin/absensi-karyawan-hari-ini';
+      // Operator Role
+      case 'OPRATOR BP': return '/dashboard';
+      
+      // Karyawan with special pages
+      case 'SOPIR TM': return '/karyawan/checklist-harian-tm';
+      case 'KEPALA MEKANIK':
+      case 'KEPALA WORKSHOP':
+        return '/karyawan/manajemen-alat';
 
-    // Operator Role
-    if (jabatan === 'OPRATOR BP') return '/dashboard';
-    
-    // Karyawan with special pages
-    if (jabatan === 'SOPIR TM') return '/karyawan/checklist-harian-tm';
-    if (jabatan === 'KEPALA MEKANIK' || jabatan === 'KEPALA WORKSHOP') return '/karyawan/manajemen-alat';
-
-    // Default for all other 'karyawan' roles
-    return '/karyawan/absensi-harian';
+      // Default for all other 'karyawan' roles
+      default: return '/karyawan/absensi-harian';
+    }
 };
+
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -35,53 +39,52 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading) {
-      return; // Wait until the user state is determined from localStorage
+      return; // Wait until auth state is confirmed
     }
 
     const isLoginPage = pathname === '/';
-    const isPublicPage = isLoginPage; // Can add more public pages here later if needed
+    const isPublicPage = isLoginPage;
 
-    // If trying to access a protected page without being logged in, redirect to login
-    if (!user && !isPublicPage) {
-      router.replace('/');
+    // SCENARIO 1: User is NOT logged in
+    if (!user) {
+      if (!isPublicPage) {
+        // If trying to access a protected page, redirect to login
+        router.replace('/');
+      }
+      // Otherwise, allow rendering the public page (login page)
       return;
     }
 
-    if (user) {
-      const defaultRoute = getDefaultRouteForUser(user);
+    // SCENARIO 2: User IS logged in
+    const defaultRoute = getDefaultRouteForUser(user);
+    const isAdminRoute = defaultRoute.startsWith('/admin') || defaultRoute.startsWith('/admin-bp');
+    const isKaryawanRoute = defaultRoute.startsWith('/karyawan');
+    const isDashboardRoute = defaultRoute.startsWith('/dashboard');
 
-      // If logged in, redirect away from login page to their default page
-      if (isLoginPage) {
-        router.replace(defaultRoute);
-        return;
-      }
-      
-      const isAdminPage = pathname.startsWith('/admin/') || pathname.startsWith('/admin-bp/');
-      const isOperatorPage = pathname.startsWith('/dashboard');
-      const isKaryawanPage = pathname.startsWith('/karyawan/');
+    const accessingAdminPages = pathname.startsWith('/admin') || pathname.startsWith('/admin-bp');
+    const accessingKaryawanPages = pathname.startsWith('/karyawan');
+    const accessingDashboardPage = pathname.startsWith('/dashboard');
 
-      const userDefaultRoute = getDefaultRouteForUser(user);
-      const isUserAdmin = userDefaultRoute.startsWith('/admin');
-      const isUserOperator = userDefaultRoute.startsWith('/dashboard');
-      const isUserKaryawan = userDefaultRoute.startsWith('/karyawan');
-      
-      // Authorization Checks:
-      // If an admin tries to access a non-admin page, redirect them to their default admin page
-      if (isUserAdmin && !isAdminPage) {
-          router.replace(defaultRoute);
-          return;
-      }
-      // If an operator tries to access a non-operator page, redirect them
-      if (isUserOperator && !isOperatorPage) {
-          router.replace(defaultRoute);
-          return;
-      }
-      // If a karyawan tries to access a non-karyawan page, redirect them
-      if (isUserKaryawan && !isKaryawanPage) {
-          router.replace(defaultRoute);
-          return;
-      }
+    if (isLoginPage) {
+      // If on login page, redirect to their default dashboard
+      router.replace(defaultRoute);
+      return;
     }
+
+    // Authorization checks
+    if (isAdminRoute && !accessingAdminPages) {
+      router.replace(defaultRoute);
+      return;
+    }
+    if (isKaryawanRoute && !accessingKaryawanPages) {
+      router.replace(defaultRoute);
+      return;
+    }
+    if (isDashboardRoute && !accessingDashboardPage) {
+      router.replace(defaultRoute);
+      return;
+    }
+
   }, [user, isLoading, router, pathname]);
 
   if (isLoading) {
@@ -91,11 +94,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
-  // Prevent flashing content
-  const isLoginPage = pathname === '/';
-  if (!user && !isLoginPage) return null; // Don't render protected content if not logged in
-  if (user && isLoginPage) return null; // Don't render login page if logged in
+
+  // Prevent flashing content:
+  // If user is not logged in, only render the login page.
+  if (!user && pathname !== '/') return null;
+  // If user is logged in, do not render the login page.
+  if (user && pathname === '/') return null;
 
   return <>{children}</>;
 }

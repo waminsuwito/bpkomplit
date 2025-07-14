@@ -3,12 +3,11 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { verifyLogin, type User, type Jabatan } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+import { type User } from '@/lib/types';
+import { getDefaultRouteForUser } from '@/components/auth/auth-guard';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
-  login: (username: string, pass: string) => Promise<Omit<User, 'password'>>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -19,9 +18,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
+    // This effect runs ONLY ONCE on initial app load.
+    // It's the single source of truth for the user's logged-in state.
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -33,29 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  const login = async (username: string, pass: string): Promise<Omit<User, 'password'>> => {
-    const loggedInUser = await verifyLogin(username, pass);
-    if (loggedInUser) {
-      setUser(loggedInUser);
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
-      toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
-      return loggedInUser;
-    } else {
-      throw new Error('Username, NIK, atau password salah.');
-    }
-  };
+  }, []); // Empty dependency array ensures this runs only once.
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    // The AuthGuard will handle redirecting to '/'
-    router.replace('/'); 
+    // Force a reload to the login page to ensure a clean state.
+    window.location.href = '/';
   };
 
+  const value = { user, logout, isLoading };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/context/auth-provider';
+import { verifyLogin } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,25 +12,38 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
 import { AuthGuard, getDefaultRouteForUser } from '@/components/auth/auth-guard';
+import { type User } from '@/lib/types';
 
 function LoginPageContent() {
-  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    
     try {
-      const loggedInUser = await login(username, password);
-      // Let the AuthGuard handle redirection.
-      const destination = getDefaultRouteForUser(loggedInUser);
-      router.replace(destination);
+      const loggedInUser = await verifyLogin(username, password);
+      
+      if (loggedInUser) {
+        // Step 1: Save user to localStorage
+        localStorage.setItem('user', JSON.stringify(loggedInUser));
+        
+        // Step 2: Determine destination
+        const destination = getDefaultRouteForUser(loggedInUser);
+        
+        // Step 3: Force a full page reload to the destination.
+        // This is the key to fixing the race condition. It ensures AuthProvider
+        // re-reads from localStorage in a clean state.
+        window.location.href = destination;
+        
+      } else {
+        throw new Error('Username, NIK, atau password salah.');
+      }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred.';
       setError(errorMessage);
