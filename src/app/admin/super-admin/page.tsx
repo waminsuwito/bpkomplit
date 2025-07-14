@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
-import { type User, type UserRole } from '@/lib/types';
+import { type User, type Jabatan } from '@/lib/types';
 import { getUsers, addUser, updateUser, deleteUser, verifyLogin } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,7 +49,7 @@ export default function SuperAdminPage() {
     if (userId) { // Update existing user
       const userDataToUpdate: Partial<User> = {
         username: data.username,
-        role: data.role as UserRole,
+        jabatan: data.jabatan as Jabatan,
         location: data.location,
         nik: data.nik,
       };
@@ -70,7 +70,7 @@ export default function SuperAdminPage() {
       const newUser: Omit<User, 'id'> = {
         username: data.username,
         password: data.password,
-        role: data.role as UserRole,
+        jabatan: data.jabatan as Jabatan,
         location: data.location,
         nik: data.nik,
       };

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useAuth } from '@/context/auth-provider';
@@ -22,8 +21,6 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
       default: return '/karyawan/absensi-harian'; // Default for all other jabatans
     }
 };
-
-const adminJabatans: Jabatan[] = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
 
 export function AuthGuard({ 
   children, 
