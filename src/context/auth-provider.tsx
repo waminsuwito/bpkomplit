@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    // Let AuthGuard handle the redirection to '/'
+    // The AuthGuard will handle redirecting to '/'
     router.replace('/'); 
   };
 
