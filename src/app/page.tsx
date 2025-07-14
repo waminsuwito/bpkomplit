@@ -49,14 +49,6 @@ export default function LoginPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // If user is already logged in (e.g., from a previous session), redirect them.
-    if (user && !isAuthLoading) {
-      const destination = getDefaultRouteForUser(user);
-      router.replace(destination);
-    }
-  }, [user, isAuthLoading, router]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifying(true);
@@ -65,7 +57,7 @@ export default function LoginPage() {
       const loggedInUser = await verifyLogin(username, password);
       if (loggedInUser) {
         toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
-        login(loggedInUser); // login now handles the redirect
+        login(loggedInUser);
       } else {
         const errorMessage = 'Username, NIK, atau password salah.';
         setError(errorMessage);
@@ -86,10 +78,18 @@ export default function LoginPage() {
       setIsVerifying(false);
     }
   };
+  
+  // This effect will run ONLY after the `user` state has been updated by the `login` function.
+  useEffect(() => {
+    if (user && !isAuthLoading) {
+        const destination = getDefaultRouteForUser(user);
+        router.replace(destination);
+    }
+  }, [user, isAuthLoading, router]);
 
   const isLoading = isAuthLoading || isVerifying;
 
-  // If the user is already authenticated, show a loading state while redirecting
+  // Show a loading spinner if the user is already authenticated and we're just waiting for the redirect.
   if (isAuthLoading || user) {
       return (
           <div className="flex h-screen w-full items-center justify-center bg-background">

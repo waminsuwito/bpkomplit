@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { type User, type UserRole, type UserJabatan } from '@/lib/types';
 
-// This helper MUST stay in sync with the one in AuthProvider
 const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     if (user.jabatan === 'OPRATOR BP') return '/dashboard';
     if (user.jabatan === 'ADMIN BP') return '/admin-bp/schedule-cor-hari-ini';
@@ -19,7 +18,7 @@ const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
         'hse_hrd_lokasi': '/admin/absensi-karyawan-hari-ini'
     };
     
-    if (roleRedirects[user.role]) {
+    if (user.role && roleRedirects[user.role]) {
         return roleRedirects[user.role]!;
     }
     
@@ -48,17 +47,17 @@ export function AuthGuard({
 
   useEffect(() => {
     if (isLoading) {
-      return; // Do nothing while loading authentication state
+      return; // Wait until authentication state is loaded
     }
 
     if (!user) {
       // If not logged in, redirect to the login page.
-      // This is the primary protection for all guarded routes.
+      // This protects all guarded routes.
       router.replace('/');
       return;
     }
     
-    // User is logged in. Now, check if they are authorized for the *current* page.
+    // Check if the user is authorized for the current page
     let isAuthorized = true;
     if (requiredRoles && requiredRoles.length > 0) {
       if (!requiredRoles.includes(user.role)) {
@@ -76,10 +75,9 @@ export function AuthGuard({
         }
     }
 
-
     if (!isAuthorized) {
-      // If the user is logged in but not authorized for THIS specific page,
-      // redirect them to THEIR default page. This prevents access to wrong sections.
+      // If the user is logged in but not authorized for this specific page,
+      // redirect them to their default page.
       const defaultRoute = getDefaultRouteForUser(user);
       router.replace(defaultRoute);
     }
@@ -102,7 +100,7 @@ export function AuthGuard({
      }
   }
   
-  // While loading or if content shouldn't be rendered, show a spinner.
+  // While loading or if content shouldn't be rendered yet, show a spinner.
   if (isLoading || !canRenderContent) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
