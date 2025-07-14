@@ -2,8 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { verifyLogin, type User } from '@/lib/auth';
+import { useRouter, usePathname } from 'next/navigation';
+import { verifyLogin, type User, type Jabatan } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -32,19 +32,18 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
     }
 };
 
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        setUser(JSON.parse(storedUser));
       }
     } catch (e) {
       console.error("Failed to parse user from localStorage", e);
@@ -54,10 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    // This effect handles redirection after login or on page refresh for a logged-in user.
+    if (!isLoading && user) {
+      const defaultRoute = getDefaultRouteForUser(user);
+      // Redirect from login page to default route if user is already logged in
+      if (pathname === '/') {
+        router.replace(defaultRoute);
+      }
+    }
+  }, [user, isLoading, pathname, router]);
+
   const login = async (username: string, pass: string): Promise<Omit<User, 'password'>> => {
     const loggedInUser = await verifyLogin(username, pass);
     if (loggedInUser) {
-      // This is the key change: update state and localStorage synchronously
       setUser(loggedInUser);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
       toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
@@ -68,9 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
     setUser(null);
-    router.push('/');
+    localStorage.removeItem('user');
+    router.replace('/');
   };
 
   return (

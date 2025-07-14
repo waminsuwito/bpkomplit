@@ -2,8 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth, getDefaultRouteForUser } from '@/context/auth-provider';
+import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +13,6 @@ import { Loader2, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,9 +24,9 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
     try {
-      const loggedInUser = await login(username, password);
-      const destination = getDefaultRouteForUser(loggedInUser);
-      router.push(destination);
+      // The login function now only sets the user state.
+      // The redirect will be handled by the AuthProvider's useEffect.
+      await login(username, password);
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred.';
       setError(errorMessage);
