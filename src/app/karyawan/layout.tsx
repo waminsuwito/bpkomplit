@@ -4,10 +4,10 @@ import { AuthGuard } from '@/components/auth/auth-guard';
 import { KaryawanSidebar } from '@/components/karyawan/karyawan-sidebar';
 import { userRoles } from '@/lib/types';
 
-// Define roles that are NOT considered standard 'karyawan'
-const nonKaryawanRoles = ['SUPER ADMIN', 'ADMIN BP', 'OPRATOR BP'];
+// Define roles that are NOT considered standard 'karyawan' for this layout's purpose.
+const nonKaryawanRoles: string[] = ['SUPER ADMIN', 'ADMIN BP', 'OPRATOR BP'];
 
-// Filter the main userRoles list to get all standard karyawan roles
+// Filter the main userRoles list to get all roles that should use this layout.
 const karyawanRoles = userRoles.filter(role => !nonKaryawanRoles.includes(role));
 
 export default function KaryawanLayout({

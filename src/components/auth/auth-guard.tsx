@@ -7,18 +7,6 @@ import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { type User, type UserRole } from '@/lib/types';
 
-const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
-    switch(user.role) {
-      case 'OPRATOR BP': return '/dashboard';
-      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
-      case 'SUPER ADMIN': return '/admin/super-admin';
-      case 'ADMIN LOGISTIK': return '/admin/laporan-harian'; // Placeholder, adjust if needed
-      case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
-      case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
-      default: return '/karyawan/absensi-harian';
-    }
-};
-
 
 export function AuthGuard({ 
   children, 
@@ -52,10 +40,10 @@ export function AuthGuard({
     }
 
     if (!isAuthorized) {
-      // If the user is logged in but not authorized for this specific page,
-      // redirect them to their default page.
-      const defaultRoute = getDefaultRouteForUser(user);
-      router.replace(defaultRoute);
+      // If user is logged in but not authorized for this specific page,
+      // just send them back to the login page. The login page will then
+      // handle redirecting them to their correct default page.
+      router.replace('/');
     }
 
   }, [user, isLoading, router, requiredRoles, pathname]);

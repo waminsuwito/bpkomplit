@@ -12,16 +12,19 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { User, UserRole } from '@/lib/types';
+import type { User } from '@/lib/types';
 
 const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     switch(user.role) {
       case 'OPRATOR BP': return '/dashboard';
       case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
       case 'SUPER ADMIN': return '/admin/super-admin';
-      case 'ADMIN LOGISTIK': return '/admin/laporan-harian'; // Placeholder, adjust if needed
+      case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
       case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
       case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
+      case 'KEPALA MEKANIK':
+      case 'KEPALA WORKSHOP':
+        return '/karyawan/manajemen-alat';
       default: return '/karyawan/absensi-harian';
     }
 };

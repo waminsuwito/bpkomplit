@@ -2,7 +2,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
 
 interface AuthContextType {
@@ -17,7 +16,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     try {
@@ -41,7 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    router.push('/');
+    // The AuthGuard will handle redirecting to '/' on logout
+    window.location.href = '/'; // Force a full reload to clear state
   };
 
   return (
