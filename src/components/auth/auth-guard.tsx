@@ -9,6 +9,8 @@ import { type User } from '@/lib/types';
 
 export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     const jabatan = user.jabatan;
+    
+    // Explicit route mapping for all roles
     switch (jabatan) {
       case 'SUPER ADMIN': return '/admin/super-admin';
       case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
@@ -19,6 +21,7 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
       case 'SOPIR TM': return '/karyawan/checklist-harian-tm';
       case 'KEPALA MEKANIK': return '/karyawan/manajemen-alat';
       case 'KEPALA WORKSHOP': return '/karyawan/manajemen-alat';
+      // Default fallback for all other employee roles
       default: return '/karyawan/absensi-harian';
     }
 };
@@ -52,35 +55,34 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // Authorization checks for logged-in users
     const { jabatan } = user;
-    if (!jabatan) return; // Prevent errors if jabatan is missing
+    if (!jabatan) { // If user object exists but jabatan is somehow missing, redirect to login
+        router.replace('/');
+        return;
+    }
 
     let isAuthorized = false;
-    const isKaryawanPage = pathname.startsWith('/karyawan');
     const isAdminPage = pathname.startsWith('/admin');
     const isAdminBpPage = pathname.startsWith('/admin-bp');
     const isDashboardPage = pathname.startsWith('/dashboard');
+    const isKaryawanPage = pathname.startsWith('/karyawan');
+    
+    const adminRoles = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
 
-    if (jabatan === 'SUPER ADMIN' && isAdminPage) {
-        isAuthorized = true;
-    } else if (jabatan === 'ADMIN LOGISTIK' && isAdminPage) {
-        isAuthorized = true;
-    } else if (jabatan === 'LOGISTIK MATERIAL' && isAdminPage) {
-        isAuthorized = true;
-    } else if (jabatan === 'HSE/K3' && isAdminPage) {
+    if (adminRoles.includes(jabatan) && isAdminPage) {
         isAuthorized = true;
     } else if (jabatan === 'ADMIN BP' && isAdminBpPage) {
         isAuthorized = true;
-    } else if (jabatan === 'OPRATOR BP' && (isDashboardPage || isKaryawanPage)) {
+    } else if (jabatan === 'OPRATOR BP' && isDashboardPage) {
         isAuthorized = true;
-    } else if (jabatan.includes('SOPIR') || jabatan.includes('HELPER') || jabatan.includes('KEPALA') || jabatan.includes('QC') || jabatan.includes('OPRATOR')) {
-        // This is a broad catch for various employee roles.
-        // OPRATOR BP is handled above, so this will catch the other operators.
-        if (isKaryawanPage) {
-            isAuthorized = true;
-        }
+    } else if (!adminRoles.includes(jabatan) && jabatan !== 'ADMIN BP' && isKaryawanPage) {
+        // Any role that is NOT an admin role is considered a 'karyawan' for this purpose
+        isAuthorized = true;
+    } else if (jabatan === 'OPRATOR BP' && isKaryawanPage) {
+        // Allow OPRATOR BP to access karyawan pages too
+        isAuthorized = true;
     }
     
-    if (!isAuthorized && pathname !== defaultRoute) {
+    if (!isAuthorized) {
         router.replace(defaultRoute);
     }
 

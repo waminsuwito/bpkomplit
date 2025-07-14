@@ -1,15 +1,15 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
 import { type User, type Jabatan } from '@/lib/types';
-import { getUsers, addUser, updateUser, deleteUser, verifyLogin } from '@/lib/auth';
+import { getUsers, addUser, updateUser, deleteUser } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { useEffect, useState } from 'react';
 
 
 export default function SuperAdminPage() {
@@ -18,7 +18,6 @@ export default function SuperAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Safely load users on the client side after the component has mounted
   useEffect(() => {
     try {
       setUsers(getUsers());
@@ -31,7 +30,6 @@ export default function SuperAdminPage() {
   }, [toast]);
 
   const handleSaveUser = (data: UserFormValues, userId: string | null) => {
-    // Re-fetch users right before the check to prevent race conditions
     const currentUsers = getUsers();
     const nikExists = currentUsers.some(
       (user) => user.nik === data.nik && user.id !== userId
@@ -46,7 +44,7 @@ export default function SuperAdminPage() {
       return;
     }
     
-    if (userId) { // Update existing user
+    if (userId) {
       const userDataToUpdate: Partial<User> = {
         username: data.username,
         jabatan: data.jabatan as Jabatan,
@@ -58,7 +56,7 @@ export default function SuperAdminPage() {
       }
       updateUser(userId, userDataToUpdate);
       toast({ title: 'User Updated', description: `User "${data.username}" has been updated.` });
-    } else { // Add new user
+    } else {
        if (!data.password) {
         toast({
           variant: 'destructive',
@@ -78,7 +76,6 @@ export default function SuperAdminPage() {
       toast({ title: 'User Created', description: `User "${data.username}" has been created.` });
     }
     
-    // Refresh state from the authoritative source (localStorage) and reset form
     setUsers(getUsers()); 
     setUserToEdit(null);
   };
@@ -93,14 +90,13 @@ export default function SuperAdminPage() {
 
   const handleDeleteUser = (id: string) => {
     deleteUser(id);
-    setUsers(getUsers()); // Re-fetch from storage
+    setUsers(getUsers());
   };
 
   const handleCancelEdit = () => {
     setUserToEdit(null);
   };
 
-  // We need to pass users without their passwords to the list component for display
   const usersForDisplay = users.map(({ password, ...user }) => user);
 
   if (isLoading) {

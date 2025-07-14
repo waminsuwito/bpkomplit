@@ -1,295 +1,146 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Trash2, Users, Calendar as CalendarIcon, Save } from 'lucide-react';
-import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Shield } from 'lucide-react';
+import { UserForm, type UserFormValues } from '@/components/admin/user-form';
+import { UserList } from '@/components/admin/user-list';
+import { type User, type Jabatan } from '@/lib/types';
+import { getUsers, addUser, updateUser, deleteUser } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { useEffect, useState } from 'react';
 
-const KARYAWAN_STORAGE_KEY = 'app-karyawan-reports';
-
-interface KaryawanReport {
-  id: string; // Will use date as ID YYYY-MM-DD
-  date: string;
-  totalKaryawan: number;
-  karyawanMasuk: number;
-  sakit: number;
-  ijin: number;
-  alpha: number;
-}
-
-const initialFormState = {
-  totalKaryawan: 0,
-  karyawanMasuk: 0,
-  sakit: 0,
-  ijin: 0,
-  alpha: 0,
-};
+// This page is a duplicate of super-admin page and is intended to be a combined user management page.
+// The name is kept for routing purposes.
 
 export default function ManajemenKaryawanPage() {
-  const [reports, setReports] = useState<KaryawanReport[]>([]);
-  const [date, setDate] = useState<Date>(new Date());
-  const [formState, setFormState] = useState(initialFormState);
+  const [users, setUsers] = useState<User[]>([]);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem(KARYAWAN_STORAGE_KEY);
-      if (storedData) {
-        setReports(JSON.parse(storedData));
-      }
+      setUsers(getUsers());
     } catch (error) {
-      console.error("Failed to load data from localStorage", error);
+      console.error("Failed to load users:", error);
+      toast({ variant: 'destructive', title: "Error", description: "Could not load user data." });
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
-  // When date changes, load the data for that date into the form
-  useEffect(() => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    const existingReport = reports.find(r => r.date === dateString);
-    if (existingReport) {
-      setFormState({
-        totalKaryawan: existingReport.totalKaryawan,
-        karyawanMasuk: existingReport.karyawanMasuk,
-        sakit: existingReport.sakit,
-        ijin: existingReport.ijin,
-        alpha: existingReport.alpha,
+  const handleSaveUser = (data: UserFormValues, userId: string | null) => {
+    const currentUsers = getUsers();
+    const nikExists = currentUsers.some(
+      (user) => user.nik === data.nik && user.id !== userId
+    );
+
+    if (nikExists) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan',
+        description: `NIK "${data.nik}" sudah digunakan oleh pengguna lain.`,
       });
-    } else {
-      setFormState(initialFormState);
+      return;
     }
-  }, [date, reports]);
-
-  const saveToLocalStorage = (data: KaryawanReport[]) => {
-    try {
-      localStorage.setItem(KARYAWAN_STORAGE_KEY, JSON.stringify(data));
-    } catch (error) {
-      console.error("Failed to save data to localStorage", error);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: Number(value) >= 0 ? Number(value) : 0 }));
-  };
-
-  const handleSaveReport = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const dateString = format(date, 'yyyy-MM-dd');
     
-    // Check for negative numbers
-    for (const key in formState) {
-        if (formState[key as keyof typeof formState] < 0) {
-            toast({ variant: 'destructive', title: 'Invalid Input', description: 'Values cannot be negative.' });
-            return;
-        }
-    }
-
-    const newReport: KaryawanReport = {
-      id: dateString,
-      date: dateString,
-      ...formState,
-    };
-
-    let updatedReports;
-    const existingReportIndex = reports.findIndex(r => r.id === dateString);
-
-    if (existingReportIndex > -1) {
-      // Update existing report
-      updatedReports = [...reports];
-      updatedReports[existingReportIndex] = newReport;
+    if (userId) {
+      const userDataToUpdate: Partial<User> = {
+        username: data.username,
+        jabatan: data.jabatan as Jabatan,
+        location: data.location,
+        nik: data.nik,
+      };
+      if (data.password) {
+        userDataToUpdate.password = data.password;
+      }
+      updateUser(userId, userDataToUpdate);
+      toast({ title: 'User Updated', description: `User "${data.username}" has been updated.` });
     } else {
-      // Add new report and sort
-      updatedReports = [...reports, newReport].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+       if (!data.password) {
+        toast({
+          variant: 'destructive',
+          title: 'Creation Failed',
+          description: 'Password is required for new users.',
+        });
+        return;
+      }
+      const newUser: Omit<User, 'id'> = {
+        username: data.username,
+        password: data.password,
+        jabatan: data.jabatan as Jabatan,
+        location: data.location,
+        nik: data.nik,
+      };
+      addUser(newUser);
+      toast({ title: 'User Created', description: `User "${data.username}" has been created.` });
     }
-
-    setReports(updatedReports);
-    saveToLocalStorage(updatedReports);
-    toast({ title: 'Report Saved', description: `Data for ${format(date, 'd MMMM yyyy')} has been saved.` });
+    
+    setUsers(getUsers()); 
+    setUserToEdit(null);
   };
   
-  const handleDeleteReport = (id: string) => {
-    setReports(currentReports => {
-        const updatedReports = currentReports.filter(r => r.id !== id);
-        saveToLocalStorage(updatedReports);
-        toast({ variant: 'destructive', title: 'Report Deleted', description: `Data for ${id} has been deleted.` });
-        return updatedReports;
-    });
+  const handleEditUser = (id: string) => {
+    const user = users.find(u => u.id === id);
+    if (user) {
+      setUserToEdit(user);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleDeleteUser = (id: string) => {
+    deleteUser(id);
+    setUsers(getUsers());
+  };
+
+  const handleCancelEdit = () => {
+    setUserToEdit(null);
+  };
+
+  const usersForDisplay = users.map(({ password, ...user }) => user);
+
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <p>Loading user data...</p>
+        </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="w-full max-w-4xl space-y-6 mx-auto">
+       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
-            Manajemen Karyawan
+             <Shield className="h-6 w-6 text-primary" />
+             {userToEdit ? 'Edit User' : 'Create New User'}
           </CardTitle>
           <CardDescription>
-            Masukkan data absensi karyawan harian. Pilih tanggal untuk melihat atau mengedit data.
+            {userToEdit ? `Editing user: ${userToEdit.username}` : 'Add a new user and assign them a role.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSaveReport} className="space-y-4">
-            <div className="space-y-2 max-w-xs">
-               <Label>Tanggal Laporan</Label>
-               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : <span>Pilih tanggal</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(d) => setDate(d || new Date())}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="totalKaryawan">Total Karyawan</Label>
-                <Input id="totalKaryawan" name="totalKaryawan" type="number" value={formState.totalKaryawan} onChange={handleInputChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="karyawanMasuk">Karyawan Masuk</Label>
-                <Input id="karyawanMasuk" name="karyawanMasuk" type="number" value={formState.karyawanMasuk} onChange={handleInputChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sakit">Sakit</Label>
-                <Input id="sakit" name="sakit" type="number" value={formState.sakit} onChange={handleInputChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ijin">Ijin</Label>
-                <Input id="ijin" name="ijin" type="number" value={formState.ijin} onChange={handleInputChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="alpha">Alpha</Label>
-                <Input id="alpha" name="alpha" type="number" value={formState.alpha} onChange={handleInputChange} />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button type="submit">
-                <Save className="mr-2 h-4 w-4" />
-                Simpan Laporan
-              </Button>
-            </div>
-          </form>
+          <UserForm
+            onSave={handleSaveUser}
+            userToEdit={userToEdit}
+            onCancel={handleCancelEdit}
+          />
         </CardContent>
       </Card>
       
+      <Separator />
+
       <Card>
-        <CardHeader>
-          <CardTitle>Riwayat Laporan Absensi</CardTitle>
-          <CardDescription>
-            Daftar laporan absensi yang telah disimpan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {reports.length > 0 ? (
-            <div className="border rounded-lg overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tanggal</TableHead>
-                    <TableHead className="text-center">Total Karyawan</TableHead>
-                    <TableHead className="text-center">Masuk</TableHead>
-                    <TableHead className="text-center">Sakit</TableHead>
-                    <TableHead className="text-center">Ijin</TableHead>
-                    <TableHead className="text-center">Alpha</TableHead>
-                    <TableHead className="text-center">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reports.map((report) => (
-                    <TableRow key={report.id}>
-                      <TableCell className="font-medium">{format(new Date(report.date), 'd MMMM yyyy')}</TableCell>
-                      <TableCell className="text-center">{report.totalKaryawan}</TableCell>
-                      <TableCell className="text-center">{report.karyawanMasuk}</TableCell>
-                      <TableCell className="text-center">{report.sakit}</TableCell>
-                      <TableCell className="text-center">{report.ijin}</TableCell>
-                      <TableCell className="text-center">{report.alpha}</TableCell>
-                      <TableCell className="text-center">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Hapus</span>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus laporan untuk tanggal {format(new Date(report.date), 'd MMMM yyyy')}?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => handleDeleteReport(report.id)}>
-                                Ya, Hapus
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center text-muted-foreground py-12">
-              <p>Belum ada laporan absensi yang disimpan.</p>
-            </div>
-          )}
-        </CardContent>
+          <CardHeader>
+              <CardTitle>Manage Users</CardTitle>
+              <CardDescription>View, edit, or delete existing users.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <UserList users={usersForDisplay} onEdit={handleEditUser} onDelete={handleDeleteUser} />
+          </CardContent>
       </Card>
     </div>
   );
 }
-
-    

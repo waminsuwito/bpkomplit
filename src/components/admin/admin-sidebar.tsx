@@ -19,9 +19,9 @@ import {
   Megaphone,
   MapPin,
   MailQuestion,
-  ShieldAlert,
   Lightbulb,
-  MessageSquareWarning
+  MessageSquareWarning,
+  Users
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -36,13 +36,14 @@ const superAdminNav = [
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
 ];
 
-const adminLokasiNav = [
+const adminLogistikNav = [
   { href: '/admin/laporan-harian', label: 'Laporan Harian', icon: FileText },
   { href: '/admin/schedule-cor', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
+  { href: '/admin/manajemen-karyawan', label: 'Manajemen Karyawan', icon: Users },
   { href: '/admin/usulan-karyawan', label: 'Usulan Karyawan', icon: Lightbulb },
   { href: '/admin/komplain-karyawan', label: 'Komplain Karyawan', icon: MessageSquareWarning },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
-  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
+  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: MailQuestion },
 ];
 
 const logistikMaterialNav = [
@@ -52,7 +53,7 @@ const logistikMaterialNav = [
   { href: '/admin/usulan-karyawan', label: 'Usulan Karyawan', icon: Lightbulb },
   { href: '/admin/komplain-karyawan', label: 'Komplain Karyawan', icon: MessageSquareWarning },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
-  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
+  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: MailQuestion },
 ];
 
 const hseHrdNav = [
@@ -65,7 +66,7 @@ const hseHrdNav = [
   { href: '/admin/usulan-karyawan', label: 'Usulan Karyawan', icon: Lightbulb },
   { href: '/admin/komplain-karyawan', label: 'Komplain Karyawan', icon: MessageSquareWarning },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
-  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: ShieldAlert },
+  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: MailQuestion },
 ];
 
 const ANONYMOUS_REPORTS_KEY = 'app-anonymous-reports';
@@ -85,25 +86,23 @@ export function AdminSidebar() {
     const checkUnread = () => {
       if (!user) return;
       try {
-        if (user.jabatan === 'SUPER ADMIN') {
-          const anonData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
-          const anonReports: AnonymousReport[] = anonData ? JSON.parse(anonData) : [];
-          setHasUnreadAnonymous(anonReports.some(r => r.status === 'new'));
-        }
+        const isSuperAdmin = user.jabatan === 'SUPER ADMIN';
+
+        const anonData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
+        const anonReports: AnonymousReport[] = anonData ? JSON.parse(anonData) : [];
+        setHasUnreadAnonymous(anonReports.some(r => r.status === 'new'));
 
         const suggestionData = localStorage.getItem(SUGGESTIONS_KEY);
         const suggestions: Suggestion[] = suggestionData ? JSON.parse(suggestionData) : [];
-        setHasUnreadSuggestions(suggestions.some(r => r.status === 'new' && (user.role === 'super_admin' || r.location === user.location)));
+        setHasUnreadSuggestions(suggestions.some(r => r.status === 'new' && (isSuperAdmin || r.location === user.location)));
 
         const complaintData = localStorage.getItem(COMPLAINTS_KEY);
         const complaints: Complaint[] = complaintData ? JSON.parse(complaintData) : [];
-        setHasUnreadComplaints(complaints.some(r => r.status === 'new' && (user.role === 'super_admin' || r.location === user.location)));
+        setHasUnreadComplaints(complaints.some(r => r.status === 'new' && (isSuperAdmin || r.location === user.location)));
         
-        if (user.jabatan === 'HSE/K3') {
-          const accidentData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
-          const accidentReports: AccidentReport[] = accidentData ? JSON.parse(accidentData) : [];
-          setHasUnreadAccidents(accidentReports.some(r => r.status === 'new' && (user.role === 'super_admin' || r.location === user.location)));
-        }
+        const accidentData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
+        const accidentReports: AccidentReport[] = accidentData ? JSON.parse(accidentData) : [];
+        setHasUnreadAccidents(accidentReports.some(r => r.status === 'new' && (isSuperAdmin || r.location === user.location)));
 
       } catch (e) {
         console.error("Failed to check unread reports", e);
@@ -137,7 +136,7 @@ export function AdminSidebar() {
   if (user?.jabatan === 'SUPER ADMIN') {
     navItems = superAdminNav;
   } else if (user?.jabatan === 'ADMIN LOGISTIK') {
-    navItems = adminLokasiNav;
+    navItems = adminLogistikNav;
   } else if (user?.jabatan === 'LOGISTIK MATERIAL') {
     navItems = logistikMaterialNav;
   } else if (user?.jabatan === 'HSE/K3') {
@@ -149,7 +148,7 @@ export function AdminSidebar() {
       <nav className="flex flex-col gap-2">
         <h2 className="mb-2 text-lg font-semibold tracking-tight">Admin Menu</h2>
         {navItems.map((item) => {
-          const showAnonymousDot = item.href === '/admin/pesan-anonim' && hasUnreadAnonymous;
+          const showAnonymousDot = (item.href === '/admin/pesan-anonim' || item.href === '/admin/laporan-anonim') && hasUnreadAnonymous;
           const showAccidentDot = item.href === '/admin/insiden-kerja' && hasUnreadAccidents;
           const showSuggestionDot = item.href === '/admin/usulan-karyawan' && hasUnreadSuggestions;
           const showComplaintDot = item.href === '/admin/komplain-karyawan' && hasUnreadComplaints;
