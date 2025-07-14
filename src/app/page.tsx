@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { verifyLogin } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +10,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
-import { AuthGuard, getDefaultRouteForUser } from '@/components/auth/auth-guard';
+import { getDefaultRouteForUser } from '@/components/auth/auth-guard';
 import { useAuth } from '@/context/auth-provider';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 function LoginPageContent() {
   const [username, setUsername] = useState('');
@@ -25,31 +24,34 @@ function LoginPageContent() {
     e.preventDefault();
     setIsLoading(true);
     
-    setTimeout(() => {
-        const loggedInUser = verifyLogin(username, password);
-        
-        if (loggedInUser) {
-            try {
-                localStorage.setItem('user', JSON.stringify(loggedInUser));
-                const destination = getDefaultRouteForUser(loggedInUser);
-                window.location.href = destination;
-            } catch (error) {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Login Gagal',
-                    description: 'Gagal menyimpan sesi login. Mohon coba lagi.',
-                });
-                setIsLoading(false);
-            }
-        } else {
-            toast({
+    // The setTimeout is removed to make the login process synchronous and more reliable.
+    const loggedInUser = verifyLogin(username, password);
+    
+    if (loggedInUser) {
+        try {
+            // 1. Save user to localStorage
+            localStorage.setItem('user', JSON.stringify(loggedInUser));
+            // 2. Determine the destination
+            const destination = getDefaultRouteForUser(loggedInUser);
+            // 3. Force a full page reload to the destination. This is the key fix.
+            // It ensures a clean state and prevents race conditions.
+            window.location.href = destination;
+        } catch (error) {
+             toast({
                 variant: 'destructive',
                 title: 'Login Gagal',
-                description: 'Username, NIK, atau password salah.',
+                description: 'Gagal menyimpan sesi login. Mohon coba lagi.',
             });
             setIsLoading(false);
         }
-    }, 250);
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Login Gagal',
+            description: 'Username, NIK, atau password salah.',
+        });
+        setIsLoading(false);
+    }
   };
   
   return (
@@ -113,12 +115,15 @@ export default function LoginPage() {
     const router = useRouter();
 
     useEffect(() => {
+        // This effect only redirects if a user is already logged in.
+        // It avoids the race condition that was happening before.
         if (!isLoading && user) {
             const destination = getDefaultRouteForUser(user);
             router.replace(destination);
         }
     }, [user, isLoading, router]);
 
+    // While checking for a user, or if a user is found and redirect is pending, show loader.
     if (isLoading || user) {
         return (
             <div className="flex items-center justify-center h-screen bg-background">
@@ -127,5 +132,6 @@ export default function LoginPage() {
         );
     }
     
+    // If no user and not loading, show the login page.
     return <LoginPageContent />;
 }

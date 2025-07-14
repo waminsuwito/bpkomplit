@@ -24,7 +24,10 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
     }
 };
 
-const getAllowedPrefix = (jabatan: User['jabatan']): string => {
+// This function defines the "home" prefix for each role.
+const getAllowedPrefix = (jabatan?: User['jabatan']): string => {
+    if (!jabatan) return '';
+    
     const adminRoles = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
     if (adminRoles.includes(jabatan)) {
         return '/admin';
@@ -33,10 +36,10 @@ const getAllowedPrefix = (jabatan: User['jabatan']): string => {
         return '/admin-bp';
     }
     if (jabatan === 'OPRATOR BP') {
-        // Operator BP can access dashboard and karyawan pages
-        return '/dashboard'; // Primary prefix
+        return '/dashboard'; // OPRATOR BP has two allowed prefixes, this is the primary one.
     }
-    // All other roles are considered 'karyawan'
+    
+    // Default for all other roles
     return '/karyawan';
 }
 
@@ -46,52 +49,52 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    // 1. Wait until the AuthProvider is done loading the user from localStorage.
     if (isLoading) {
       return; 
     }
     
     const isLoginPage = pathname === '/';
 
-    // Case 1: User is not logged in
+    // 2. If the user is NOT logged in:
     if (!user) {
+      // If they are not on the login page, redirect them there.
       if (!isLoginPage) {
         router.replace('/');
       }
       return;
     }
 
-    // Case 2: User IS logged in
-    const { jabatan } = user;
-    if (!jabatan) {
-        // If user object is malformed, send to login
+    // 3. If the user IS logged in:
+    if (!user.jabatan) {
+        // Handle malformed user object
         router.replace('/');
         return;
     }
-    
-    const defaultRoute = getDefaultRouteForUser(user);
-    const allowedPrefix = getAllowedPrefix(jabatan);
 
+    // If they are on the login page, redirect them to their default dashboard.
     if (isLoginPage) {
-      router.replace(defaultRoute);
-      return;
+        router.replace(getDefaultRouteForUser(user));
+        return;
     }
-
-    // Case 3: Authorization Check for Logged-in Users
-    let isAuthorized = pathname.startsWith(allowedPrefix);
     
+    // 4. Authorization check: Ensure user is in the correct section of the app.
+    const allowedPrefix = getAllowedPrefix(user.jabatan);
+    let isAuthorized = pathname.startsWith(allowedPrefix);
+
     // Special case for OPRATOR BP who can also access /karyawan
-    if (jabatan === 'OPRATOR BP' && pathname.startsWith('/karyawan')) {
+    if (user.jabatan === 'OPRATOR BP' && pathname.startsWith('/karyawan')) {
         isAuthorized = true;
     }
 
+    // If they are in the wrong section, redirect them to their default dashboard.
     if (!isAuthorized) {
-        // If the user is in the wrong section, redirect them to their correct dashboard.
-        router.replace(defaultRoute);
+        router.replace(getDefaultRouteForUser(user));
     }
 
   }, [user, isLoading, router, pathname]);
 
-  // Render loading screen while checking auth state, or if a redirect is imminent
+  // While loading, or if redirecting, show a loader to prevent flicker.
   if (isLoading || (!user && pathname !== '/')) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -100,6 +103,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // Render the children (the actual page) if everything is okay
+  // If the user is logged in and on a valid page, or if they are on the login page, render the content.
   return <>{children}</>;
 }
