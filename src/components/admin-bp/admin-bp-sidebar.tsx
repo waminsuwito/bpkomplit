@@ -8,6 +8,7 @@ import {
   Database,
   GitCompareArrows,
   ClipboardList,
+  Boxes,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -17,6 +18,7 @@ const navItems = [
   { href: '/admin-bp/schedule-cor-hari-ini', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
   { href: '/admin-bp/database-produksi', label: 'Database Produksi', icon: Database },
   { href: '/admin-bp/pemakaian-material', label: 'Pemakaian Material', icon: ClipboardList },
+  { href: '/admin-bp/stok-material', label: 'Stok Material', icon: Boxes },
   { href: '/admin-bp/laporan-sinkronisasi', label: 'Laporan Sinkronisasi', icon: GitCompareArrows },
 ];
 
