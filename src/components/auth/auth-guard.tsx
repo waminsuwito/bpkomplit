@@ -8,19 +8,24 @@ import { Loader2 } from 'lucide-react';
 import { type User, type Jabatan } from '@/lib/types';
 
 export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
-    switch(user.jabatan) {
-      case 'OPRATOR BP': return '/dashboard';
-      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
-      case 'SOPIR TM': return '/karyawan/checklist-harian-tm';
-      case 'KEPALA MEKANIK': return '/karyawan/manajemen-alat';
-      case 'KEPALA WORKSHOP': return '/karyawan/manajemen-alat';
-      case 'SUPER ADMIN': return '/admin/super-admin';
-      case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
-      case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
-      case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
-      // Default for all other jabatans
-      default: return '/karyawan/absensi-harian';
-    }
+    const jabatan = user.jabatan;
+
+    // Admin Roles
+    if (jabatan === 'SUPER ADMIN') return '/admin/super-admin';
+    if (jabatan === 'ADMIN BP') return '/admin-bp/schedule-cor-hari-ini';
+    if (jabatan === 'ADMIN LOGISTIK') return '/admin/laporan-harian';
+    if (jabatan === 'LOGISTIK MATERIAL') return '/admin/pemasukan-material';
+    if (jabatan === 'HSE/K3') return '/admin/absensi-karyawan-hari-ini';
+
+    // Operator Role
+    if (jabatan === 'OPRATOR BP') return '/dashboard';
+    
+    // Karyawan Roles with specific pages
+    if (jabatan === 'SOPIR TM') return '/karyawan/checklist-harian-tm';
+    if (jabatan === 'KEPALA MEKANIK' || jabatan === 'KEPALA WORKSHOP') return '/karyawan/manajemen-alat';
+
+    // Default for all other 'karyawan' roles
+    return '/karyawan/absensi-harian';
 };
 
 export function AuthGuard({ 
