@@ -11,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
 import { AuthGuard, getDefaultRouteForUser } from '@/components/auth/auth-guard';
+import { useAuth } from '@/context/auth-provider';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 function LoginPageContent() {
   const [username, setUsername] = useState('');
@@ -22,21 +25,13 @@ function LoginPageContent() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate a short delay to allow UI to update
     setTimeout(() => {
         const loggedInUser = verifyLogin(username, password);
         
         if (loggedInUser) {
             try {
-                // Step 1: Save user to localStorage
                 localStorage.setItem('user', JSON.stringify(loggedInUser));
-                
-                // Step 2: Determine destination
                 const destination = getDefaultRouteForUser(loggedInUser);
-                
-                // Step 3: Force a full page reload to the destination.
-                // This is the key to fixing the race condition. It ensures AuthProvider
-                // re-reads from localStorage in a clean state.
                 window.location.href = destination;
             } catch (error) {
                  toast({
@@ -54,7 +49,7 @@ function LoginPageContent() {
             });
             setIsLoading(false);
         }
-    }, 250); // Small delay for better UX
+    }, 250);
   };
   
   return (
@@ -114,9 +109,23 @@ function LoginPageContent() {
 }
 
 export default function LoginPage() {
-    return (
-        <AuthGuard>
-            <LoginPageContent />
-        </AuthGuard>
-    )
+    const { user, isLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!isLoading && user) {
+            const destination = getDefaultRouteForUser(user);
+            router.replace(destination);
+        }
+    }, [user, isLoading, router]);
+
+    if (isLoading || user) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-background">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    return <LoginPageContent />;
 }

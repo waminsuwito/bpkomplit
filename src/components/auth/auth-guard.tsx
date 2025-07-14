@@ -32,75 +32,18 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading) {
-      return; // Wait until auth state is confirmed
+      return; 
     }
 
     const isLoginPage = pathname === '/';
 
-    // SCENARIO 1: User is NOT logged in
-    if (!user) {
-      if (!isLoginPage) {
-        router.replace('/');
-      }
-      return; // Allow rendering the login page
-    }
-
-    // SCENARIO 2: User IS logged in.
-    // Ensure user and jabatan are defined before proceeding.
-    if (!user.jabatan) {
-      // If jabatan is missing, logout to be safe
-      localStorage.removeItem('user');
+    if (!user && !isLoginPage) {
       router.replace('/');
       return;
-    }
-    
-    const defaultRoute = getDefaultRouteForUser(user);
-
-    // If logged-in user is on the login page, redirect them away.
-    if (isLoginPage) {
-      router.replace(defaultRoute);
-      return;
-    }
-
-    // Authorization check: prevent users from accessing pages not meant for them.
-    const isAdminPage = pathname.startsWith('/admin');
-    const isAdminBpPage = pathname.startsWith('/admin-bp');
-    const isKaryawanPage = pathname.startsWith('/karyawan');
-    const isDashboardPage = pathname.startsWith('/dashboard');
-
-    const jabatan = user.jabatan;
-    let isAuthorized = false;
-
-    // This check is now safe because we've confirmed user.jabatan exists.
-    if (jabatan === 'SUPER ADMIN' && isAdminPage) {
-        isAuthorized = true;
-    } else if (jabatan === 'ADMIN BP' && isAdminBpPage) {
-        isAuthorized = true;
-    } else if ((jabatan === 'ADMIN LOGISTIK' || jabatan === 'LOGISTIK MATERIAL' || jabatan === 'HSE/K3') && isAdminPage) {
-        isAuthorized = true;
-    } else if (jabatan === 'OPRATOR BP' && isDashboardPage) {
-        isAuthorized = true;
-    } else if (jabatan.includes('SOPIR') || jabatan.includes('HELPER') || jabatan.includes('KEPALA') || jabatan.includes('QC') || jabatan.includes('OPRATOR')) {
-        // This is a broad catch for various employee roles.
-        // OPRATOR BP is handled above, so this will catch the other operators.
-        if (isKaryawanPage) {
-          isAuthorized = true;
-        }
-    }
-
-    // A final check for specific employee roles that might have been missed
-    if (!isAuthorized && (jabatan === 'SOPIR TM' || jabatan === 'KEPALA MEKANIK' || jabatan === 'KEPALA WORKSHOP' || jabatan.startsWith('HELPER')) && isKaryawanPage) {
-        isAuthorized = true;
-    }
-
-
-    if (!isAuthorized) {
-        router.replace(defaultRoute);
     }
 
   }, [user, isLoading, router, pathname]);
 
-  // Render a loading indicator while checking auth status.
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -109,14 +52,22 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Prevent flashing content while redirecting
-  if ((!user && pathname !== '/') || (user && pathname === '/')) {
-      return (
+  // If user is not logged in, and we are on the login page, let the login page render.
+  // The login page itself will handle redirecting logged-in users away.
+  if (!user && pathname === '/') {
+     return <>{children}</>;
+  }
+
+  // If user is not logged in and not on the login page, the useEffect above will redirect.
+  // While redirecting, show a loader.
+  if (!user) {
+    return (
         <div className="flex items-center justify-center h-screen bg-background">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       );
   }
 
+  // At this point, user is logged in. Render the children.
   return <>{children}</>;
 }
