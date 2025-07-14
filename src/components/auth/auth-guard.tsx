@@ -24,10 +24,7 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
     }
 };
 
-// This function defines the "home" prefix for each role.
-const getAllowedPrefix = (jabatan?: User['jabatan']): string => {
-    if (!jabatan) return '';
-    
+const getAllowedPrefix = (jabatan: User['jabatan']): string => {
     const adminRoles = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
     if (adminRoles.includes(jabatan)) {
         return '/admin';
@@ -35,11 +32,11 @@ const getAllowedPrefix = (jabatan?: User['jabatan']): string => {
     if (jabatan === 'ADMIN BP') {
         return '/admin-bp';
     }
-    if (jabatan === 'OPRATOR BP') {
-        return '/dashboard'; // OPRATOR BP has two allowed prefixes, this is the primary one.
+     if (jabatan === 'OPRATOR BP') {
+        return '/dashboard';
     }
     
-    // Default for all other roles
+    // Default for all other employee roles
     return '/karyawan';
 }
 
@@ -49,36 +46,29 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // 1. Wait until the AuthProvider is done loading the user from localStorage.
     if (isLoading) {
       return; 
     }
     
     const isLoginPage = pathname === '/';
 
-    // 2. If the user is NOT logged in:
     if (!user) {
-      // If they are not on the login page, redirect them there.
       if (!isLoginPage) {
         router.replace('/');
       }
       return;
     }
 
-    // 3. If the user IS logged in:
-    if (!user.jabatan) {
-        // Handle malformed user object
-        router.replace('/');
-        return;
-    }
-
-    // If they are on the login page, redirect them to their default dashboard.
     if (isLoginPage) {
         router.replace(getDefaultRouteForUser(user));
         return;
     }
     
-    // 4. Authorization check: Ensure user is in the correct section of the app.
+    if (!user.jabatan) {
+        router.replace('/');
+        return;
+    }
+
     const allowedPrefix = getAllowedPrefix(user.jabatan);
     let isAuthorized = pathname.startsWith(allowedPrefix);
 
@@ -87,14 +77,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         isAuthorized = true;
     }
 
-    // If they are in the wrong section, redirect them to their default dashboard.
     if (!isAuthorized) {
         router.replace(getDefaultRouteForUser(user));
     }
 
   }, [user, isLoading, router, pathname]);
 
-  // While loading, or if redirecting, show a loader to prevent flicker.
   if (isLoading || (!user && pathname !== '/')) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -103,6 +91,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If the user is logged in and on a valid page, or if they are on the login page, render the content.
   return <>{children}</>;
 }
