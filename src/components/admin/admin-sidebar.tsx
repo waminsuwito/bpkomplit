@@ -83,7 +83,7 @@ export function AdminSidebar() {
   useEffect(() => {
     const checkUnread = () => {
       try {
-        if (user?.role === 'super_admin') {
+        if (user?.role === 'SUPER ADMIN') {
           const anonData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
           const anonReports: AnonymousReport[] = anonData ? JSON.parse(anonData) : [];
           setHasUnreadAnonymous(anonReports.some(r => r.status === 'new'));
@@ -97,7 +97,7 @@ export function AdminSidebar() {
         const complaints: Complaint[] = complaintData ? JSON.parse(complaintData) : [];
         setHasUnreadComplaints(complaints.some(r => r.status === 'new'));
         
-        if (user?.role === 'hse_hrd_lokasi') {
+        if (user?.role === 'HSE/K3') {
           const accidentData = localStorage.getItem(ACCIDENT_REPORTS_KEY);
           const accidentReports: AccidentReport[] = accidentData ? JSON.parse(accidentData) : [];
           setHasUnreadAccidents(accidentReports.some(r => r.status === 'new'));
@@ -132,13 +132,13 @@ export function AdminSidebar() {
   }, [user]);
 
   let navItems = [];
-  if (user?.role === 'super_admin') {
+  if (user?.role === 'SUPER ADMIN') {
     navItems = superAdminNav;
-  } else if (user?.role === 'admin_lokasi') {
+  } else if (user?.role === 'ADMIN LOGISTIK') {
     navItems = adminLokasiNav;
-  } else if (user?.role === 'logistik_material') {
+  } else if (user?.role === 'LOGISTIK MATERIAL') {
     navItems = logistikMaterialNav;
-  } else if (user?.role === 'hse_hrd_lokasi') {
+  } else if (user?.role === 'HSE/K3') {
     navItems = hseHrdNav;
   }
 

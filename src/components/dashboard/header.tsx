@@ -20,10 +20,6 @@ export function Header() {
   const { user, logout } = useAuth();
   const [isPasswordDialogOpen, setPasswordDialogOpen] = useState(false);
 
-  const formatRoleName = (role: string) => {
-    return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
   return (
     <>
       <header className="sticky top-0 flex h-20 items-center justify-between gap-4 border-b border-primary/20 bg-background px-6 z-10 no-print">
@@ -47,10 +43,10 @@ export function Header() {
                 <UserCircle className="h-4 w-4 text-primary" />
                 {user.username}
               </p>
-              <p className="text-xs text-muted-foreground">{user.jabatan || formatRoleName(user.role)}</p>
+              <p className="text-xs text-muted-foreground">{user.role}</p>
             </div>
             
-             {user?.jabatan === 'OPRATOR BP' && (
+             {user?.role === 'OPRATOR BP' && (
               <>
                 <Button asChild variant="outline" size="sm">
                   <Link href="/karyawan/absensi-harian">

@@ -31,21 +31,6 @@ interface UserListProps {
   onDelete: (id: string) => void;
 }
 
-const roleVariantMap: Record<UserRole, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    super_admin: 'destructive',
-    admin_lokasi: 'secondary',
-    operator: 'default',
-    supervisor: 'secondary',
-    laborat: 'secondary',
-    logistik_material: 'outline',
-    logistik_spareparts: 'outline',
-    mekanik: 'outline',
-    tukang_las: 'outline',
-    hse_hrd_lokasi: 'secondary',
-    karyawan: 'outline',
-    screen_view: 'default',
-};
-
 export function UserList({ users, onEdit, onDelete }: UserListProps) {
   
   if (users.length === 0) {
@@ -57,10 +42,6 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
     )
   }
 
-  const formatRoleName = (role: string) => {
-    return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  }
-
   return (
     <div className="border rounded-lg">
       <Table>
@@ -69,7 +50,6 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
             <TableHead>Username</TableHead>
             <TableHead>NIK</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead>Jabatan</TableHead>
             <TableHead>Location</TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
@@ -80,9 +60,8 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
               <TableCell className="font-medium">{user.username}</TableCell>
               <TableCell>{user.nik || 'N/A'}</TableCell>
               <TableCell>
-                <Badge variant={roleVariantMap[user.role] || 'default'}>{formatRoleName(user.role)}</Badge>
+                <Badge variant={user.role === 'SUPER ADMIN' ? 'destructive' : 'secondary'}>{user.role}</Badge>
               </TableCell>
-              <TableCell>{user.jabatan || 'N/A'}</TableCell>
               <TableCell>{user.location || 'N/A'}</TableCell>
               <TableCell className="flex justify-center items-center gap-2">
                 <Button variant="outline" size="icon" onClick={() => onEdit(user.id)} disabled={user.id === 'superadmin-main'}>
@@ -92,7 +71,7 @@ export function UserList({ users, onEdit, onDelete }: UserListProps) {
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon" disabled={user.role === 'super_admin'}>
+                    <Button variant="destructive" size="icon" disabled={user.role === 'SUPER ADMIN'}>
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
                     </Button>

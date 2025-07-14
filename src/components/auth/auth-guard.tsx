@@ -5,41 +5,27 @@ import { useAuth } from '@/context/auth-provider';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { type User, type UserRole, type UserJabatan } from '@/lib/types';
+import { type User, type UserRole } from '@/lib/types';
 
 const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
-    if (user.jabatan === 'OPRATOR BP') return '/dashboard';
-    if (user.jabatan === 'ADMIN BP') return '/admin-bp/schedule-cor-hari-ini';
-    
-    const roleRedirects: Partial<Record<UserRole, string>> = {
-        'super_admin': '/admin/super-admin',
-        'admin_lokasi': '/admin/laporan-harian',
-        'logistik_material': '/admin/pemasukan-material',
-        'hse_hrd_lokasi': '/admin/absensi-karyawan-hari-ini'
-    };
-    
-    if (user.role && roleRedirects[user.role]) {
-        return roleRedirects[user.role]!;
+    switch(user.role) {
+      case 'OPRATOR BP': return '/dashboard';
+      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
+      case 'SUPER ADMIN': return '/admin/super-admin';
+      case 'ADMIN LOGISTIK': return '/admin/laporan-harian'; // Placeholder, adjust if needed
+      case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
+      case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
+      default: return '/karyawan/absensi-harian';
     }
-    
-    if (user.role.startsWith('karyawan') || user.role === 'operator') {
-        return '/karyawan/absensi-harian';
-    }
-
-    return '/'; // Default fallback
 };
 
 
 export function AuthGuard({ 
   children, 
   requiredRoles,
-  requiredJabatan,
-  requiredJabatans
 }: { 
   children: React.ReactNode, 
   requiredRoles?: UserRole[],
-  requiredJabatan?: UserJabatan,
-  requiredJabatans?: UserJabatan[]
 }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -64,16 +50,6 @@ export function AuthGuard({
         isAuthorized = false;
       }
     }
-    if (requiredJabatan) {
-      if (user.jabatan !== requiredJabatan) {
-        isAuthorized = false;
-      }
-    }
-    if (requiredJabatans && requiredJabatans.length > 0) {
-        if (!user.jabatan || !requiredJabatans.includes(user.jabatan)) {
-            isAuthorized = false;
-        }
-    }
 
     if (!isAuthorized) {
       // If the user is logged in but not authorized for this specific page,
@@ -82,7 +58,7 @@ export function AuthGuard({
       router.replace(defaultRoute);
     }
 
-  }, [user, isLoading, router, requiredRoles, requiredJabatan, requiredJabatans, pathname]);
+  }, [user, isLoading, router, requiredRoles, pathname]);
 
   // Determine if the user is allowed to see the content.
   // This prevents flashing unauthorized content before a redirect can happen.
@@ -91,12 +67,6 @@ export function AuthGuard({
      canRenderContent = true; // Assume allowed by default if logged in
      if (requiredRoles && requiredRoles.length > 0) {
         canRenderContent = requiredRoles.includes(user.role);
-     }
-     if (requiredJabatan) {
-        canRenderContent = canRenderContent && user.jabatan === requiredJabatan;
-     }
-     if (requiredJabatans && requiredJabatans.length > 0) {
-        canRenderContent = canRenderContent && !!user.jabatan && requiredJabatans.includes(user.jabatan);
      }
   }
   

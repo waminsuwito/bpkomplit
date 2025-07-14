@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Shield } from 'lucide-react';
 import { UserForm, type UserFormValues } from '@/components/admin/user-form';
 import { UserList } from '@/components/admin/user-list';
-import { type User, type UserRole, type UserLocation, type UserJabatan } from '@/lib/types';
+import { type User, type UserRole } from '@/lib/types';
 import { getUsers, addUser, updateUser, deleteUser, verifyLogin } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,9 +50,8 @@ export default function SuperAdminPage() {
       const userDataToUpdate: Partial<User> = {
         username: data.username,
         role: data.role as UserRole,
-        location: data.location as UserLocation,
+        location: data.location,
         nik: data.nik,
-        jabatan: data.role !== 'super_admin' ? (data.jabatan as UserJabatan) || undefined : undefined,
       };
       if (data.password) {
         userDataToUpdate.password = data.password;
@@ -72,9 +71,8 @@ export default function SuperAdminPage() {
         username: data.username,
         password: data.password,
         role: data.role as UserRole,
-        location: data.location as UserLocation,
+        location: data.location,
         nik: data.nik,
-        jabatan: data.role !== 'super_admin' ? (data.jabatan as UserJabatan) || undefined : undefined,
       };
       addUser(newUser);
       toast({ title: 'User Created', description: `User "${data.username}" has been created.` });

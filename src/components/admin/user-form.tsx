@@ -9,14 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { userRoles, type User, userLocations, jabatanOptions } from '@/lib/types';
+import { userRoles, type User, userLocations } from '@/lib/types';
 
 const formSchema = z.object({
   username: z.string().min(3, { message: 'Username must be at least 3 characters long.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }).optional().or(z.literal('')),
   nik: z.string().min(1, { message: 'NIK is required.' }),
   role: z.enum(userRoles),
-  jabatan: z.enum(jabatanOptions).optional().or(z.literal('')),
   location: z.enum(userLocations),
 });
 
@@ -37,13 +36,10 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
       username: '',
       password: '',
       nik: '',
-      role: 'operator',
-      jabatan: '',
+      role: 'HELPER',
       location: 'BP PEKANBARU',
     },
   });
-
-  const role = form.watch('role');
 
   useEffect(() => {
     if (userToEdit) {
@@ -53,15 +49,13 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
         role: userToEdit.role,
         location: userToEdit.location || 'BP PEKANBARU',
         nik: userToEdit.nik || '',
-        jabatan: userToEdit.jabatan || '',
       });
     } else {
       form.reset({
         username: '',
         password: '',
         nik: '',
-        role: 'operator',
-        jabatan: '',
+        role: 'HELPER',
         location: 'BP PEKANBARU',
       });
     }
@@ -137,7 +131,7 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
                 <SelectContent>
                   {userRoles.map((role) => (
                     <SelectItem key={role} value={role}>
-                      {role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {role}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -146,33 +140,6 @@ export function UserForm({ onSave, onCancel, userToEdit }: UserFormProps) {
             </FormItem>
           )}
         />
-
-        {role !== 'super_admin' && (
-          <FormField
-            control={form.control}
-            name="jabatan"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Jabatan</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih jabatan" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {jabatanOptions.map((jabatan) => (
-                      <SelectItem key={jabatan} value={jabatan}>
-                        {jabatan}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
 
         <FormField
           control={form.control}

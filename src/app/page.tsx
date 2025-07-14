@@ -15,28 +15,15 @@ import { useRouter } from 'next/navigation';
 import type { User, UserRole } from '@/lib/types';
 
 const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
-    if (user.jabatan === 'OPRATOR BP') return '/dashboard';
-    if (user.jabatan === 'ADMIN BP') return '/admin-bp/schedule-cor-hari-ini';
-    
-    const roleRedirects: Partial<Record<UserRole, string>> = {
-        'super_admin': '/admin/super-admin',
-        'admin_lokasi': '/admin/laporan-harian',
-        'logistik_material': '/admin/pemasukan-material',
-        'hse_hrd_lokasi': '/admin/absensi-karyawan-hari-ini'
-    };
-    
-    if (user.role && roleRedirects[user.role]) {
-        return roleRedirects[user.role]!;
+    switch(user.role) {
+      case 'OPRATOR BP': return '/dashboard';
+      case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
+      case 'SUPER ADMIN': return '/admin/super-admin';
+      case 'ADMIN LOGISTIK': return '/admin/laporan-harian'; // Placeholder, adjust if needed
+      case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
+      case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
+      default: return '/karyawan/absensi-harian';
     }
-    
-    // Fallback for any other 'karyawan' or 'operator' type role
-    if (user.role?.startsWith('karyawan') || user.role === 'operator') {
-        return '/karyawan/absensi-harian';
-    }
-
-    // A safe default fallback to prevent infinite loops.
-    // If a user is logged in but has no specific route, send them here.
-    return '/karyawan/absensi-harian';
 };
 
 
@@ -58,6 +45,8 @@ export default function LoginPage() {
       if (loggedInUser) {
         toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
         login(loggedInUser);
+        const destination = getDefaultRouteForUser(loggedInUser);
+        router.replace(destination);
       } else {
         const errorMessage = 'Username, NIK, atau password salah.';
         setError(errorMessage);

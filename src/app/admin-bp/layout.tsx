@@ -9,7 +9,7 @@ export default function AdminBpLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard requiredJabatan='ADMIN BP'>
+    <AuthGuard requiredRoles={['ADMIN BP']}>
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <div className="flex flex-1">

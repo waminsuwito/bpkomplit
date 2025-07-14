@@ -28,7 +28,7 @@ export function KaryawanSidebar() {
   let insertionIndex = 1; // The position to insert new items (after Absensi Harian)
 
   // Conditionally insert the checklist item for the correct user role
-  if (user?.jabatan === 'SOPIR TM') {
+  if (user?.role === 'SOPIR TM') {
       navItems.splice(insertionIndex, 0, {
           href: '/karyawan/checklist-harian-tm',
           label: 'Checklist Harian TM',
@@ -38,7 +38,7 @@ export function KaryawanSidebar() {
   }
 
   // Conditionally insert the management items for the correct user role
-  if (user?.jabatan === 'KEPALA MEKANIK' || user?.jabatan === 'KEPALA WORKSHOP') {
+  if (user?.role === 'KEPALA MEKANIK' || user?.role === 'KEPALA WORKSHOP') {
       navItems.splice(insertionIndex, 0, 
         {
             href: '/karyawan/manajemen-alat',
@@ -57,7 +57,7 @@ export function KaryawanSidebar() {
   return (
     <aside className="hidden w-64 flex-col border-r bg-card p-4 md:flex no-print">
       <nav className="flex flex-col gap-2">
-        {user?.jabatan === 'OPRATOR BP' && (
+        {user?.role === 'OPRATOR BP' && (
           <>
             <Button asChild variant="outline">
               <Link href="/dashboard">

@@ -7,17 +7,20 @@ const USERS_STORAGE_KEY = 'app-users';
 
 // The default users to seed localStorage with if it's empty.
 const initialUsers: User[] = [
-  { id: 'superadmin-main', username: 'admin', password: 'admin', role: 'super_admin', location: 'BP PEKANBARU', nik: 'SUPER-001' },
-  { id: 'op-1', username: 'mirul', password: '123', role: 'operator', location: 'BP PEKANBARU', nik: 'OP-001', jabatan: 'OPRATOR BP' },
-  { id: 'op-2', username: 'operator_prod', password: 'password', role: 'operator', location: 'BP DUMAI', nik: 'OP-002', jabatan: 'OPRATOR LOADER' },
-  { id: 'kepmek-1', username: 'kepala_mekanik', password: 'password', role: 'karyawan', location: 'BP PEKANBARU', nik: 'KEPMEK-001', jabatan: 'KEPALA MEKANIK' },
-  { id: 'kepws-1', username: 'kepala_workshop', password: 'password', role: 'karyawan', location: 'BP DUMAI', nik: 'KWS-001', jabatan: 'KEPALA WORKSHOP' },
-  { id: 'sopirtm-1', username: 'budi_tm', password: 'password', role: 'karyawan', location: 'BP BAUNG', nik: 'SOPIR-001', jabatan: 'SOPIR TM' },
-  { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'mekanik', location: 'BP BAUNG', nik: 'MECH-001', jabatan: 'HELPER' },
-  { id: 'head-1', username: 'supervisor', password: 'password', role: 'supervisor', location: 'BP IKN', nik: 'SUP-001' },
-  { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'laborat', location: 'BP PEKANBARU', nik: 'LAB-001' },
-  { id: 'hse-1', username: 'hse', password: 'hse', role: 'hse_hrd_lokasi', location: 'BP PEKANBARU', nik: 'HSE-001' },
-  { id: 'karyawan-1', username: 'karyawan', password: 'karyawan', role: 'karyawan', location: 'BP PEKANBARU', nik: 'K001', jabatan: 'HELPER' },
+  { id: 'superadmin-main', username: 'admin', password: 'admin', role: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-001' },
+  { id: 'op-1', username: 'mirul', password: '123', role: 'OPRATOR BP', location: 'BP PEKANBARU', nik: 'OP-001' },
+  { id: 'op-2', username: 'operator_prod', password: 'password', role: 'OPRATOR LOADER', location: 'BP DUMAI', nik: 'OP-002' },
+  { id: 'kepmek-1', username: 'kepala_mekanik', password: 'password', role: 'KEPALA MEKANIK', location: 'BP PEKANBARU', nik: 'KEPMEK-001' },
+  { id: 'kepws-1', username: 'kepala_workshop', password: 'password', role: 'KEPALA WORKSHOP', location: 'BP DUMAI', nik: 'KWS-001' },
+  { id: 'sopirtm-1', username: 'budi_tm', password: 'password', role: 'SOPIR TM', location: 'BP BAUNG', nik: 'SOPIR-001' },
+  { id: 'mech-1', username: 'andi_mekanik', password: 'password', role: 'HELPER', location: 'BP BAUNG', nik: 'MECH-001' },
+  { id: 'head-1', username: 'supervisor', password: 'password', role: 'KEPALA BP', location: 'BP IKN', nik: 'SUP-001' },
+  { id: 'lab-1', username: 'laborat_user', password: 'password', role: 'QC', location: 'BP PEKANBARU', nik: 'LAB-001' },
+  { id: 'hse-1', username: 'hse', password: 'hse', role: 'HSE/K3', location: 'BP PEKANBARU', nik: 'HSE-001' },
+  { id: 'karyawan-1', username: 'karyawan', password: 'karyawan', role: 'HELPER', location: 'BP PEKANBARU', nik: 'K001' },
+  { id: 'admin-logistik-1', username: 'admin_logistik', password: 'password', role: 'ADMIN LOGISTIK', location: 'BP PEKANBARU', nik: 'LOG-001' },
+  { id: 'logistik-material-1', username: 'logistik_material', password: 'password', role: 'LOGISTIK MATERIAL', location: 'BP DUMAI', nik: 'LOG-MAT-001' },
+  { id: 'admin-bp-1', username: 'admin_bp', password: 'password', role: 'ADMIN BP', location: 'BP PEKANBARU', nik: 'ADMIN-BP-001'},
 ];
 
 export function getUsers(): User[] {

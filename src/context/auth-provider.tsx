@@ -2,8 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import type { User, UserRole } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import type { User } from '@/lib/types';
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -36,8 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (userData: Omit<User, 'password'>) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    // The redirect is now handled by the LoginPage's useEffect after the user state is updated.
-    // This prevents race conditions and makes the login flow more predictable.
   };
 
   const logout = () => {

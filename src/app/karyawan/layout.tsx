@@ -8,7 +8,42 @@ export default function KaryawanLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard requiredRoles={['karyawan', 'operator']}>
+    <AuthGuard requiredRoles={[
+      "ADMIN BP",
+      "ADMIN LOGISTIK",
+      "ADMIN PRECAST",
+      "ADMIN QC",
+      "HELPER",
+      "HELPER BP",
+      "HELPER CP",
+      "HELPER LABORAT",
+      "HELPER LAS",
+      "HELPER PRECAST",
+      "HELPER TAMBAL BAN",
+      "HRD",
+      "HSE/K3",
+      "KEP KOOR BP",
+      "KEP KOOR QC",
+      "KEP KOOR TEKNIK",
+      "KEPALA BP",
+      "KEPALA GUDANG",
+      "KEPALA MEKANIK",
+      "KEPALA OPRATOR",
+      "KEPALA PRECAST",
+      "KEPALA SOPIR",
+      "KEPALA WORKSHOP",
+      "LAYAR MONITOR",
+      "OPRATOR BATA RINGAN",
+      "OPRATOR BP",
+      "OPRATOR CP",
+      "OPRATOR LOADER",
+      "OPRATOR PAVING",
+      "QC",
+      "SOPIR DT",
+      "SOPIR TM",
+      "TUKANG BOBOK",
+      "TUKANG LAS",
+    ]}>
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <div className="flex flex-1">
