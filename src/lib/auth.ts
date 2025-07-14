@@ -8,6 +8,7 @@ const USERS_STORAGE_KEY = 'app-users';
 // The default users to seed localStorage with if it's empty.
 const initialUsers: User[] = [
   { id: 'superadmin-main', username: 'admin', password: 'admin', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-001' },
+  { id: 'super-admin-2', username: 'SUPER ADNMIN', password: '1', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-002' },
   { id: 'op-1', username: 'mirul', password: '123', jabatan: 'OPRATOR BP', location: 'BP PEKANBARU', nik: 'OP-001' },
   { id: 'op-2', username: 'operator_prod', password: 'password', jabatan: 'OPRATOR LOADER', location: 'BP DUMAI', nik: 'OP-002' },
   { id: 'kepmek-1', username: 'kepala_mekanik', password: 'password', jabatan: 'KEPALA MEKANIK', location: 'BP PEKANBARU', nik: 'KEPMEK-001' },
