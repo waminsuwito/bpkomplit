@@ -47,9 +47,8 @@ export default function LoginPage() {
       const loggedInUser = await verifyLogin(username, password);
       if (loggedInUser) {
         toast({ title: `Selamat datang Sdr. ${loggedInUser.username}` });
-        login(loggedInUser);
-        const destination = getDefaultRouteForUser(loggedInUser);
-        router.replace(destination);
+        login(loggedInUser); // Update the user state
+        // The useEffect below will handle the redirect once the state is updated
       } else {
         const errorMessage = 'Username, NIK, atau password salah.';
         setError(errorMessage);

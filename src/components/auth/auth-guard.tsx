@@ -26,7 +26,6 @@ export function AuthGuard({
 
     if (!user) {
       // If not logged in, redirect to the login page.
-      // This protects all guarded routes.
       router.replace('/');
       return;
     }
@@ -40,16 +39,14 @@ export function AuthGuard({
     }
 
     if (!isAuthorized) {
-      // If user is logged in but not authorized for this specific page,
-      // just send them back to the login page. The login page will then
-      // handle redirecting them to their correct default page.
+      // If user is logged in but not authorized, send back to login page.
+      // The login page will then handle redirecting them to their correct default page.
       router.replace('/');
     }
 
   }, [user, isLoading, router, requiredRoles, pathname]);
 
   // Determine if the user is allowed to see the content.
-  // This prevents flashing unauthorized content before a redirect can happen.
   let canRenderContent = false;
   if (!isLoading && user) {
      canRenderContent = true; // Assume allowed by default if logged in

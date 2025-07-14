@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem('user');
     setUser(null);
-    // The AuthGuard will handle redirecting to '/' on logout
-    window.location.href = '/'; // Force a full reload to clear state
+    // Force a full reload to clear state and redirect via AuthGuard
+    window.location.href = '/'; 
   };
 
   return (
