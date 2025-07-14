@@ -10,7 +10,6 @@ import { type User } from '@/lib/types';
 export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => {
     const jabatan = user.jabatan;
     
-    // Explicit route mapping for all roles
     switch (jabatan) {
       case 'SUPER ADMIN': return '/admin/super-admin';
       case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
@@ -21,10 +20,25 @@ export const getDefaultRouteForUser = (user: Omit<User, 'password'>): string => 
       case 'SOPIR TM': return '/karyawan/checklist-harian-tm';
       case 'KEPALA MEKANIK': return '/karyawan/manajemen-alat';
       case 'KEPALA WORKSHOP': return '/karyawan/manajemen-alat';
-      // Default fallback for all other employee roles
       default: return '/karyawan/absensi-harian';
     }
 };
+
+const getAllowedPrefix = (jabatan: User['jabatan']): string => {
+    const adminRoles = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
+    if (adminRoles.includes(jabatan)) {
+        return '/admin';
+    }
+    if (jabatan === 'ADMIN BP') {
+        return '/admin-bp';
+    }
+    if (jabatan === 'OPRATOR BP') {
+        // Operator BP can access dashboard and karyawan pages
+        return '/dashboard'; // Primary prefix
+    }
+    // All other roles are considered 'karyawan'
+    return '/karyawan';
+}
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -38,56 +52,46 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     
     const isLoginPage = pathname === '/';
 
+    // Case 1: User is not logged in
     if (!user) {
       if (!isLoginPage) {
         router.replace('/');
       }
       return;
     }
-    
-    // User is logged in
-    const defaultRoute = getDefaultRouteForUser(user);
 
-    if (isLoginPage) {
-        router.replace(defaultRoute);
-        return;
-    }
-
-    // Authorization checks for logged-in users
+    // Case 2: User IS logged in
     const { jabatan } = user;
-    if (!jabatan) { // If user object exists but jabatan is somehow missing, redirect to login
+    if (!jabatan) {
+        // If user object is malformed, send to login
         router.replace('/');
         return;
     }
-
-    let isAuthorized = false;
-    const isAdminPage = pathname.startsWith('/admin');
-    const isAdminBpPage = pathname.startsWith('/admin-bp');
-    const isDashboardPage = pathname.startsWith('/dashboard');
-    const isKaryawanPage = pathname.startsWith('/karyawan');
     
-    const adminRoles = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
+    const defaultRoute = getDefaultRouteForUser(user);
+    const allowedPrefix = getAllowedPrefix(jabatan);
 
-    if (adminRoles.includes(jabatan) && isAdminPage) {
-        isAuthorized = true;
-    } else if (jabatan === 'ADMIN BP' && isAdminBpPage) {
-        isAuthorized = true;
-    } else if (jabatan === 'OPRATOR BP' && isDashboardPage) {
-        isAuthorized = true;
-    } else if (!adminRoles.includes(jabatan) && jabatan !== 'ADMIN BP' && isKaryawanPage) {
-        // Any role that is NOT an admin role is considered a 'karyawan' for this purpose
-        isAuthorized = true;
-    } else if (jabatan === 'OPRATOR BP' && isKaryawanPage) {
-        // Allow OPRATOR BP to access karyawan pages too
+    if (isLoginPage) {
+      router.replace(defaultRoute);
+      return;
+    }
+
+    // Case 3: Authorization Check for Logged-in Users
+    let isAuthorized = pathname.startsWith(allowedPrefix);
+    
+    // Special case for OPRATOR BP who can also access /karyawan
+    if (jabatan === 'OPRATOR BP' && pathname.startsWith('/karyawan')) {
         isAuthorized = true;
     }
-    
+
     if (!isAuthorized) {
+        // If the user is in the wrong section, redirect them to their correct dashboard.
         router.replace(defaultRoute);
     }
 
   }, [user, isLoading, router, pathname]);
 
+  // Render loading screen while checking auth state, or if a redirect is imminent
   if (isLoading || (!user && pathname !== '/')) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -96,5 +100,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
   
+  // Render the children (the actual page) if everything is okay
   return <>{children}</>;
 }
