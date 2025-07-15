@@ -25,40 +25,33 @@ const initialUsers: User[] = [
   { id: 'admin-bp-1', username: 'admin_bp', password: 'password', jabatan: 'ADMIN BP', location: 'BP PEKANBARU', nik: 'ADMIN-BP-001'},
 ];
 
-// In-memory cache to avoid repeated DB calls for the user list within a session
-let usersCache: User[] | null = null;
-
-async function seedInitialUsers(): Promise<User[]> {
+async function seedInitialUsers(): Promise<void> {
     const db = getDatabase(app);
     const usersObject = initialUsers.reduce((acc, user) => {
         acc[user.id] = user;
         return acc;
     }, {} as Record<string, User>);
     await set(ref(db, USERS_PATH), usersObject);
-    usersCache = initialUsers;
-    return initialUsers;
+    console.log("Database was empty. Seeded initial users.");
 }
 
 export async function getUsers(): Promise<User[]> {
-    if (usersCache) {
-        return usersCache;
-    }
-
     try {
         const dbRef = ref(getDatabase(app));
         const snapshot = await get(child(dbRef, USERS_PATH));
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
-            const usersArray = Object.values(usersObject) as User[];
-            usersCache = usersArray;
-            return usersArray;
+            // Convert the object of users into an array
+            return Object.values(usersObject) as User[];
         } else {
-            // If no users exist in the database, seed them.
-            return await seedInitialUsers();
+            // If no users exist in the database, seed them and return the seeded list.
+            await seedInitialUsers();
+            return initialUsers;
         }
     } catch (error) {
         console.error('Firebase Error: Failed to get users.', error);
-        return [];
+        // Fallback to initial users list if there's a DB connection error
+        return initialUsers;
     }
 }
 
@@ -70,9 +63,10 @@ async function saveUsers(users: User[]): Promise<void> {
             return acc;
         }, {} as Record<string, User>);
         await set(ref(db, USERS_PATH), usersObject);
-        usersCache = users; // Update cache
     } catch (error) {
         console.error('Firebase Error: Failed to save users.', error);
+        // Optionally re-throw or handle the error as needed
+        throw error;
     }
 }
 
@@ -97,7 +91,7 @@ export async function verifyLogin(usernameOrNik: string, password: string): Prom
 
 export async function addUser(userData: Omit<User, 'id'>): Promise<User> {
     const users = await getUsers();
-    const newUser: User = { ...userData, id: new Date().toISOString() };
+    const newUser: User = { ...userData, id: new Date().toISOString() + Math.random().toString(36).substring(2) };
     const updatedUsers = [...users, newUser];
     await saveUsers(updatedUsers);
     return newUser;
