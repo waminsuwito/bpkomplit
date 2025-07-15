@@ -60,7 +60,7 @@ function LoginPageContent() {
         <CardHeader className="text-center">
           <Image
             src="/logo.png"
-            alt="Company Logo"
+            alt="PT. FARIKA RIAU PERKASA Logo"
             width={120}
             height={120}
             className="mx-auto rounded-full mb-4"
@@ -79,10 +79,10 @@ function LoginPageContent() {
                 type="text"
                 placeholder="Masukkan username atau NIK"
                 value={username}
-                onChange={(e) => setUsername(e.target.value.toUpperCase())}
-                style={{ textTransform: 'uppercase' }}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={isLoading}
+                autoCapitalize="none"
               />
             </div>
             <div className="space-y-2">

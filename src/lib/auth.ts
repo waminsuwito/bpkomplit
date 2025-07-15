@@ -57,9 +57,11 @@ export function saveUsers(users: User[]): void {
 
 export function verifyLogin(usernameOrNik: string, password: string): Omit<User, 'password'> | null {
   const users = getUsers();
+  const lowerCaseUsernameOrNik = usernameOrNik.toLowerCase();
+
   const user = users.find(
     (u) =>
-      (u.username.toLowerCase() === usernameOrNik.toLowerCase() || (u.nik && u.nik.toLowerCase() === usernameOrNik.toLowerCase())) &&
+      (u.username.toLowerCase() === lowerCaseUsernameOrNik || (u.nik && u.nik.toLowerCase() === lowerCaseUsernameOrNik)) &&
       u.password === password
   );
 
