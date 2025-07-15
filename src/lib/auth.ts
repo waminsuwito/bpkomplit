@@ -2,10 +2,11 @@
 'use client';
 
 import { type User } from '@/lib/types';
+import { getDatabase, ref, get, set, child } from "firebase/database";
+import { app } from '@/lib/firebase';
 
-const USERS_STORAGE_KEY = 'app-users';
+const USERS_PATH = 'users';
 
-// The default users to seed localStorage with if it's empty.
 const initialUsers: User[] = [
   { id: 'superadmin-main', username: 'admin', password: '123', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-001' },
   { id: 'super-admin-2', username: 'SUPER ADNMIN', password: '1', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-002' },
@@ -24,99 +25,113 @@ const initialUsers: User[] = [
   { id: 'admin-bp-1', username: 'admin_bp', password: 'password', jabatan: 'ADMIN BP', location: 'BP PEKANBARU', nik: 'ADMIN-BP-001'},
 ];
 
-export function getUsers(): User[] {
-  // This function is now safe to call from anywhere on the client-side.
-  if (typeof window === 'undefined') {
-    return []; // Return empty array on server-side or during pre-rendering.
-  }
-  try {
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    if (storedUsers) {
-      return JSON.parse(storedUsers);
-    } else {
-      // Seed the storage if it's the first time.
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-      return initialUsers;
-    }
-  } catch (error) {
-    console.error('Failed to access users from localStorage:', error);
-    // Return initial users as a fallback in case of parsing errors.
+// In-memory cache to avoid repeated DB calls for the user list within a session
+let usersCache: User[] | null = null;
+
+async function seedInitialUsers(): Promise<User[]> {
+    const db = getDatabase(app);
+    const usersObject = initialUsers.reduce((acc, user) => {
+        acc[user.id] = user;
+        return acc;
+    }, {} as Record<string, User>);
+    await set(ref(db, USERS_PATH), usersObject);
+    usersCache = initialUsers;
     return initialUsers;
-  }
 }
 
-export function saveUsers(users: User[]): void {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-    } catch (error) {
-      console.error('Failed to save users to localStorage:', error);
+export async function getUsers(): Promise<User[]> {
+    if (usersCache) {
+        return usersCache;
     }
-  }
+
+    try {
+        const dbRef = ref(getDatabase(app));
+        const snapshot = await get(child(dbRef, USERS_PATH));
+        if (snapshot.exists()) {
+            const usersObject = snapshot.val();
+            const usersArray = Object.values(usersObject) as User[];
+            usersCache = usersArray;
+            return usersArray;
+        } else {
+            // If no users exist in the database, seed them.
+            return await seedInitialUsers();
+        }
+    } catch (error) {
+        console.error('Firebase Error: Failed to get users.', error);
+        return [];
+    }
 }
 
-export function verifyLogin(usernameOrNik: string, password: string): Omit<User, 'password'> | null {
-  const users = getUsers();
-  const lowerCaseUsernameOrNik = usernameOrNik.toLowerCase();
-
-  const user = users.find(
-    (u) =>
-      (u.username.toLowerCase() === lowerCaseUsernameOrNik || (u.nik && u.nik.toLowerCase() === lowerCaseUsernameOrNik)) &&
-      u.password === password
-  );
-
-  if (user) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
-  } else {
-    return null;
-  }
+async function saveUsers(users: User[]): Promise<void> {
+    try {
+        const db = getDatabase(app);
+        const usersObject = users.reduce((acc, user) => {
+            acc[user.id] = user;
+            return acc;
+        }, {} as Record<string, User>);
+        await set(ref(db, USERS_PATH), usersObject);
+        usersCache = users; // Update cache
+    } catch (error) {
+        console.error('Firebase Error: Failed to save users.', error);
+    }
 }
 
-export function addUser(userData: Omit<User, 'id'>): User {
-  const users = getUsers();
-  const newUser: User = { ...userData, id: new Date().toISOString() };
-  const updatedUsers = [...users, newUser];
-  saveUsers(updatedUsers);
-  return newUser;
+export async function verifyLogin(usernameOrNik: string, password: string): Promise<Omit<User, 'password'> | null> {
+    const users = await getUsers();
+    const lowerCaseUsernameOrNik = usernameOrNik.toLowerCase();
+
+    const user = users.find(
+        (u) =>
+            (u.username.toLowerCase() === lowerCaseUsernameOrNik || (u.nik && u.nik.toLowerCase() === lowerCaseUsernameOrNik)) &&
+            u.password === password
+    );
+
+    if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+    } else {
+        return null;
+    }
 }
 
-export function updateUser(userId: string, userData: Partial<Omit<User, 'id'>>): void {
-  const users = getUsers();
-  const updatedUsers = users.map((u) =>
-    u.id === userId ? { ...u, ...userData } : u
-  );
-  saveUsers(updatedUsers);
+export async function addUser(userData: Omit<User, 'id'>): Promise<User> {
+    const users = await getUsers();
+    const newUser: User = { ...userData, id: new Date().toISOString() };
+    const updatedUsers = [...users, newUser];
+    await saveUsers(updatedUsers);
+    return newUser;
 }
 
-export function deleteUser(userId: string): void {
-  const users = getUsers();
-  const updatedUsers = users.filter((u) => u.id !== userId);
-  saveUsers(updatedUsers);
+export async function updateUser(userId: string, userData: Partial<Omit<User, 'id'>>): Promise<void> {
+    const users = await getUsers();
+    const updatedUsers = users.map((u) =>
+        u.id === userId ? { ...u, ...userData } : u
+    );
+    await saveUsers(updatedUsers);
 }
 
-export function changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-  return new Promise((resolve) => {
-    const users = getUsers();
+export async function deleteUser(userId: string): Promise<void> {
+    const users = await getUsers();
+    const updatedUsers = users.filter((u) => u.id !== userId);
+    await saveUsers(updatedUsers);
+}
+
+export async function changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    const users = await getUsers();
     const userIndex = users.findIndex((u) => u.id === userId);
 
     if (userIndex === -1) {
-      resolve({ success: false, message: 'User not found.' });
-      return;
+        return { success: false, message: 'User not found.' };
     }
 
     const user = users[userIndex];
-
     if (user.password !== oldPassword) {
-      resolve({ success: false, message: 'Incorrect old password.' });
-      return;
+        return { success: false, message: 'Incorrect old password.' };
     }
 
-    // Update password
     users[userIndex].password = newPassword;
-    saveUsers(users);
+    await saveUsers(users);
 
-    resolve({ success: true, message: 'Password updated successfully.' });
-  });
+    return { success: true, message: 'Password updated successfully.' };
 }

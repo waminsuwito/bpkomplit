@@ -20,35 +20,32 @@ function LoginPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // The setTimeout is removed to make the login process synchronous and more reliable.
-    const loggedInUser = verifyLogin(username, password);
-    
-    if (loggedInUser) {
-        try {
-            // 1. Save user to localStorage
+
+    try {
+        const loggedInUser = await verifyLogin(username, password);
+        
+        if (loggedInUser) {
             localStorage.setItem('user', JSON.stringify(loggedInUser));
-            // 2. Determine the destination
             const destination = getDefaultRouteForUser(loggedInUser);
-            // 3. Force a full page reload to the destination. This is the key fix.
-            // It ensures a clean state and prevents race conditions.
+            // This forces a full page reload, ensuring a clean state.
             window.location.href = destination;
-        } catch (error) {
-             toast({
+        } else {
+            toast({
                 variant: 'destructive',
                 title: 'Login Gagal',
-                description: 'Gagal menyimpan sesi login. Mohon coba lagi.',
+                description: 'Username, NIK, atau password salah.',
             });
             setIsLoading(false);
         }
-    } else {
+    } catch (error) {
+        console.error("Login error:", error);
         toast({
             variant: 'destructive',
-            title: 'Login Gagal',
-            description: 'Username, NIK, atau password salah.',
+            title: 'Login Error',
+            description: 'Terjadi kesalahan saat mencoba login. Periksa koneksi internet Anda.',
         });
         setIsLoading(false);
     }
@@ -116,14 +113,13 @@ export default function LoginPage() {
 
     useEffect(() => {
         // This effect only redirects if a user is already logged in.
-        // It avoids the race condition that was happening before.
         if (!isLoading && user) {
             const destination = getDefaultRouteForUser(user);
             router.replace(destination);
         }
     }, [user, isLoading, router]);
 
-    // While checking for a user, or if a user is found and redirect is pending, show loader.
+    // While checking for a user, or if a user is found and redirect is pending, show a loader.
     if (isLoading || user) {
         return (
             <div className="flex items-center justify-center h-screen bg-background">
@@ -132,6 +128,6 @@ export default function LoginPage() {
         );
     }
     
-    // If no user and not loading, show the login page.
+    // If no user is logged in and not loading, show the login page.
     return <LoginPageContent />;
 }

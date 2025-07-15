@@ -13,33 +13,33 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // If auth state is still being determined, do nothing and wait.
+    // If the auth state is still loading, don't do anything yet.
     if (isLoading) {
       return; 
     }
     
     const isLoginPage = pathname === '/';
 
-    // If there is no user logged in...
+    // If there is no authenticated user...
     if (!user) {
-      // ...and they are not on the login page, redirect them there.
+      // ...and they are trying to access a protected page, redirect them to the login page.
       if (!isLoginPage) {
         router.replace('/');
       }
       return;
     }
 
-    // If a user IS logged in and tries to access the login page,
-    // redirect them away from it to their default dashboard.
-    // This is the only redirect this component should handle for logged-in users.
+    // If there IS an authenticated user and they try to visit the login page...
     if (user && isLoginPage) {
+      // ...redirect them to their appropriate dashboard.
       const destination = getDefaultRouteForUser(user);
       router.replace(destination);
     }
     
   }, [user, isLoading, router, pathname]);
 
-  // While loading, or if we are redirecting, show a loader.
+  // Show a loading screen while auth state is being determined,
+  // or if a redirect is in progress.
   if (isLoading || (!user && pathname !== '/') || (user && pathname === '/')) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -48,11 +48,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If all checks pass, render the children components.
+  // If all checks pass, render the protected page.
   return <>{children}</>;
 }
 
-// This function remains the central logic for determining a user's default page.
 export const getDefaultRouteForUser = (user: { jabatan?: string }): string => {
     const jabatan = user.jabatan;
     

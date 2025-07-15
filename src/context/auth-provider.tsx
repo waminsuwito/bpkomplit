@@ -17,7 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This effect runs ONLY ONCE on initial app load.
+    // This effect runs ONLY ONCE on initial app load on the client.
     // Its only job is to check localStorage for an existing session.
     try {
       const storedUser = localStorage.getItem('user');
@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Failed to parse user from localStorage", e);
       localStorage.removeItem('user');
     } finally {
+      // We are done loading the initial user state from localStorage.
       setIsLoading(false);
     }
   }, []); // Empty dependency array ensures this runs only once.
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    // Force a reload to the login page to ensure a clean state.
+    // Force a full page reload to the login page to ensure a clean state across all components.
     window.location.href = '/';
   };
 

@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function SuperAdminPage() {
+export default function ManajemenKaryawanPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
