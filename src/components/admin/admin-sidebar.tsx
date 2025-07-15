@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -21,7 +20,9 @@ import {
   MailQuestion,
   Lightbulb,
   MessageSquareWarning,
-  Users
+  Users,
+  Wrench,
+  Construction
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -37,13 +38,8 @@ const superAdminNav = [
 ];
 
 const adminLogistikNav = [
-  { href: '/admin/laporan-harian', label: 'Laporan Harian', icon: FileText },
-  { href: '/admin/schedule-cor', label: 'Schedule Cor Hari Ini', icon: CalendarCheck },
-  { href: '/admin/manajemen-karyawan', label: 'Manajemen Karyawan', icon: Users },
-  { href: '/admin/usulan-karyawan', label: 'Usulan Karyawan', icon: Lightbulb },
-  { href: '/admin/komplain-karyawan', label: 'Komplain Karyawan', icon: MessageSquareWarning },
-  { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
-  { href: '/admin/laporan-anonim', label: 'Laporan Anonim', icon: MailQuestion },
+  { href: '/admin/pemakaian-spare-part', label: 'Pemakaian Spare Part', icon: Wrench },
+  { href: '/admin/list-kerusakan-alat', label: 'List Kerusakan Alat', icon: Construction },
 ];
 
 const logistikMaterialNav = [

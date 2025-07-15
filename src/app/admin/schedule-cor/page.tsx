@@ -1,4 +1,6 @@
 
+// This page is now unlinked for the ADMIN LOGISTIK role.
+// The content is kept to avoid breaking changes for other roles that might use it.
 'use client';
 
 import { useState, useEffect } from 'react';
