@@ -32,7 +32,7 @@ import { useState, useEffect } from 'react';
 import type { AnonymousReport, AccidentReport, Suggestion, Complaint } from '@/lib/types';
 
 const superAdminNav = [
-  { href: '/admin/super-admin', label: 'User Management', icon: Shield },
+  { href: '/admin/manajemen-karyawan', label: 'User Management', icon: Users },
   { href: '/admin/pesan-anonim', label: 'Pesan dari Anonim', icon: MailQuestion },
   { href: '/admin/broadcast-karyawan', label: 'Broadcast Karyawan', icon: Megaphone },
 ];
