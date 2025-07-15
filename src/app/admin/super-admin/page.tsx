@@ -9,7 +9,8 @@ import { type User, type Jabatan } from '@/lib/types';
 import { getUsers, addUser, updateUser, deleteUser } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function SuperAdminPage() {
@@ -18,19 +19,25 @@ export default function SuperAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
     try {
-      setUsers(getUsers());
+      const userList = await getUsers();
+      setUsers(userList);
     } catch (error) {
       console.error("Failed to load users:", error);
-      toast({ variant: 'destructive', title: "Error", description: "Could not load user data." });
+      toast({ variant: 'destructive', title: "Error", description: "Could not load user data from the database." });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
-  const handleSaveUser = (data: UserFormValues, userId: string | null) => {
-    const currentUsers = getUsers();
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleSaveUser = async (data: UserFormValues, userId: string | null) => {
+    const currentUsers = await getUsers();
     const nikExists = currentUsers.some(
       (user) => user.nik === data.nik && user.id !== userId
     );
@@ -54,7 +61,7 @@ export default function SuperAdminPage() {
       if (data.password) {
         userDataToUpdate.password = data.password;
       }
-      updateUser(userId, userDataToUpdate);
+      await updateUser(userId, userDataToUpdate);
       toast({ title: 'User Updated', description: `User "${data.username}" has been updated.` });
     } else {
        if (!data.password) {
@@ -72,11 +79,11 @@ export default function SuperAdminPage() {
         location: data.location,
         nik: data.nik,
       };
-      addUser(newUser);
+      await addUser(newUser);
       toast({ title: 'User Created', description: `User "${data.username}" has been created.` });
     }
     
-    setUsers(getUsers()); 
+    await fetchUsers();
     setUserToEdit(null);
   };
   
@@ -88,9 +95,9 @@ export default function SuperAdminPage() {
     }
   };
 
-  const handleDeleteUser = (id: string) => {
-    deleteUser(id);
-    setUsers(getUsers());
+  const handleDeleteUser = async (id: string) => {
+    await deleteUser(id);
+    await fetchUsers();
   };
 
   const handleCancelEdit = () => {
@@ -101,8 +108,29 @@ export default function SuperAdminPage() {
 
   if (isLoading) {
     return (
-        <div className="flex justify-center items-center h-64">
-            <p>Loading user data...</p>
+        <div className="w-full max-w-4xl space-y-6 mx-auto">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-6">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-4 w-2/3" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-40 w-full" />
+                </CardContent>
+            </Card>
         </div>
     );
   }
