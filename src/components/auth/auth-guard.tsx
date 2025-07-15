@@ -58,7 +58,7 @@ export const getDefaultRouteForUser = (user: { jabatan?: string }): string => {
     switch (jabatan) {
       case 'SUPER ADMIN': return '/admin/super-admin';
       case 'ADMIN BP': return '/admin-bp/schedule-cor-hari-ini';
-      case 'ADMIN LOGISTIK': return '/admin/laporan-harian';
+      case 'ADMIN LOGISTIK': return '/admin/pemakaian-spare-part';
       case 'LOGISTIK MATERIAL': return '/admin/pemasukan-material';
       case 'HSE/K3': return '/admin/absensi-karyawan-hari-ini';
       case 'OPRATOR BP': return '/dashboard';

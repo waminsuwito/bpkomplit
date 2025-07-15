@@ -97,115 +97,12 @@ export default function LaporanHarianPage() {
         <CardHeader>
           <CardTitle>Laporan Harian Produksi</CardTitle>
           <CardDescription>
-            Laporan jadwal, pemakaian material, dan stok material aktual.
+            Halaman ini tidak lagi digunakan untuk peran Anda.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">TANGGAL:</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-[240px] justify-start text-left font-normal no-print',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : <span>Pilih tanggal</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 no-print">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-               <span className="font-semibold print-only">{date ? format(date, 'PPP') : ''}</span>
-            </div>
-            <button
-              onClick={() => printElement('print-content')}
-              className="no-print inline-flex items-center justify-center whitespace-nowrap rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 text-sm font-medium"
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Cetak
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <Table className="border min-w-full" style={{ tableLayout: 'fixed' }}>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead
-                    colSpan={4}
-                    className="text-center border font-bold text-foreground p-2 align-middle w-[30%]"
-                  >
-                    SCHEDULE HARI INI
-                  </TableHead>
-                  <TableHead
-                    rowSpan={2}
-                    className="text-center border font-bold text-foreground p-2 align-middle w-[8%]"
-                  >
-                    REALISASI SAAT INI ( M³ )
-                  </TableHead>
-                  <TableHead
-                    colSpan={4}
-                    className="text-center border font-bold text-foreground p-2 align-middle w-[32%]"
-                  >
-                    AKTUAL PEMAKAIAN MATERIAL
-                  </TableHead>
-                  <TableHead
-                    colSpan={4}
-                    className="text-center border font-bold text-foreground p-2 align-middle w-[32%]"
-                  >
-                    STOK MATERIAL AKTUAL SAAT INI
-                  </TableHead>
-                </TableRow>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[10%]">LOKASI</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[5%]">MUTU</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[5%]">SLUMP</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[7%]">VOLUME</TableHead>
-                  
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">PASIR</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">BATU</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">SEMEN</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">AIR</TableHead>
-
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">PASIR</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">BATU</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">SEMEN</TableHead>
-                  <TableHead className="text-center border p-2 font-semibold text-foreground w-[8%]">AIR</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tableData.map((row, rowIndex) => (
-                  <TableRow key={rowIndex}>
-                    {(Object.keys(row) as Array<keyof typeof row>).map(
-                      (key) => (
-                        <TableCell key={key} className="border p-0 h-10">
-                          <Input
-                            type="text"
-                            value={row[key]}
-                            onChange={(e) =>
-                              handleInputChange(rowIndex, key, e.target.value)
-                            }
-                            className="w-full h-full border-none rounded-none text-center"
-                            style={{ textTransform: 'uppercase' }}
-                            readOnly={['lokasi', 'mutu', 'slump', 'volume'].includes(key) && !!row[key]}
-                          />
-                        </TableCell>
-                      )
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="text-center py-12 text-muted-foreground">
+              <p>Halaman ini telah digantikan oleh menu baru di sidebar.</p>
           </div>
         </CardContent>
       </Card>
