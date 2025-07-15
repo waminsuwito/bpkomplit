@@ -20,24 +20,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // This effect runs ONLY ONCE on initial app load.
     // Its only job is to check localStorage for an existing session.
     try {
-      // --- SIMULATION START ---
-      // Hardcode the SUPER ADMIN user to simulate automatic login.
-      const superAdminUser: Omit<User, 'password'> = {
-        id: 'superadmin-main',
-        username: 'admin',
-        jabatan: 'SUPER ADMIN',
-        location: 'BP PEKANBARU',
-        nik: 'SUPER-001'
-      };
-      setUser(superAdminUser);
-      // --- SIMULATION END ---
-      
-      /* Original code:
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
-      */
     } catch (e) {
       console.error("Failed to parse user from localStorage", e);
       localStorage.removeItem('user');
