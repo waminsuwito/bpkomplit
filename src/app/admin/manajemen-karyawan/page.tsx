@@ -11,9 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-provider';
 
 
 export default function ManajemenKaryawanPage() {
+  const { isLoading: isAuthLoading } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,8 +35,11 @@ export default function ManajemenKaryawanPage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    // Only fetch users once the authentication process is complete
+    if (!isAuthLoading) {
+      fetchUsers();
+    }
+  }, [isAuthLoading, fetchUsers]);
 
   const handleSaveUser = async (data: UserFormValues, userId: string | null) => {
     const currentUsers = await getUsers();
@@ -106,7 +111,7 @@ export default function ManajemenKaryawanPage() {
 
   const usersForDisplay = Array.isArray(users) ? users.map(({ password, ...user }) => user) : [];
 
-  if (isLoading) {
+  if (isLoading || isAuthLoading) {
     return (
         <div className="w-full max-w-4xl space-y-6 mx-auto">
             <Card>

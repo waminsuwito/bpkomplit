@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { type User } from '@/lib/types';
+import { getUsers } from '@/lib/auth'; // Import getUsers to find the admin user from DB
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -12,25 +13,37 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded SUPER ADMIN user for direct access
-const superAdminUser: Omit<User, 'password'> = {
-  id: 'superadmin-main',
-  username: 'admin',
-  jabatan: 'SUPER ADMIN',
-  location: 'BP PEKANBARU',
-  nik: 'SUPER-001'
-};
-
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Force login as SUPER ADMIN immediately
-    setUser(superAdminUser);
-    localStorage.setItem('user', JSON.stringify(superAdminUser));
-    setIsLoading(false);
+    const checkUser = async () => {
+      try {
+        // Try to get user from localStorage first for faster page loads
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } else {
+            // This is a fallback to ensure the superadmin is always available
+            // if localStorage is cleared or on first visit.
+            const allUsers = await getUsers();
+            const superAdminUser = allUsers.find(u => u.id === 'superadmin-main');
+            if (superAdminUser) {
+                const { password, ...adminData } = superAdminUser;
+                setUser(adminData);
+                localStorage.setItem('user', JSON.stringify(adminData));
+            }
+        }
+      } catch (e) {
+        console.error("Failed to initialize auth state", e);
+      } finally {
+        // Only set loading to false after all async operations are complete
+        setIsLoading(false);
+      }
+    };
+    checkUser();
   }, []);
 
   const logout = () => {
