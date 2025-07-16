@@ -41,7 +41,7 @@ export async function getUsers(): Promise<User[]> {
         const snapshot = await get(child(dbRef, USERS_PATH));
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
-            // Convert the object of users into an array
+            // Convert the object of users into an array, which is the correct format.
             return Object.values(usersObject) as User[];
         } else {
             // If no users exist in the database, seed them and return the seeded list.
@@ -51,7 +51,7 @@ export async function getUsers(): Promise<User[]> {
     } catch (error) {
         console.error('Firebase Error: Failed to get users.', error);
         // Fallback to initial users list if there's a DB connection error
-        return initialUsers;
+        return [];
     }
 }
 

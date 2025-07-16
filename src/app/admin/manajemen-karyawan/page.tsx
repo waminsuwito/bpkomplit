@@ -23,7 +23,7 @@ export default function ManajemenKaryawanPage() {
     setIsLoading(true);
     try {
       const userList = await getUsers();
-      setUsers(userList);
+      setUsers(userList || []); // Ensure userList is an array, fallback to empty array
     } catch (error) {
       console.error("Failed to load users:", error);
       toast({ variant: 'destructive', title: "Error", description: "Could not load user data from the database." });
@@ -104,7 +104,7 @@ export default function ManajemenKaryawanPage() {
     setUserToEdit(null);
   };
 
-  const usersForDisplay = users.map(({ password, ...user }) => user);
+  const usersForDisplay = Array.isArray(users) ? users.map(({ password, ...user }) => user) : [];
 
   if (isLoading) {
     return (
