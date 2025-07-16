@@ -12,31 +12,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Hardcoded SUPER ADMIN user for direct access
+const superAdminUser: Omit<User, 'password'> = {
+  id: 'superadmin-main',
+  username: 'admin',
+  jabatan: 'SUPER ADMIN',
+  location: 'BP PEKANBARU',
+  nik: 'SUPER-001'
+};
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This effect runs ONLY ONCE on initial app load on the client.
-    // Its only job is to check localStorage for an existing session.
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (e) {
-      console.error("Failed to parse user from localStorage", e);
-      localStorage.removeItem('user');
-    } finally {
-      // We are done loading the initial user state from localStorage.
-      setIsLoading(false);
-    }
-  }, []); // Empty dependency array ensures this runs only once.
+    // Force login as SUPER ADMIN immediately
+    setUser(superAdminUser);
+    localStorage.setItem('user', JSON.stringify(superAdminUser));
+    setIsLoading(false);
+  }, []);
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    // Force a full page reload to the login page to ensure a clean state across all components.
     window.location.href = '/';
   };
 
