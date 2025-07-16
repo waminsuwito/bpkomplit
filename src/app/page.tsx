@@ -17,12 +17,12 @@ import { useRouter } from 'next/navigation';
 function LoginPageContent() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsLoggingIn(true);
 
     try {
         const loggedInUser = await verifyLogin(username, password);
@@ -30,7 +30,7 @@ function LoginPageContent() {
         if (loggedInUser) {
             localStorage.setItem('user', JSON.stringify(loggedInUser));
             const destination = getDefaultRouteForUser(loggedInUser);
-            // This forces a full page reload, ensuring a clean state.
+            // This forces a full page reload, ensuring a clean state and running the AuthGuard correctly.
             window.location.href = destination;
         } else {
             toast({
@@ -38,7 +38,7 @@ function LoginPageContent() {
                 title: 'Login Gagal',
                 description: 'Username, NIK, atau password salah.',
             });
-            setIsLoading(false);
+            setIsLoggingIn(false);
         }
     } catch (error) {
         console.error("Login error:", error);
@@ -47,7 +47,7 @@ function LoginPageContent() {
             title: 'Login Error',
             description: 'Terjadi kesalahan saat mencoba login. Periksa koneksi internet Anda.',
         });
-        setIsLoading(false);
+        setIsLoggingIn(false);
     }
   };
   
@@ -78,7 +78,7 @@ function LoginPageContent() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoggingIn}
                 autoCapitalize="none"
               />
             </div>
@@ -91,13 +91,13 @@ function LoginPageContent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoggingIn}
               />
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+            <Button type="submit" className="w-full" disabled={isLoggingIn}>
+              {isLoggingIn ? <Loader2 className="animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
               Login
             </Button>
           </CardFooter>
@@ -112,14 +112,14 @@ export default function LoginPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // This effect only redirects if a user is already logged in.
+        // This effect only redirects if a user is ALREADY logged in and lands here.
         if (!isLoading && user) {
             const destination = getDefaultRouteForUser(user);
             router.replace(destination);
         }
     }, [user, isLoading, router]);
 
-    // While checking for a user, or if a user is found and redirect is pending, show a loader.
+    // While checking for an existing session or redirecting, show a loader.
     if (isLoading || user) {
         return (
             <div className="flex items-center justify-center h-screen bg-background">
@@ -128,6 +128,6 @@ export default function LoginPage() {
         );
     }
     
-    // If no user is logged in and not loading, show the login page.
+    // If no user is logged in (and not loading), show the actual login page.
     return <LoginPageContent />;
 }

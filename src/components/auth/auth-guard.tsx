@@ -13,32 +13,30 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // If the auth state is still loading, don't do anything yet.
+    // Don't do anything until the auth state is resolved.
     if (isLoading) {
       return; 
     }
     
     const isLoginPage = pathname === '/';
 
-    // If there is no authenticated user...
-    if (!user) {
-      // ...and they are trying to access a protected page, redirect them to the login page.
-      if (!isLoginPage) {
-        router.replace('/');
-      }
+    // If there's no user and they're trying to access a protected page,
+    // redirect them to the login page.
+    if (!user && !isLoginPage) {
+      router.replace('/');
       return;
     }
 
-    // If there IS an authenticated user and they try to visit the login page...
+    // If there IS a user and they somehow land on the login page,
+    // redirect them to their designated home page.
     if (user && isLoginPage) {
-      // ...redirect them to their appropriate dashboard.
       const destination = getDefaultRouteForUser(user);
       router.replace(destination);
     }
     
   }, [user, isLoading, router, pathname]);
 
-  // Show a loading screen while auth state is being determined,
+  // Show a loading screen while the initial user check is happening,
   // or if a redirect is in progress.
   if (isLoading || (!user && pathname !== '/') || (user && pathname === '/')) {
     return (
@@ -48,7 +46,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If all checks pass, render the protected page.
+  // If all checks pass and the user is authorized for the current route, render the page.
   return <>{children}</>;
 }
 
