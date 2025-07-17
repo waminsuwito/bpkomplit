@@ -3,7 +3,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { type User } from '@/lib/types';
-import { getUsers } from '@/lib/auth'; // Import getUsers to find the admin user from DB
 
 interface AuthContextType {
   user: Omit<User, 'password'> | null;
@@ -18,44 +17,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        // Try to get user from localStorage first for faster page loads
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-        } else {
-            // This is a fallback to ensure the superadmin is always available
-            // if localStorage is cleared or on first visit.
-            const allUsers = await getUsers();
-            const superAdminUser = allUsers.find(u => u.id === 'superadmin-main');
-            if (superAdminUser) {
-                const { password, ...adminData } = superAdminUser;
-                setUser(adminData);
-                localStorage.setItem('user', JSON.stringify(adminData));
-            }
-        }
-      } catch (e) {
-        console.error("Failed to initialize auth state", e);
-      } finally {
-        // Only set loading to false after all async operations are complete
-        setIsLoading(false);
+    // This effect runs only once on the client-side when the app mounts.
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
-    };
-    checkUser();
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+      // Ensure user is null if parsing fails
+      setUser(null);
+      localStorage.removeItem('user');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    // Force a full page reload to the login page to clear all state.
     window.location.href = '/';
   };
 
-  const value = { user, logout, isLoading };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -13,7 +13,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Don't do anything until the auth state is resolved.
+    // Wait until the auth state is fully resolved.
     if (isLoading) {
       return; 
     }
@@ -36,7 +36,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     
   }, [user, isLoading, router, pathname]);
 
-  // Show a loading screen while the initial user check is happening,
+  // Show a loading screen while the initial user check is happening
   // or if a redirect is in progress.
   if (isLoading || (!user && pathname !== '/') || (user && pathname === '/')) {
     return (
@@ -46,7 +46,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If all checks pass and the user is authorized for the current route, render the page.
+  // If all checks pass, render the protected page.
   return <>{children}</>;
 }
 

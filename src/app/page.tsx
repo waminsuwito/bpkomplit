@@ -30,7 +30,7 @@ function LoginPageContent() {
         if (loggedInUser) {
             localStorage.setItem('user', JSON.stringify(loggedInUser));
             const destination = getDefaultRouteForUser(loggedInUser);
-            // This forces a full page reload, ensuring a clean state and running the AuthGuard correctly.
+            // This forces a full page reload, ensuring a clean state and running AuthGuard correctly.
             window.location.href = destination;
         } else {
             toast({
