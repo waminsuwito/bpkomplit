@@ -2,11 +2,11 @@
 'use client';
 
 import { type User } from '@/lib/types';
-import { getDatabase, ref, get, set, child } from "firebase/database";
-import { app } from '@/lib/firebase';
 
-const USERS_PATH = 'users';
+// The key used to store users in localStorage.
+const USERS_STORAGE_KEY = 'app-users';
 
+// The initial set of users to seed the application with if none are found.
 const initialUsers: User[] = [
   { id: 'superadmin-main', username: 'admin', password: '123', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-001' },
   { id: 'superadmin-new', username: 'superadmin', password: 'superadmin', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-999' },
@@ -25,53 +25,48 @@ const initialUsers: User[] = [
   { id: 'admin-bp-1', username: 'admin_bp', password: 'password', jabatan: 'ADMIN BP', location: 'BP PEKANBARU', nik: 'ADMIN-BP-001'},
 ];
 
-async function seedInitialUsers(): Promise<void> {
-    const db = getDatabase(app);
-    const usersObject = initialUsers.reduce((acc, user) => {
-        acc[user.id] = user;
-        return acc;
-    }, {} as Record<string, User>);
-    await set(ref(db, USERS_PATH), usersObject);
-    console.log("Database was empty. Seeded initial users.");
-}
-
-export async function getUsers(): Promise<User[]> {
+/**
+ * Retrieves the list of users from localStorage.
+ * If no users are found, it seeds localStorage with an initial list.
+ * This function should only be called on the client side.
+ * @returns {User[]} An array of user objects.
+ */
+export function getUsers(): User[] {
+    if (typeof window === 'undefined') {
+        return [];
+    }
     try {
-        const dbRef = ref(getDatabase(app));
-        const snapshot = await get(child(dbRef, USERS_PATH));
-        if (snapshot.exists()) {
-            const usersObject = snapshot.val();
-            // Convert the object of users into an array. This is the critical fix.
-            return Object.values(usersObject) as User[];
+        const storedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
+        if (storedUsers) {
+            return JSON.parse(storedUsers);
         } else {
-            // If no users exist in the database, seed them and return the seeded list.
-            await seedInitialUsers();
+            // Seed the initial users into localStorage if it's empty
+            window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
             return initialUsers;
         }
     } catch (error) {
-        console.error('Firebase Error: Failed to get users.', error);
-        // Fallback to initial users list if there's a DB connection error
+        console.error('Failed to access users from localStorage:', error);
         return [];
     }
 }
 
-async function saveUsers(users: User[]): Promise<void> {
+/**
+ * Saves the provided array of users to localStorage.
+ * This function should only be called on the client side.
+ * @param {User[]} users The array of users to save.
+ */
+function saveUsers(users: User[]): void {
+    if (typeof window === 'undefined') return;
     try {
-        const db = getDatabase(app);
-        const usersObject = users.reduce((acc, user) => {
-            acc[user.id] = user;
-            return acc;
-        }, {} as Record<string, User>);
-        await set(ref(db, USERS_PATH), usersObject);
+        window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
     } catch (error) {
-        console.error('Firebase Error: Failed to save users.', error);
-        // Optionally re-throw or handle the error as needed
-        throw error;
+        console.error('Failed to save users to localStorage:', error);
     }
 }
 
-export async function verifyLogin(usernameOrNik: string, password: string): Promise<Omit<User, 'password'> | null> {
-    const users = await getUsers();
+
+export function verifyLogin(usernameOrNik: string, password: string): Omit<User, 'password'> | null {
+    const users = getUsers();
     const lowerCaseUsernameOrNik = usernameOrNik.toLowerCase();
 
     const user = users.find(
@@ -89,30 +84,30 @@ export async function verifyLogin(usernameOrNik: string, password: string): Prom
     }
 }
 
-export async function addUser(userData: Omit<User, 'id'>): Promise<User> {
-    const users = await getUsers();
+export function addUser(userData: Omit<User, 'id'>): User {
+    const users = getUsers();
     const newUser: User = { ...userData, id: new Date().toISOString() + Math.random().toString(36).substring(2) };
     const updatedUsers = [...users, newUser];
-    await saveUsers(updatedUsers);
+    saveUsers(updatedUsers);
     return newUser;
 }
 
-export async function updateUser(userId: string, userData: Partial<Omit<User, 'id'>>): Promise<void> {
-    const users = await getUsers();
+export function updateUser(userId: string, userData: Partial<Omit<User, 'id'>>): void {
+    const users = getUsers();
     const updatedUsers = users.map((u) =>
         u.id === userId ? { ...u, ...userData } : u
     );
-    await saveUsers(updatedUsers);
+    saveUsers(updatedUsers);
 }
 
-export async function deleteUser(userId: string): Promise<void> {
-    const users = await getUsers();
+export function deleteUser(userId: string): void {
+    const users = getUsers();
     const updatedUsers = users.filter((u) => u.id !== userId);
-    await saveUsers(updatedUsers);
+    saveUsers(updatedUsers);
 }
 
-export async function changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-    const users = await getUsers();
+export function changePassword(userId: string, oldPassword: string, newPassword: string): { success: boolean; message: string } {
+    const users = getUsers();
     const userIndex = users.findIndex((u) => u.id === userId);
 
     if (userIndex === -1) {
@@ -125,7 +120,7 @@ export async function changePassword(userId: string, oldPassword: string, newPas
     }
 
     users[userIndex].password = newPassword;
-    await saveUsers(users);
+    saveUsers(users);
 
     return { success: true, message: 'Password updated successfully.' };
 }
