@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import { ClipboardEdit, Wrench, Inbox, MoreHorizontal } from 'lucide-react';
 import type { TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
-import { format, formatDistanceToNow, differenceInMinutes } from 'date-fns';
+import { format, formatDistanceToNow, differenceInMinutes, isValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -339,51 +339,55 @@ export default function WorkOrderPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {myWorkOrders.map(wo => (
-                    <TableRow key={wo.id}>
-                      <TableCell className="font-medium">{wo.vehicle.username}</TableCell>
-                      <TableCell>{wo.vehicle.userNik}</TableCell>
-                      <TableCell>
-                        <ul className="list-disc pl-5 space-y-1 text-xs">
-                          {wo.vehicle.damagedItems.map(item => (
-                            <li key={item.id}>
-                              <span className="font-semibold">{item.label}:</span>
-                              <p className="whitespace-pre-wrap pl-2 text-sm text-muted-foreground">{item.notes || "Tidak ada catatan."}</p>
-                            </li>
-                          ))}
-                        </ul>
-                      </TableCell>
-                       <TableCell className="text-xs">{format(new Date(wo.targetCompletionTime), 'd MMM, HH:mm')}</TableCell>
-                       <TableCell className="font-semibold">
-                          {wo.status}
-                      </TableCell>
-                       <TableCell className="text-xs font-semibold">{wo.notes || '-'}</TableCell>
-                      <TableCell className="text-center">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" disabled={wo.status === 'Selesai'}>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Opsi</span>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Menunggu')}>
-                                    Menunggu
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')}>
-                                    Dikerjakan
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Tunda')}>
-                                    Tunda
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo, 'Selesai')}>
-                                    Selesai
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {myWorkOrders.map(wo => {
+                    const targetDate = new Date(wo.targetCompletionTime);
+                    const isTargetDateValid = isValid(targetDate);
+                    return (
+                        <TableRow key={wo.id}>
+                          <TableCell className="font-medium">{wo.vehicle.username}</TableCell>
+                          <TableCell>{wo.vehicle.userNik}</TableCell>
+                          <TableCell>
+                            <ul className="list-disc pl-5 space-y-1 text-xs">
+                              {wo.vehicle.damagedItems.map(item => (
+                                <li key={item.id}>
+                                  <span className="font-semibold">{item.label}:</span>
+                                  <p className="whitespace-pre-wrap pl-2 text-sm text-muted-foreground">{item.notes || "Tidak ada catatan."}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          </TableCell>
+                           <TableCell className="text-xs">{isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}</TableCell>
+                           <TableCell className="font-semibold">
+                              {wo.status}
+                          </TableCell>
+                           <TableCell className="text-xs font-semibold">{wo.notes || '-'}</TableCell>
+                          <TableCell className="text-center">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={wo.status === 'Selesai'}>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Opsi</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Menunggu')}>
+                                        Menunggu
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')}>
+                                        Dikerjakan
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Tunda')}>
+                                        Tunda
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo, 'Selesai')}>
+                                        Selesai
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>
