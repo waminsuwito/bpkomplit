@@ -7,11 +7,10 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import { format } from 'date-fns';
-import { ClipboardCheck, Camera, Loader2, CheckCircle, Upload } from 'lucide-react';
+import { ClipboardCheck, Camera, Loader2, Upload } from 'lucide-react';
 import type { TruckChecklistItem, TruckChecklistReport, ChecklistStatus, UserLocation } from '@/lib/types';
 import Image from 'next/image';
 
@@ -31,20 +30,20 @@ const checklistItemsDefinition = [
 
 const getDailyChecklistKey = (userId: string) => `loader-checklist-${userId}-${format(new Date(), 'yyyy-MM-dd')}`;
 
+const getInitialChecklistState = () => checklistItemsDefinition.map(item => ({ ...item, status: 'baik' as ChecklistStatus, photo: null, notes: '' }));
+
 export default function ChecklistHarianLoaderPage() {
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const [checklistItems, setChecklistItems] = useState<TruckChecklistItem[]>(
-        checklistItemsDefinition.map(item => ({ ...item, status: 'baik', photo: null, notes: '' }))
-    );
-    const [isSubmittedToday, setIsSubmittedToday] = useState(false);
+    const [checklistItems, setChecklistItems] = useState<TruckChecklistItem[]>(getInitialChecklistState());
     const [isLoading, setIsLoading] = useState(false);
     const [cameraForItem, setCameraForItem] = useState<string | null>(null);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
+    
+    // This effect ensures that even on page reload, the user continues with their last saved state for the day
     useEffect(() => {
         if (user) {
             try {
@@ -54,7 +53,6 @@ export default function ChecklistHarianLoaderPage() {
                     const parsedReport: TruckChecklistReport = JSON.parse(storedReport);
                     const itemsWithNotes = parsedReport.items.map(item => ({ ...item, status: item.status || 'baik', notes: item.notes || '' }));
                     setChecklistItems(itemsWithNotes);
-                    setIsSubmittedToday(true);
                 }
             } catch (error) {
                 console.error("Failed to load today's checklist report", error);
@@ -161,12 +159,23 @@ export default function ChecklistHarianLoaderPage() {
             localStorage.setItem(dailyKey, JSON.stringify(report));
 
             const storedGlobal = localStorage.getItem(CHECKLIST_STORAGE_KEY);
-            const allGlobalReports: TruckChecklistReport[] = storedGlobal ? JSON.parse(storedGlobal) : [];
-            allGlobalReports.push(report);
+            let allGlobalReports: TruckChecklistReport[] = storedGlobal ? JSON.parse(storedGlobal) : [];
+            
+            // Find if a report for this user and day already exists
+            const existingReportIndex = allGlobalReports.findIndex(r => r.id === dailyKey);
+
+            if (existingReportIndex > -1) {
+                // If it exists, replace it with the new one
+                allGlobalReports[existingReportIndex] = report;
+            } else {
+                // If not, add it
+                allGlobalReports.push(report);
+            }
+            
             localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(allGlobalReports));
 
             toast({ title: 'Berhasil', description: 'Checklist harian berhasil dikirim.' });
-            setIsSubmittedToday(true);
+            
         } catch (error) {
             console.error("Failed to save checklist report", error);
             toast({ variant: 'destructive', title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan laporan.' });
@@ -183,21 +192,11 @@ export default function ChecklistHarianLoaderPage() {
                     Checklist Harian Wheel Loader
                 </CardTitle>
                 <CardDescription>
-                    Lakukan pemeriksaan berikut sebelum memulai operasi harian.
+                    Lakukan pemeriksaan berikut sebelum memulai operasi harian. Anda dapat mengirim laporan ini beberapa kali jika kondisi alat berubah.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <canvas ref={canvasRef} className="hidden" />
-
-                {isSubmittedToday && (
-                    <Alert variant="default" className="bg-green-100 dark:bg-green-900/40 border-green-500">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <AlertTitle>Laporan Terkirim</AlertTitle>
-                        <AlertDescription>
-                            Anda sudah mengirimkan checklist untuk hari ini. Terima kasih.
-                        </AlertDescription>
-                    </Alert>
-                )}
 
                 <div className="space-y-8">
                     {checklistItems.map((item, index) => (
@@ -209,7 +208,7 @@ export default function ChecklistHarianLoaderPage() {
                                         value={item.status || ""}
                                         onValueChange={(value) => handleStatusChange(item.id, value as ChecklistStatus)}
                                         className="space-y-2"
-                                        disabled={isSubmittedToday || isLoading}
+                                        disabled={isLoading}
                                     >
                                         <div className="flex items-center space-x-2">
                                             <RadioGroupItem value="baik" id={`${item.id}-baik`} />
@@ -236,7 +235,7 @@ export default function ChecklistHarianLoaderPage() {
                                                 value={item.notes || ''}
                                                 onChange={(e) => handleNotesChange(item.id, e.target.value)}
                                                 style={{ textTransform: 'uppercase' }}
-                                                disabled={isSubmittedToday || isLoading}
+                                                disabled={isLoading}
                                                 rows={3}
                                             />
                                         </div>
@@ -261,7 +260,7 @@ export default function ChecklistHarianLoaderPage() {
                                         <Button
                                             variant="outline"
                                             onClick={() => handleActivateCamera(item.id)}
-                                            disabled={isSubmittedToday || isLoading}
+                                            disabled={isLoading}
                                         >
                                             <Upload className="mr-2 h-4 w-4" /> Upload Foto
                                         </Button>
@@ -275,7 +274,7 @@ export default function ChecklistHarianLoaderPage() {
             <CardFooter>
                 <Button
                     onClick={handleSubmit}
-                    disabled={isSubmittedToday || isLoading}
+                    disabled={isLoading}
                     className="w-full"
                     size="lg"
                 >
