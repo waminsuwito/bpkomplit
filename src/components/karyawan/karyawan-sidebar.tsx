@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck, Construction, Wrench } from 'lucide-react';
+import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck, Construction, Wrench, ClipboardEdit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
@@ -25,7 +25,18 @@ export function KaryawanSidebar() {
 
   let navItems = [...baseNavItems];
   
-  let insertionIndex = 1; // The position to insert new items (after Absensi Harian)
+  let insertionIndex = 1;
+
+  if (user?.jabatan === 'KEPALA MEKANIK' || user?.jabatan === 'KEPALA WORKSHOP') {
+      navItems.splice(insertionIndex, 0, 
+        {
+            href: '/karyawan/work-order',
+            label: 'Work Order (WO)',
+            icon: ClipboardEdit,
+        }
+      );
+      insertionIndex++;
+  }
 
   // Conditionally insert the checklist item for the correct user role
   if (user?.jabatan === 'SOPIR TM') {
