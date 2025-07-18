@@ -1,6 +1,5 @@
 
 import { Header } from '@/components/dashboard/header';
-import { AuthGuard } from '@/components/auth/auth-guard';
 import { AdminBpSidebar } from '@/components/admin-bp/admin-bp-sidebar';
 
 export default function AdminBpLayout({
@@ -9,7 +8,6 @@ export default function AdminBpLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard>
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <div className="flex flex-1">
@@ -19,6 +17,5 @@ export default function AdminBpLayout({
           </main>
         </div>
       </div>
-    </AuthGuard>
   );
 }

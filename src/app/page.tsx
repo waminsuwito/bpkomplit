@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { verifyLogin } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,11 +10,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Loader2, LogIn } from 'lucide-react';
-import { getDefaultRouteForUser } from '@/components/auth/auth-guard';
-import { useAuth } from '@/context/auth-provider';
-import { useRouter } from 'next/navigation';
+import { getDefaultRouteForUser } from '@/lib/auth-guard-helper';
 
-function LoginPageContent() {
+export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -30,7 +28,6 @@ function LoginPageContent() {
         if (loggedInUser) {
             localStorage.setItem('user', JSON.stringify(loggedInUser));
             const destination = getDefaultRouteForUser(loggedInUser);
-            // This forces a full page reload, ensuring a clean state and running AuthGuard correctly.
             window.location.href = destination;
         } else {
             toast({
@@ -45,7 +42,7 @@ function LoginPageContent() {
         toast({
             variant: 'destructive',
             title: 'Login Error',
-            description: 'Terjadi kesalahan saat mencoba login. Periksa koneksi internet Anda.',
+            description: 'Terjadi kesalahan saat mencoba login.',
         });
         setIsLoggingIn(false);
     }
@@ -105,29 +102,4 @@ function LoginPageContent() {
       </Card>
     </div>
   );
-}
-
-export default function LoginPage() {
-    const { user, isLoading } = useAuth();
-    const router = useRouter();
-
-    // This effect only redirects if a user is ALREADY logged in and lands here.
-    useEffect(() => {
-        if (!isLoading && user) {
-            const destination = getDefaultRouteForUser(user);
-            router.replace(destination);
-        }
-    }, [user, isLoading, router]);
-
-    // While checking for an existing session or redirecting, show a loader.
-    if (isLoading || user) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-background">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
-    // If no user is logged in (and not loading), show the actual login page.
-    return <LoginPageContent />;
 }
