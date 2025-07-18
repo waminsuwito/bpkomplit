@@ -259,22 +259,22 @@ export default function StokMaterialPage() {
               <TableRow>
                 <TableCell className="font-semibold">PENGIRIMAN</TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.pengiriman} onChange={e => handleStockChange('pasir', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.pengiriman || 0} onChange={e => handleStockChange('pasir', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.pengiriman} onChange={e => handleStockChange('batu', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.pengiriman || 0} onChange={e => handleStockChange('batu', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.pengiriman} onChange={e => handleStockChange('semen', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.pengiriman || 0} onChange={e => handleStockChange('semen', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.pengiriman} onChange={e => handleStockChange('vz', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.pengiriman || 0} onChange={e => handleStockChange('vz', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.pengiriman} onChange={e => handleStockChange('nn', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.pengiriman || 0} onChange={e => handleStockChange('nn', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.pengiriman} onChange={e => handleStockChange('visco', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.pengiriman || 0} onChange={e => handleStockChange('visco', 'pengiriman', e.target.value)} />
                 </TableCell>
               </TableRow>
               <TableRow className="bg-muted font-bold">
