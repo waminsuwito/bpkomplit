@@ -21,11 +21,11 @@ const checklistItemsDefinition = [
     { id: 'oli_hidraulik', label: 'Level Oli Hidraulik' },
     { id: 'air_radiator', label: 'Level Air Radiator' },
     { id: 'tekanan_ban', label: 'Kondisi & Tekanan Ban' },
-    { id: 'bucket_gigi', label: 'Kondisi Bucket & Gigi' },
+    { id: 'bucket_gigi', label: 'Kondisi Baket' },
     { id: 'fungsi_listrik', label: 'Fungsi Klakson & Lampu-lampu' },
     { id: 'kaca_wiper', label: 'Kaca Spion, Kaca Jendela & Wiper' },
     { id: 'kebersihan', label: 'Kebersihan Kabin' },
-    { id: 'kerusakan_lain', label: 'Kerusakan Lainnya' },
+    { id: 'kerusakan_lain', label: 'Kerusakan' },
 ];
 
 const getDailyChecklistKey = (userId: string) => `loader-checklist-${userId}-${format(new Date(), 'yyyy-MM-dd')}`;
