@@ -41,6 +41,7 @@ interface WorkOrder {
   vehicle: DamagedVehicle;
   startTime: string; // ISO String
   status: WorkOrderStatus;
+  completionTime?: string; // ISO String, set when status becomes 'Selesai'
 }
 
 export default function WorkOrderPage() {
@@ -67,8 +68,24 @@ export default function WorkOrderPage() {
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
-    // Filter for my work orders that are currently in progress
-    const myCurrentWOs = allWorkOrders.filter(wo => wo.mechanicId === user.id && wo.status !== 'Selesai');
+    // Filter for my work orders
+    const myCurrentWOs = allWorkOrders.filter(wo => {
+        if (wo.mechanicId !== user.id) return false;
+        
+        if (wo.status !== 'Selesai') {
+            return true; // Always show active work orders
+        }
+
+        // If status is 'Selesai', check the completion time
+        if (wo.status === 'Selesai' && wo.completionTime) {
+            const twentyFourHoursAgo = new Date();
+            twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+            const completionDate = new Date(wo.completionTime);
+            return completionDate > twentyFourHoursAgo; // Keep if completed within last 24 hours
+        }
+
+        return false; // By default, don't show completed orders without a completion time
+    });
     setMyWorkOrders(myCurrentWOs);
 
     // Create a set of report IDs that are already part of an active work order
@@ -174,9 +191,18 @@ export default function WorkOrderPage() {
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
-    const updatedWorkOrders = allWorkOrders.map(wo => 
-        wo.id === workOrder.id ? { ...wo, status } : wo
-    );
+    const updatedWorkOrders = allWorkOrders.map(wo => {
+        if (wo.id === workOrder.id) {
+            const updatedWo: WorkOrder = { ...wo, status };
+            if (status === 'Selesai') {
+                updatedWo.completionTime = new Date().toISOString();
+            } else {
+                delete updatedWo.completionTime; // Remove completion time if status is not 'Selesai'
+            }
+            return updatedWo;
+        }
+        return wo;
+    });
     
     localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedWorkOrders));
     
@@ -229,7 +255,7 @@ export default function WorkOrderPage() {
         <CardHeader>
           <CardTitle>List WO Saya</CardTitle>
           <CardDescription>
-            Daftar kendaraan yang sedang Anda tangani atau yang ditunda.
+            Daftar kendaraan yang sedang Anda tangani atau yang ditunda. Laporan yang selesai akan hilang setelah 24 jam.
           </CardDescription>
         </CardHeader>
         <CardContent>
