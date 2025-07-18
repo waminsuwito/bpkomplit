@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-provider';
+import type { ProductionHistoryEntry } from '@/lib/types';
 
 interface MaterialStock {
   awal: number;
@@ -32,12 +33,25 @@ const initialStock: DailyStock = {
 };
 
 const getStockKey = (date: Date) => `app-stok-material-${format(date, 'yyyy-MM-dd')}`;
+const PRODUCTION_HISTORY_KEY = 'app-production-history';
 
 export default function StokMaterialPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [stock, setStock] = useState<DailyStock>(initialStock);
+  const [productionHistory, setProductionHistory] = useState<ProductionHistoryEntry[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem(PRODUCTION_HISTORY_KEY);
+      if (storedHistory) {
+        setProductionHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Failed to load production history:", error);
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -46,21 +60,61 @@ export default function StokMaterialPage() {
       if (storedData) {
         setStock(JSON.parse(storedData));
       } else {
-        setStock(initialStock);
+        setStock({
+          pasir: { awal: 0, pemakaian: 0 },
+          batu: { awal: 0, pemakaian: 0 },
+          semen: { awal: 0, pemakaian: 0 },
+        });
       }
     } catch (error) {
       console.error("Failed to load stock data:", error);
       setStock(initialStock);
     }
   }, [date]);
+  
+  const calculatedUsage = useMemo(() => {
+    const selectedDateStr = format(date, 'yyyy-MM-dd');
+    const todaysProduction = productionHistory.filter(
+      item => format(new Date(item.startTime), 'yyyy-MM-dd') === selectedDateStr
+    );
 
-  const handleStockChange = (material: 'pasir' | 'batu' | 'semen', type: 'awal' | 'pemakaian', value: string) => {
+    const totals = {
+      pasir: 0,
+      batu: 0,
+      semen: 0,
+    };
+
+    todaysProduction.forEach(item => {
+      totals.pasir += (item.actualWeights?.pasir1 || 0) + (item.actualWeights?.pasir2 || 0);
+      totals.batu += (item.actualWeights?.batu1 || 0) + (item.actualWeights?.batu2 || 0);
+      totals.semen += item.actualWeights?.semen || 0;
+    });
+
+    return {
+      pasir: totals.pasir, // Already in Kg
+      batu: totals.batu, // Already in Kg
+      semen: totals.semen // Already in Kg
+    };
+  }, [date, productionHistory]);
+  
+  // Effect to update stock usage when calculatedUsage changes
+  useEffect(() => {
+    setStock(prev => ({
+      ...prev,
+      pasir: { ...prev.pasir, pemakaian: calculatedUsage.pasir / 1000 }, // Convert Kg to M³ approx. (assuming 1M³ = 1000Kg is sufficient for this context, though not precise)
+      batu: { ...prev.batu, pemakaian: calculatedUsage.batu / 1000 },
+      semen: { ...prev.semen, pemakaian: calculatedUsage.semen },
+    }));
+  }, [calculatedUsage]);
+
+
+  const handleStockAwalChange = (material: 'pasir' | 'batu' | 'semen', value: string) => {
     const numericValue = parseFloat(value) || 0;
     setStock(prev => ({
       ...prev,
       [material]: {
         ...prev[material],
-        [type]: numericValue,
+        awal: numericValue,
       },
     }));
   };
@@ -142,32 +196,32 @@ export default function StokMaterialPage() {
               <TableRow>
                 <TableCell className="font-semibold">STOK AWAL</TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.pasir.awal} onChange={e => handleStockChange('pasir', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.pasir.awal} onChange={e => handleStockAwalChange('pasir', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.batu.awal} onChange={e => handleStockChange('batu', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.batu.awal} onChange={e => handleStockAwalChange('batu', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.semen.awal} onChange={e => handleStockChange('semen', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.semen.awal} onChange={e => handleStockAwalChange('semen', e.target.value)} />
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PEMAKAIAN</TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.pasir.pemakaian} onChange={e => handleStockChange('pasir', 'pemakaian', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.pasir.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.batu.pemakaian} onChange={e => handleStockChange('batu', 'pemakaian', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.batu.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.semen.pemakaian} onChange={e => handleStockChange('semen', 'pemakaian', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.semen.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
               </TableRow>
               <TableRow className="bg-muted font-bold">
                 <TableCell>STOK AKHIR</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.pasir).toLocaleString()}</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.batu).toLocaleString()}</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.semen).toLocaleString()}</TableCell>
+                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.pasir).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.batu).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.semen).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
