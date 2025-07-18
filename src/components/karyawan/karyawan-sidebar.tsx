@@ -25,7 +25,7 @@ export function KaryawanSidebar() {
 
   let navItems = [...baseNavItems];
   
-  let insertionIndex = 1;
+  let insertionIndex = 1; // Start inserting after 'Absensi Harian'
 
   if (user?.jabatan === 'KEPALA MEKANIK' || user?.jabatan === 'KEPALA WORKSHOP') {
       navItems.splice(insertionIndex, 0, 
@@ -38,7 +38,7 @@ export function KaryawanSidebar() {
       insertionIndex++;
   }
 
-  // Conditionally insert the checklist item for the correct user role
+  // Conditionally insert the TM checklist
   if (user?.jabatan === 'SOPIR TM') {
       navItems.splice(insertionIndex, 0, {
           href: '/karyawan/checklist-harian-tm',
@@ -48,7 +48,17 @@ export function KaryawanSidebar() {
       insertionIndex++;
   }
 
-  // Conditionally insert the management items for the correct user role
+  // Conditionally insert the Loader checklist
+  if (user?.jabatan === 'OPRATOR LOADER') {
+      navItems.splice(insertionIndex, 0, {
+          href: '/karyawan/checklist-harian-loader',
+          label: 'Checklist Harian',
+          icon: ClipboardCheck,
+      });
+      insertionIndex++;
+  }
+
+  // Conditionally insert the management items
   if (user?.jabatan === 'KEPALA MEKANIK' || user?.jabatan === 'KEPALA WORKSHOP') {
       navItems.splice(insertionIndex, 0, 
         {
