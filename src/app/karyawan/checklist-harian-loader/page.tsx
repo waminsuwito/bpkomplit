@@ -200,7 +200,6 @@ export default function ChecklistHarianLoaderPage() {
                     Checklist Harian Wheel Loader
                 </CardTitle>
                 <CardDescription>
-                    Lakukan pemeriksaan berikut sebelum memulai operasi harian. Anda dapat mengirim laporan ini beberapa kali jika kondisi alat berubah. Kerusakan yang dilaporkan akan ditambahkan ke laporan hari ini.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
