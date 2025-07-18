@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
-import { addDays, format, startOfDay } from 'date-fns';
+import { addDays, format, startOfDay, isValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { CalendarIcon, Search, Printer, Inbox, ScrollText } from 'lucide-react';
 import { printElement, cn } from '@/lib/utils';
@@ -178,23 +178,29 @@ export default function RiwayatWoPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {filteredRecords.map((item) => (
-                    <TableRow key={item.id}>
-                        <TableCell className="font-medium whitespace-nowrap">{format(new Date(item.completionTime!), 'd MMM yyyy, HH:mm')}</TableCell>
-                        <TableCell>{item.mechanicName}</TableCell>
-                        <TableCell>{item.vehicle.username}</TableCell>
-                        <TableCell>{item.vehicle.userNik}</TableCell>
-                        <TableCell>
-                           <ul className="list-disc pl-4 space-y-1 text-xs">
-                            {item.vehicle.damagedItems.map(d => (
-                                <li key={d.id}>{d.label}: {d.notes || 'Tidak ada catatan'}</li>
-                            ))}
-                           </ul>
-                        </TableCell>
-                         <TableCell className="text-xs">{format(new Date(item.targetCompletionTime), 'd MMM, HH:mm')}</TableCell>
-                        <TableCell className="text-xs font-semibold">{item.notes || '-'}</TableCell>
-                    </TableRow>
-                    ))}
+                    {filteredRecords.map((item) => {
+                      const targetDate = new Date(item.targetCompletionTime);
+                      const isTargetDateValid = isValid(targetDate);
+                      return (
+                        <TableRow key={item.id}>
+                            <TableCell className="font-medium whitespace-nowrap">{format(new Date(item.completionTime!), 'd MMM yyyy, HH:mm')}</TableCell>
+                            <TableCell>{item.mechanicName}</TableCell>
+                            <TableCell>{item.vehicle.username}</TableCell>
+                            <TableCell>{item.vehicle.userNik}</TableCell>
+                            <TableCell>
+                              <ul className="list-disc pl-4 space-y-1 text-xs">
+                                {item.vehicle.damagedItems.map(d => (
+                                    <li key={d.id}>{d.label}: {d.notes || 'Tidak ada catatan'}</li>
+                                ))}
+                              </ul>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}
+                            </TableCell>
+                            <TableCell className="text-xs font-semibold">{item.notes || '-'}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                 </TableBody>
                 </Table>
             </div>
