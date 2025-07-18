@@ -118,7 +118,7 @@ export default function WorkOrderPage() {
     }
 
     const newWorkOrder: WorkOrder = {
-      id: `${vehicleToRepair.reportId}-${user.id}`,
+      id: `${vehicleToRepair.reportId}-${user.id}-${Date.now()}`,
       mechanicId: user.id,
       mechanicName: user.username,
       vehicle: vehicleToRepair,
