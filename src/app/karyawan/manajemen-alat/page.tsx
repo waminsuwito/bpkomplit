@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building } from 'lucide-react';
+import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { type TruckChecklistReport, type TruckChecklistItem, type UserLocation } from '@/lib/types';
 import { printElement } from '@/lib/utils';
@@ -32,6 +32,7 @@ interface Report {
   lokasi: UserLocation | 'N/A';
   status: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Belum Checklist';
   waktu: string;
+  items?: TruckChecklistItem[];
 }
 
 
@@ -51,6 +52,7 @@ const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, c
 export default function ManajemenAlatPage() {
   const { user } = useAuth();
   const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
+  const [detailReport, setDetailReport] = useState<Report | null>(null);
   
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
   const [notSubmittedReports, setNotSubmittedReports] = useState<Report[]>([]);
@@ -96,6 +98,7 @@ export default function ManajemenAlatPage() {
             lokasi: report.location,
             status: getOverallStatus(report.items),
             waktu: format(new Date(report.timestamp), 'HH:mm'),
+            items: report.items.filter(item => item.status === 'rusak' || item.status === 'perlu_perhatian'),
         };
     });
     setSubmittedReports(processedSubmittedReports);
@@ -109,6 +112,7 @@ export default function ManajemenAlatPage() {
         lokasi: user.location || 'N/A',
         status: 'Belum Checklist',
         waktu: '-',
+        items: [],
     }));
     setNotSubmittedReports(processedNotSubmittedReports);
 
@@ -253,7 +257,7 @@ export default function ManajemenAlatPage() {
       </Card>
 
       <Dialog open={!!dialogContent} onOpenChange={(open) => !open && setDialogContent(null)}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{dialogContent?.title}</DialogTitle>
             <DialogDescription>
@@ -267,9 +271,9 @@ export default function ManajemenAlatPage() {
                   <TableRow>
                     <TableHead>Operator</TableHead>
                     <TableHead>Kendaraan</TableHead>
-                    <TableHead>Lokasi</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Waktu Lapor</TableHead>
+                    <TableHead>Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -277,7 +281,6 @@ export default function ManajemenAlatPage() {
                     <TableRow key={report.id}>
                       <TableCell className="font-medium">{report.operator}</TableCell>
                       <TableCell>{report.kendaraan}</TableCell>
-                      <TableCell>{report.lokasi}</TableCell>
                       <TableCell>
                         <Badge variant={getBadgeVariant(report.status)}
                           className={cn({
@@ -289,6 +292,14 @@ export default function ManajemenAlatPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{report.waktu}</TableCell>
+                       <TableCell>
+                        {(report.status === 'Rusak' || report.status === 'Perlu Perhatian') && (
+                            <Button variant="outline" size="sm" onClick={() => setDetailReport(report)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Detail
+                            </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -297,6 +308,43 @@ export default function ManajemenAlatPage() {
               <p className="text-center text-muted-foreground py-8">Tidak ada data untuk ditampilkan.</p>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={!!detailReport} onOpenChange={(open) => !open && setDetailReport(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detail Kerusakan</DialogTitle>
+            <DialogDescription>
+              Rincian laporan kerusakan untuk kendaraan <span className="font-bold">{detailReport?.kendaraan}</span> oleh operator {detailReport?.operator}.
+            </DialogDescription>
+          </DialogHeader>
+           <div className="max-h-[60vh] overflow-y-auto mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item Pemeriksaan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Catatan Operator</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detailReport?.items?.map(item => (
+                     <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.label}</TableCell>
+                        <TableCell>
+                           <Badge variant={item.status === 'rusak' ? 'destructive' : 'secondary'}
+                            className={cn(item.status === 'perlu_perhatian' && 'bg-amber-500 hover:bg-amber-600 text-white')}
+                           >
+                            {item.status}
+                           </Badge>
+                        </TableCell>
+                        <TableCell>{item.notes || '-'}</TableCell>
+                     </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+           </div>
         </DialogContent>
       </Dialog>
     </div>
