@@ -236,16 +236,16 @@ export default function WorkOrderPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Menunggu')}>
-                                    Tandai "Menunggu"
+                                    Menunggu
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Dikerjakan')}>
-                                    Tandai "Dikerjakan"
+                                    Dikerjakan
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Tunda')}>
-                                    Tandai "Tunda"
+                                    Tunda
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Selesai')}>
-                                    Tandai "Selesai"
+                                    Selesai
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
