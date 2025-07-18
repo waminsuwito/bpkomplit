@@ -11,9 +11,9 @@ import { useAuth } from '@/context/auth-provider';
 import { ClipboardEdit, Wrench, CheckCircle, Inbox } from 'lucide-react';
 import type { TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
 import { format } from 'date-fns';
-import { id as localeID } from 'date-fns/locale';
 
-const CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
+const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
+const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
 const WORK_ORDER_STORAGE_KEY = 'app-work-orders';
 
 interface DamagedVehicle {
@@ -46,9 +46,14 @@ export default function WorkOrderPage() {
   const loadData = () => {
     if (!user) return;
 
-    // Load all checklist reports
-    const storedChecklists = localStorage.getItem(CHECKLIST_STORAGE_KEY);
-    const allChecklists: TruckChecklistReport[] = storedChecklists ? JSON.parse(storedChecklists) : [];
+    // Load all checklist reports from both sources
+    const tmChecklistsStr = localStorage.getItem(TM_CHECKLIST_STORAGE_KEY);
+    const loaderChecklistsStr = localStorage.getItem(LOADER_CHECKLIST_STORAGE_KEY);
+    
+    const tmChecklists: TruckChecklistReport[] = tmChecklistsStr ? JSON.parse(tmChecklistsStr) : [];
+    const loaderChecklists: TruckChecklistReport[] = loaderChecklistsStr ? JSON.parse(loaderChecklistsStr) : [];
+    
+    const allChecklists = [...tmChecklists, ...loaderChecklists];
 
     // Load all existing work orders
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
