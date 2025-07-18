@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
-import { ClipboardEdit, Wrench, CheckCircle, Inbox, MoreHorizontal } from 'lucide-react';
+import { ClipboardEdit, Wrench, Inbox, MoreHorizontal } from 'lucide-react';
 import type { TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -137,17 +137,56 @@ export default function WorkOrderPage() {
     setSelectedVehicleId(null);
     loadData();
   };
+  
+  const clearVehicleDamageStatus = (reportId: string) => {
+      const checklistKeys = [TM_CHECKLIST_STORAGE_KEY, LOADER_CHECKLIST_STORAGE_KEY];
+      
+      for (const key of checklistKeys) {
+          const storedChecklists = localStorage.getItem(key);
+          if (storedChecklists) {
+              let checklists: TruckChecklistReport[] = JSON.parse(storedChecklists);
+              let wasUpdated = false;
+              
+              const updatedChecklists = checklists.map(report => {
+                  if (report.id === reportId) {
+                      wasUpdated = true;
+                      const repairedItems = report.items.map(item => ({
+                          ...item,
+                          status: 'baik' as 'baik', // Reset status
+                          notes: '', // Clear notes
+                          photo: null, // Clear photo
+                      }));
+                      return { ...report, items: repairedItems };
+                  }
+                  return report;
+              });
 
-  const handleUpdateWorkOrderStatus = (workOrderId: string, status: WorkOrderStatus) => {
+              if (wasUpdated) {
+                  localStorage.setItem(key, JSON.stringify(updatedChecklists));
+                  break; // Stop after finding and updating the report
+              }
+          }
+      }
+  };
+
+
+  const handleUpdateWorkOrderStatus = (workOrder: WorkOrder, status: WorkOrderStatus) => {
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
     const updatedWorkOrders = allWorkOrders.map(wo => 
-        wo.id === workOrderId ? { ...wo, status } : wo
+        wo.id === workOrder.id ? { ...wo, status } : wo
     );
     
     localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedWorkOrders));
-    toast({ title: 'Status Diperbarui', description: `Work Order telah diperbarui menjadi "${status}".` });
+    
+    if (status === 'Selesai') {
+        clearVehicleDamageStatus(workOrder.vehicle.reportId);
+        toast({ title: 'Perbaikan Selesai', description: `Kendaraan ${workOrder.vehicle.userNik} telah selesai diperbaiki.` });
+    } else {
+        toast({ title: 'Status Diperbarui', description: `Work Order telah diperbarui menjadi "${status}".` });
+    }
+
     loadData();
   };
 
@@ -235,16 +274,16 @@ export default function WorkOrderPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Menunggu')}>
+                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Menunggu')}>
                                     Menunggu
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Dikerjakan')}>
+                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')}>
                                     Dikerjakan
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Tunda')}>
+                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Tunda')}>
                                     Tunda
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Selesai')}>
+                                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo, 'Selesai')}>
                                     Selesai
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
