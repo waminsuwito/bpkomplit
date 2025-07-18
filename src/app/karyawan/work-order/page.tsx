@@ -2,13 +2,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
-import { ClipboardEdit, Wrench, CheckCircle, Inbox } from 'lucide-react';
+import { ClipboardEdit, Wrench, CheckCircle, Inbox, MoreHorizontal } from 'lucide-react';
 import type { TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -26,13 +32,15 @@ interface DamagedVehicle {
   damagedItems: TruckChecklistItem[];
 }
 
+type WorkOrderStatus = 'Menunggu' | 'Dikerjakan' | 'Tunda' | 'Selesai';
+
 interface WorkOrder {
   id: string; // Combination of reportId and mechanicId
   mechanicId: string;
   mechanicName: string;
   vehicle: DamagedVehicle;
   startTime: string; // ISO String
-  status: 'Dalam Pengerjaan' | 'Selesai';
+  status: WorkOrderStatus;
 }
 
 export default function WorkOrderPage() {
@@ -60,17 +68,17 @@ export default function WorkOrderPage() {
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
     // Filter for my work orders that are currently in progress
-    const myCurrentWOs = allWorkOrders.filter(wo => wo.mechanicId === user.id && wo.status === 'Dalam Pengerjaan');
+    const myCurrentWOs = allWorkOrders.filter(wo => wo.mechanicId === user.id && wo.status !== 'Selesai');
     setMyWorkOrders(myCurrentWOs);
 
     // Create a set of report IDs that are already part of an active work order
     const activeWorkOrderReportIds = new Set(
         allWorkOrders
-            .filter(wo => wo.status === 'Dalam Pengerjaan')
+            .filter(wo => wo.status !== 'Selesai')
             .map(wo => wo.vehicle.reportId)
     );
 
-    // Find checklists with 'rusak' status that are NOT already in an active work order
+    // Find checklists with 'rusak' or 'perlu_perhatian' status that are NOT already in an active work order
     const availableDamaged: DamagedVehicle[] = allChecklists
       .map(report => {
         const damagedItems = report.items.filter(item => item.status === 'rusak' || item.status === 'perlu_perhatian');
@@ -115,7 +123,7 @@ export default function WorkOrderPage() {
       mechanicName: user.username,
       vehicle: vehicleToRepair,
       startTime: new Date().toISOString(),
-      status: 'Dalam Pengerjaan',
+      status: 'Dikerjakan',
     };
 
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
@@ -130,16 +138,16 @@ export default function WorkOrderPage() {
     loadData();
   };
 
-  const handleCompleteWorkOrder = (workOrderId: string) => {
+  const handleUpdateWorkOrderStatus = (workOrderId: string, status: WorkOrderStatus) => {
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
     const updatedWorkOrders = allWorkOrders.map(wo => 
-        wo.id === workOrderId ? { ...wo, status: 'Selesai' as const } : wo
+        wo.id === workOrderId ? { ...wo, status } : wo
     );
     
     localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedWorkOrders));
-    toast({ title: 'Perbaikan Selesai', description: 'Work Order telah ditandai sebagai selesai.' });
+    toast({ title: 'Status Diperbarui', description: `Work Order telah diperbarui menjadi "${status}".` });
     loadData();
   };
 
@@ -180,9 +188,9 @@ export default function WorkOrderPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>List WO Saya (Dalam Pengerjaan)</CardTitle>
+          <CardTitle>List WO Saya</CardTitle>
           <CardDescription>
-            Daftar kendaraan yang sedang Anda tangani.
+            Daftar kendaraan yang sedang Anda tangani atau yang ditunda.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -195,6 +203,7 @@ export default function WorkOrderPage() {
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Lokasi</TableHead>
                     <TableHead>Detail Kerusakan</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-center">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -214,10 +223,32 @@ export default function WorkOrderPage() {
                           ))}
                         </ul>
                       </TableCell>
+                       <TableCell className="font-semibold">
+                          {wo.status}
+                      </TableCell>
                       <TableCell className="text-center">
-                        <Button variant="default" size="sm" onClick={() => handleCompleteWorkOrder(wo.id)}>
-                          <CheckCircle className="mr-2 h-4 w-4" /> Tandai Selesai
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Opsi</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Menunggu')}>
+                                    Tandai "Menunggu"
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Dikerjakan')}>
+                                    Tandai "Dikerjakan"
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Tunda')}>
+                                    Tandai "Tunda"
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo.id, 'Selesai')}>
+                                    Tandai "Selesai"
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
