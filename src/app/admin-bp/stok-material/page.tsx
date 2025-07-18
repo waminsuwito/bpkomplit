@@ -198,7 +198,7 @@ export default function StokMaterialPage() {
       </CardHeader>
       <CardContent>
         <p className="text-lg font-semibold mb-2">Lokasi: <span className="text-primary">{user?.location}</span></p>
-        <div className="border rounded-lg overflow-x-auto">
+        <div className="border rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
