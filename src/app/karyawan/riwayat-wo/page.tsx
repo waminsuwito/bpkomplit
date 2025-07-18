@@ -32,8 +32,10 @@ interface WorkOrder {
     damagedItems: TruckChecklistItem[];
   };
   startTime: string; // ISO String
+  targetCompletionTime: string; // ISO String
   status: 'Menunggu' | 'Dikerjakan' | 'Tunda' | 'Selesai';
   completionTime?: string; // ISO String, set when status becomes 'Selesai'
+  notes?: string;
 }
 
 export default function RiwayatWoPage() {
@@ -170,8 +172,9 @@ export default function RiwayatWoPage() {
                     <TableHead>Mekanik</TableHead>
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
-                    <TableHead>Lokasi</TableHead>
                     <TableHead>Detail Kerusakan</TableHead>
+                    <TableHead>Target Selesai</TableHead>
+                    <TableHead>Keterangan</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -181,7 +184,6 @@ export default function RiwayatWoPage() {
                         <TableCell>{item.mechanicName}</TableCell>
                         <TableCell>{item.vehicle.username}</TableCell>
                         <TableCell>{item.vehicle.userNik}</TableCell>
-                        <TableCell>{item.vehicle.location}</TableCell>
                         <TableCell>
                            <ul className="list-disc pl-4 space-y-1 text-xs">
                             {item.vehicle.damagedItems.map(d => (
@@ -189,6 +191,8 @@ export default function RiwayatWoPage() {
                             ))}
                            </ul>
                         </TableCell>
+                         <TableCell className="text-xs">{format(new Date(item.targetCompletionTime), 'd MMM, HH:mm')}</TableCell>
+                        <TableCell className="text-xs font-semibold">{item.notes || '-'}</TableCell>
                     </TableRow>
                     ))}
                 </TableBody>
