@@ -202,13 +202,13 @@ export default function StokMaterialPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[15%] font-bold text-black">KETERANGAN</TableHead>
-                <TableHead className="text-center font-bold text-black">PASIR (M³)</TableHead>
-                <TableHead className="text-center font-bold text-black">BATU (M³)</TableHead>
-                <TableHead className="text-center font-bold text-black">SEMEN (Kg)</TableHead>
-                <TableHead className="text-center font-bold text-black">VZ (L)</TableHead>
-                <TableHead className="text-center font-bold text-black">NN (L)</TableHead>
-                <TableHead className="text-center font-bold text-black">VISCO (L)</TableHead>
+                <TableHead className="w-[15%] font-bold text-white">KETERANGAN</TableHead>
+                <TableHead className="text-center font-bold text-white">PASIR (M³)</TableHead>
+                <TableHead className="text-center font-bold text-white">BATU (M³)</TableHead>
+                <TableHead className="text-center font-bold text-white">SEMEN (Kg)</TableHead>
+                <TableHead className="text-center font-bold text-white">VZ (L)</TableHead>
+                <TableHead className="text-center font-bold text-white">NN (L)</TableHead>
+                <TableHead className="text-center font-bold text-white">VISCO (L)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
