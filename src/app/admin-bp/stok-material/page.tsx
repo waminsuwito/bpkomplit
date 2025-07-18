@@ -18,6 +18,7 @@ import type { ProductionHistoryEntry } from '@/lib/types';
 interface MaterialStock {
   awal: number;
   pemakaian: number;
+  pengiriman: number;
 }
 
 interface DailyStock {
@@ -27,9 +28,9 @@ interface DailyStock {
 }
 
 const initialStock: DailyStock = {
-  pasir: { awal: 0, pemakaian: 0 },
-  batu: { awal: 0, pemakaian: 0 },
-  semen: { awal: 0, pemakaian: 0 },
+  pasir: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  batu: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  semen: { awal: 0, pemakaian: 0, pengiriman: 0 },
 };
 
 const getStockKey = (date: Date) => `app-stok-material-${format(date, 'yyyy-MM-dd')}`;
@@ -58,12 +59,17 @@ export default function StokMaterialPage() {
       const key = getStockKey(date);
       const storedData = localStorage.getItem(key);
       if (storedData) {
-        setStock(JSON.parse(storedData));
+        const parsedData = JSON.parse(storedData);
+        // Ensure pengiriman field exists to avoid errors with old data
+        parsedData.pasir.pengiriman = parsedData.pasir.pengiriman || 0;
+        parsedData.batu.pengiriman = parsedData.batu.pengiriman || 0;
+        parsedData.semen.pengiriman = parsedData.semen.pengiriman || 0;
+        setStock(parsedData);
       } else {
         setStock({
-          pasir: { awal: 0, pemakaian: 0 },
-          batu: { awal: 0, pemakaian: 0 },
-          semen: { awal: 0, pemakaian: 0 },
+          pasir: { awal: 0, pemakaian: 0, pengiriman: 0 },
+          batu: { awal: 0, pemakaian: 0, pengiriman: 0 },
+          semen: { awal: 0, pemakaian: 0, pengiriman: 0 },
         });
       }
     } catch (error) {
@@ -91,30 +97,29 @@ export default function StokMaterialPage() {
     });
 
     return {
-      pasir: totals.pasir, // Already in Kg
-      batu: totals.batu, // Already in Kg
+      pasir: totals.pasir / 1000, // Convert to M3 approx.
+      batu: totals.batu / 1000,   // Convert to M3 approx.
       semen: totals.semen // Already in Kg
     };
   }, [date, productionHistory]);
   
-  // Effect to update stock usage when calculatedUsage changes
   useEffect(() => {
     setStock(prev => ({
       ...prev,
-      pasir: { ...prev.pasir, pemakaian: calculatedUsage.pasir / 1000 }, // Convert Kg to M³ approx. (assuming 1M³ = 1000Kg is sufficient for this context, though not precise)
-      batu: { ...prev.batu, pemakaian: calculatedUsage.batu / 1000 },
+      pasir: { ...prev.pasir, pemakaian: calculatedUsage.pasir },
+      batu: { ...prev.batu, pemakaian: calculatedUsage.batu },
       semen: { ...prev.semen, pemakaian: calculatedUsage.semen },
     }));
   }, [calculatedUsage]);
 
 
-  const handleStockAwalChange = (material: 'pasir' | 'batu' | 'semen', value: string) => {
+  const handleStockChange = (material: 'pasir' | 'batu' | 'semen', field: 'awal' | 'pengiriman', value: string) => {
     const numericValue = parseFloat(value) || 0;
     setStock(prev => ({
       ...prev,
       [material]: {
         ...prev[material],
-        awal: numericValue,
+        [field]: numericValue,
       },
     }));
   };
@@ -138,7 +143,7 @@ export default function StokMaterialPage() {
   };
 
   const calculateStockAkhir = (material: MaterialStock) => {
-    return material.awal - material.pemakaian;
+    return material.awal - material.pemakaian - material.pengiriman;
   };
 
   return (
@@ -196,13 +201,13 @@ export default function StokMaterialPage() {
               <TableRow>
                 <TableCell className="font-semibold">STOK AWAL</TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.pasir.awal} onChange={e => handleStockAwalChange('pasir', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.pasir.awal} onChange={e => handleStockChange('pasir', 'awal', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.batu.awal} onChange={e => handleStockAwalChange('batu', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.batu.awal} onChange={e => handleStockChange('batu', 'awal', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.semen.awal} onChange={e => handleStockAwalChange('semen', e.target.value)} />
+                  <Input type="number" className="text-center" value={stock.semen.awal} onChange={e => handleStockChange('semen', 'awal', e.target.value)} />
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -215,6 +220,18 @@ export default function StokMaterialPage() {
                 </TableCell>
                 <TableCell>
                   <Input type="number" className="text-center" value={stock.semen.pemakaian.toFixed(2)} readOnly disabled />
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">PENGIRIMAN</TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.pasir.pengiriman} onChange={e => handleStockChange('pasir', 'pengiriman', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.batu.pengiriman} onChange={e => handleStockChange('batu', 'pengiriman', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.semen.pengiriman} onChange={e => handleStockChange('semen', 'pengiriman', e.target.value)} />
                 </TableCell>
               </TableRow>
               <TableRow className="bg-muted font-bold">
