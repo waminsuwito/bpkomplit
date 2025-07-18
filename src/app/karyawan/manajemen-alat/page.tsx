@@ -22,7 +22,8 @@ import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-provider';
 
 
-const CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
+const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
+const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
 
 interface Report {
   id: string | number;
@@ -64,12 +65,18 @@ export default function ManajemenAlatPage() {
         u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR')
     );
     
-    // 3. Get all checklist reports ever submitted from localStorage
-    const storedReportsStr = localStorage.getItem(CHECKLIST_STORAGE_KEY);
-    const allChecklists: TruckChecklistReport[] = storedReportsStr ? JSON.parse(storedReportsStr) : [];
+    // 3. Get all checklist reports from both sources
+    const tmReportsStr = localStorage.getItem(TM_CHECKLIST_STORAGE_KEY);
+    const loaderReportsStr = localStorage.getItem(LOADER_CHECKLIST_STORAGE_KEY);
+
+    const allTmChecklists: TruckChecklistReport[] = tmReportsStr ? JSON.parse(tmReportsStr) : [];
+    const allLoaderChecklists: TruckChecklistReport[] = loaderReportsStr ? JSON.parse(loaderReportsStr) : [];
     
+    const allChecklists = [...allTmChecklists, ...allLoaderChecklists];
+
     // 4. Filter for today's reports only
-    const todaysChecklists = allChecklists.filter(report => report.id.endsWith(todayStr));
+    // Note: The loader checklist ID is now `userId-date`, not composite key
+    const todaysChecklists = allChecklists.filter(report => report.id.includes(todayStr));
 
     // 5. Create a Set of user IDs who have submitted a report today for quick lookup
     const submittedUserIds = new Set(todaysChecklists.map(r => r.userId));
