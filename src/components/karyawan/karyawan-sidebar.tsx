@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck, Construction, Wrench, ClipboardEdit } from 'lucide-react';
+import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck, Construction, Wrench, ClipboardEdit, ScrollText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
@@ -33,9 +33,14 @@ export function KaryawanSidebar() {
             href: '/karyawan/work-order',
             label: 'Work Order (WO)',
             icon: ClipboardEdit,
+        },
+        {
+            href: '/karyawan/riwayat-wo',
+            label: 'Riwayat WO',
+            icon: ScrollText,
         }
       );
-      insertionIndex++;
+      insertionIndex += 2;
   }
 
   // Conditionally insert the TM checklist
