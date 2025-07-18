@@ -104,8 +104,8 @@ export default function StokMaterialPage() {
     });
 
     return {
-      pasir: totals.pasir / 1000, // Convert to M3 approx.
-      batu: totals.batu / 1000,   // Convert to M3 approx.
+      pasir: totals.pasir,
+      batu: totals.batu,
       semen: totals.semen, // Already in Kg
       vz: 0, // Not tracked in production history
       nn: 0, // Not tracked in production history
@@ -156,7 +156,10 @@ export default function StokMaterialPage() {
   };
 
   const calculateStockAkhir = (material: MaterialStock) => {
-    return material.awal - material.pemakaian - material.pengiriman;
+    const awal = Number(material.awal) || 0;
+    const pemakaian = Number(material.pemakaian) || 0;
+    const pengiriman = Number(material.pengiriman) || 0;
+    return awal - pemakaian - pengiriman;
   };
 
   return (
@@ -205,8 +208,8 @@ export default function StokMaterialPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[15%] font-bold text-white">KETERANGAN</TableHead>
-                <TableHead className="text-center font-bold text-white">PASIR (M³)</TableHead>
-                <TableHead className="text-center font-bold text-white">BATU (M³)</TableHead>
+                <TableHead className="text-center font-bold text-white">PASIR (Kg)</TableHead>
+                <TableHead className="text-center font-bold text-white">BATU (Kg)</TableHead>
                 <TableHead className="text-center font-bold text-white">SEMEN (Kg)</TableHead>
                 <TableHead className="text-center font-bold text-white">VZ (L)</TableHead>
                 <TableHead className="text-center font-bold text-white">NN (L)</TableHead>
