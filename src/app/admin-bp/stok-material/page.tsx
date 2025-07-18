@@ -25,12 +25,18 @@ interface DailyStock {
   pasir: MaterialStock;
   batu: MaterialStock;
   semen: MaterialStock;
+  vz: MaterialStock;
+  nn: MaterialStock;
+  visco: MaterialStock;
 }
 
 const initialStock: DailyStock = {
   pasir: { awal: 0, pemakaian: 0, pengiriman: 0 },
   batu: { awal: 0, pemakaian: 0, pengiriman: 0 },
   semen: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  vz: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  nn: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  visco: { awal: 0, pemakaian: 0, pengiriman: 0 },
 };
 
 const getStockKey = (date: Date) => `app-stok-material-${format(date, 'yyyy-MM-dd')}`;
@@ -59,18 +65,17 @@ export default function StokMaterialPage() {
       const key = getStockKey(date);
       const storedData = localStorage.getItem(key);
       if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        // Ensure pengiriman field exists to avoid errors with old data
-        parsedData.pasir.pengiriman = parsedData.pasir.pengiriman || 0;
-        parsedData.batu.pengiriman = parsedData.batu.pengiriman || 0;
-        parsedData.semen.pengiriman = parsedData.semen.pengiriman || 0;
+        const parsedData: DailyStock = JSON.parse(storedData);
+        // Ensure new fields exist to avoid errors with old data
+        parsedData.pasir = parsedData.pasir || { awal: 0, pemakaian: 0, pengiriman: 0 };
+        parsedData.batu = parsedData.batu || { awal: 0, pemakaian: 0, pengiriman: 0 };
+        parsedData.semen = parsedData.semen || { awal: 0, pemakaian: 0, pengiriman: 0 };
+        parsedData.vz = parsedData.vz || { awal: 0, pemakaian: 0, pengiriman: 0 };
+        parsedData.nn = parsedData.nn || { awal: 0, pemakaian: 0, pengiriman: 0 };
+        parsedData.visco = parsedData.visco || { awal: 0, pemakaian: 0, pengiriman: 0 };
         setStock(parsedData);
       } else {
-        setStock({
-          pasir: { awal: 0, pemakaian: 0, pengiriman: 0 },
-          batu: { awal: 0, pemakaian: 0, pengiriman: 0 },
-          semen: { awal: 0, pemakaian: 0, pengiriman: 0 },
-        });
+        setStock(initialStock);
       }
     } catch (error) {
       console.error("Failed to load stock data:", error);
@@ -99,7 +104,10 @@ export default function StokMaterialPage() {
     return {
       pasir: totals.pasir / 1000, // Convert to M3 approx.
       batu: totals.batu / 1000,   // Convert to M3 approx.
-      semen: totals.semen // Already in Kg
+      semen: totals.semen, // Already in Kg
+      vz: 0, // Not tracked in production history
+      nn: 0, // Not tracked in production history
+      visco: 0, // Not tracked in production history
     };
   }, [date, productionHistory]);
   
@@ -109,11 +117,14 @@ export default function StokMaterialPage() {
       pasir: { ...prev.pasir, pemakaian: calculatedUsage.pasir },
       batu: { ...prev.batu, pemakaian: calculatedUsage.batu },
       semen: { ...prev.semen, pemakaian: calculatedUsage.semen },
+      vz: { ...prev.vz, pemakaian: calculatedUsage.vz },
+      nn: { ...prev.nn, pemakaian: calculatedUsage.nn },
+      visco: { ...prev.visco, pemakaian: calculatedUsage.visco },
     }));
   }, [calculatedUsage]);
 
 
-  const handleStockChange = (material: 'pasir' | 'batu' | 'semen', field: 'awal' | 'pengiriman', value: string) => {
+  const handleStockChange = (material: keyof DailyStock, field: 'awal' | 'pengiriman', value: string) => {
     const numericValue = parseFloat(value) || 0;
     setStock(prev => ({
       ...prev,
@@ -191,10 +202,13 @@ export default function StokMaterialPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[25%] font-bold text-black">KETERANGAN</TableHead>
-                <TableHead className="w-[25%] text-center font-bold text-black">PASIR (M³)</TableHead>
-                <TableHead className="w-[25%] text-center font-bold text-black">BATU (M³)</TableHead>
-                <TableHead className="w-[25%] text-center font-bold text-black">SEMEN (Kg)</TableHead>
+                <TableHead className="w-[15%] font-bold text-black">KETERANGAN</TableHead>
+                <TableHead className="text-center font-bold text-black">PASIR (M³)</TableHead>
+                <TableHead className="text-center font-bold text-black">BATU (M³)</TableHead>
+                <TableHead className="text-center font-bold text-black">SEMEN (Kg)</TableHead>
+                <TableHead className="text-center font-bold text-black">VZ (L)</TableHead>
+                <TableHead className="text-center font-bold text-black">NN (L)</TableHead>
+                <TableHead className="text-center font-bold text-black">VISCO (L)</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -209,6 +223,15 @@ export default function StokMaterialPage() {
                 <TableCell>
                   <Input type="number" className="text-center" value={stock.semen.awal} onChange={e => handleStockChange('semen', 'awal', e.target.value)} />
                 </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.vz.awal} onChange={e => handleStockChange('vz', 'awal', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.nn.awal} onChange={e => handleStockChange('nn', 'awal', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.visco.awal} onChange={e => handleStockChange('visco', 'awal', e.target.value)} />
+                </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PEMAKAIAN</TableCell>
@@ -220,6 +243,15 @@ export default function StokMaterialPage() {
                 </TableCell>
                 <TableCell>
                   <Input type="number" className="text-center" value={stock.semen.pemakaian.toFixed(2)} readOnly disabled />
+                </TableCell>
+                 <TableCell>
+                  <Input type="number" className="text-center" value={stock.vz.pemakaian.toFixed(2)} readOnly disabled />
+                </TableCell>
+                 <TableCell>
+                  <Input type="number" className="text-center" value={stock.nn.pemakaian.toFixed(2)} readOnly disabled />
+                </TableCell>
+                 <TableCell>
+                  <Input type="number" className="text-center" value={stock.visco.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -233,12 +265,24 @@ export default function StokMaterialPage() {
                 <TableCell>
                   <Input type="number" className="text-center" value={stock.semen.pengiriman} onChange={e => handleStockChange('semen', 'pengiriman', e.target.value)} />
                 </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.vz.pengiriman} onChange={e => handleStockChange('vz', 'pengiriman', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.nn.pengiriman} onChange={e => handleStockChange('nn', 'pengiriman', e.target.value)} />
+                </TableCell>
+                <TableCell>
+                  <Input type="number" className="text-center" value={stock.visco.pengiriman} onChange={e => handleStockChange('visco', 'pengiriman', e.target.value)} />
+                </TableCell>
               </TableRow>
               <TableRow className="bg-muted font-bold">
                 <TableCell>STOK AKHIR</TableCell>
                 <TableCell className="text-center text-lg">{calculateStockAkhir(stock.pasir).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                 <TableCell className="text-center text-lg">{calculateStockAkhir(stock.batu).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                 <TableCell className="text-center text-lg">{calculateStockAkhir(stock.semen).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.vz).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.nn).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.visco).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
