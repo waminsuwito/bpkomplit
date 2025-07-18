@@ -42,23 +42,6 @@ export default function ChecklistHarianLoaderPage() {
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    
-    // This effect ensures that even on page reload, the user continues with their last saved state for the day
-    useEffect(() => {
-        if (user) {
-            try {
-                const dailyKey = getDailyChecklistKey(user.id);
-                const storedReport = localStorage.getItem(dailyKey);
-                if (storedReport) {
-                    const parsedReport: TruckChecklistReport = JSON.parse(storedReport);
-                    const itemsWithNotes = parsedReport.items.map(item => ({ ...item, status: item.status || 'baik', notes: item.notes || '' }));
-                    setChecklistItems(itemsWithNotes);
-                }
-            } catch (error) {
-                console.error("Failed to load today's checklist report", error);
-            }
-        }
-    }, [user]);
 
     const stopCamera = () => {
         if (videoRef.current?.srcObject) {
@@ -156,19 +139,17 @@ export default function ChecklistHarianLoaderPage() {
         };
 
         try {
+            // Save to a personal daily key (overwrites previous today's report)
             localStorage.setItem(dailyKey, JSON.stringify(report));
 
             const storedGlobal = localStorage.getItem(CHECKLIST_STORAGE_KEY);
             let allGlobalReports: TruckChecklistReport[] = storedGlobal ? JSON.parse(storedGlobal) : [];
             
-            // Find if a report for this user and day already exists
+            // Find if a report for this user and day already exists and replace it, otherwise add it.
             const existingReportIndex = allGlobalReports.findIndex(r => r.id === dailyKey);
-
             if (existingReportIndex > -1) {
-                // If it exists, replace it with the new one
                 allGlobalReports[existingReportIndex] = report;
             } else {
-                // If not, add it
                 allGlobalReports.push(report);
             }
             
@@ -176,6 +157,9 @@ export default function ChecklistHarianLoaderPage() {
 
             toast({ title: 'Berhasil', description: 'Checklist harian berhasil dikirim.' });
             
+            // Reset form to initial state for the next submission
+            setChecklistItems(getInitialChecklistState());
+
         } catch (error) {
             console.error("Failed to save checklist report", error);
             toast({ variant: 'destructive', title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan laporan.' });
