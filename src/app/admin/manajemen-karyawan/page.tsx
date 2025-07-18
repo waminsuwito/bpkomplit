@@ -29,6 +29,7 @@ export default function ManajemenKaryawanPage() {
     } catch (error) {
       console.error("Failed to load users:", error);
       toast({ variant: 'destructive', title: "Error", description: "Could not load user data from the database." });
+      setUsers([]); // On error, ensure users is an empty array
     } finally {
       setIsLoading(false);
     }

@@ -41,7 +41,7 @@ export async function getUsers(): Promise<User[]> {
         const snapshot = await get(child(dbRef, USERS_PATH));
         if (snapshot.exists()) {
             const usersObject = snapshot.val();
-            // Convert the object of users into an array, which is the correct format.
+            // Convert the object of users into an array. This is the critical fix.
             return Object.values(usersObject) as User[];
         } else {
             // If no users exist in the database, seed them and return the seeded list.
