@@ -128,25 +128,49 @@ export default function ChecklistHarianLoaderPage() {
         setIsLoading(true);
 
         const dailyKey = getDailyChecklistKey(user.id);
-        const report: TruckChecklistReport = {
-            id: dailyKey,
-            userId: user.id,
-            userNik: user.nik,
-            username: user.username,
-            location: user.location as UserLocation,
-            timestamp: new Date().toISOString(),
-            items: checklistItems,
-        };
-
+        
         try {
-            // Save to a personal daily key (overwrites previous today's report)
-            localStorage.setItem(dailyKey, JSON.stringify(report));
-
             const storedGlobal = localStorage.getItem(CHECKLIST_STORAGE_KEY);
             let allGlobalReports: TruckChecklistReport[] = storedGlobal ? JSON.parse(storedGlobal) : [];
-            
-            // Find if a report for this user and day already exists and replace it, otherwise add it.
             const existingReportIndex = allGlobalReports.findIndex(r => r.id === dailyKey);
+
+            let finalItems: TruckChecklistItem[];
+
+            if (existingReportIndex > -1) {
+                const existingReport = allGlobalReports[existingReportIndex];
+                // Merge logic: keep old issues, add new ones
+                finalItems = existingReport.items.map(oldItem => {
+                    const newItem = checklistItems.find(i => i.id === oldItem.id);
+                    if (!newItem) return oldItem;
+
+                    // If the new status is problematic, update the old item with the new details.
+                    if (newItem.status === 'rusak' || newItem.status === 'perlu_perhatian') {
+                        return { ...oldItem, ...newItem };
+                    }
+                    
+                    // If the old status was problematic, keep it that way, even if the new one is 'baik'.
+                    // This creates a cumulative list of all problems reported today.
+                    if (oldItem.status === 'rusak' || oldItem.status === 'perlu_perhatian') {
+                        return oldItem;
+                    }
+
+                    // Otherwise, just update to the new status.
+                    return newItem;
+                });
+            } else {
+                finalItems = checklistItems;
+            }
+
+            const report: TruckChecklistReport = {
+                id: dailyKey,
+                userId: user.id,
+                userNik: user.nik,
+                username: user.username,
+                location: user.location as UserLocation,
+                timestamp: new Date().toISOString(),
+                items: finalItems,
+            };
+            
             if (existingReportIndex > -1) {
                 allGlobalReports[existingReportIndex] = report;
             } else {
@@ -155,7 +179,7 @@ export default function ChecklistHarianLoaderPage() {
             
             localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(allGlobalReports));
 
-            toast({ title: 'Berhasil', description: 'Checklist harian berhasil dikirim.' });
+            toast({ title: 'Berhasil', description: 'Checklist harian berhasil dikirim/diperbarui.' });
             
             // Reset form to initial state for the next submission
             setChecklistItems(getInitialChecklistState());
@@ -176,7 +200,7 @@ export default function ChecklistHarianLoaderPage() {
                     Checklist Harian Wheel Loader
                 </CardTitle>
                 <CardDescription>
-                    Lakukan pemeriksaan berikut sebelum memulai operasi harian. Anda dapat mengirim laporan ini beberapa kali jika kondisi alat berubah.
+                    Lakukan pemeriksaan berikut sebelum memulai operasi harian. Anda dapat mengirim laporan ini beberapa kali jika kondisi alat berubah. Kerusakan yang dilaporkan akan ditambahkan ke laporan hari ini.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -241,13 +265,15 @@ export default function ChecklistHarianLoaderPage() {
                                             </Button>
                                         </div>
                                     ) : (
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => handleActivateCamera(item.id)}
-                                            disabled={isLoading}
-                                        >
-                                            <Upload className="mr-2 h-4 w-4" /> Upload Foto
-                                        </Button>
+                                        (item.status === 'rusak' || item.status === 'perlu_perhatian') && (
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => handleActivateCamera(item.id)}
+                                                disabled={isLoading}
+                                            >
+                                                <Upload className="mr-2 h-4 w-4" /> Upload Foto
+                                            </Button>
+                                        )
                                     )}
                                 </div>
                             </div>
