@@ -65,15 +65,17 @@ export default function StokMaterialPage() {
       const key = getStockKey(date);
       const storedData = localStorage.getItem(key);
       if (storedData) {
-        const parsedData: DailyStock = JSON.parse(storedData);
-        // Ensure new fields exist to avoid errors with old data
-        parsedData.pasir = parsedData.pasir || { awal: 0, pemakaian: 0, pengiriman: 0 };
-        parsedData.batu = parsedData.batu || { awal: 0, pemakaian: 0, pengiriman: 0 };
-        parsedData.semen = parsedData.semen || { awal: 0, pemakaian: 0, pengiriman: 0 };
-        parsedData.vz = parsedData.vz || { awal: 0, pemakaian: 0, pengiriman: 0 };
-        parsedData.nn = parsedData.nn || { awal: 0, pemakaian: 0, pengiriman: 0 };
-        parsedData.visco = parsedData.visco || { awal: 0, pemakaian: 0, pengiriman: 0 };
-        setStock(parsedData);
+        const parsedData = JSON.parse(storedData);
+        // Ensure new fields exist to avoid errors with old data, providing default values.
+        const sanitizedData: DailyStock = {
+          pasir: parsedData.pasir || { awal: 0, pemakaian: 0, pengiriman: 0 },
+          batu: parsedData.batu || { awal: 0, pemakaian: 0, pengiriman: 0 },
+          semen: parsedData.semen || { awal: 0, pemakaian: 0, pengiriman: 0 },
+          vz: parsedData.vz || { awal: 0, pemakaian: 0, pengiriman: 0 },
+          nn: parsedData.nn || { awal: 0, pemakaian: 0, pengiriman: 0 },
+          visco: parsedData.visco || { awal: 0, pemakaian: 0, pengiriman: 0 },
+        };
+        setStock(sanitizedData);
       } else {
         setStock(initialStock);
       }
