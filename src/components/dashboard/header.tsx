@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database, ChevronDown } from 'lucide-react';
+import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database, ChevronDown, Building } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +44,18 @@ export function Header() {
                 <UserCircle className="h-4 w-4 text-primary" />
                 {user.username}
               </p>
-              <p className="text-xs text-muted-foreground">{user.jabatan}</p>
+              <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">
+                <span>{user.jabatan}</span>
+                {user.location && (
+                  <>
+                    <span className="h-3 w-px bg-border"></span>
+                    <span className="flex items-center gap-1">
+                      <Building className="h-3 w-3" />
+                      {user.location}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
             
             <DropdownMenu>
