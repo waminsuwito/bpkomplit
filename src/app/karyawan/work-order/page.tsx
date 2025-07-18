@@ -59,16 +59,21 @@ export default function WorkOrderPage() {
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
-    // Filter for my work orders
+    // Filter for my work orders that are currently in progress
     const myCurrentWOs = allWorkOrders.filter(wo => wo.mechanicId === user.id && wo.status === 'Dalam Pengerjaan');
     setMyWorkOrders(myCurrentWOs);
 
-    const workOrderReportIds = new Set(allWorkOrders.map(wo => wo.vehicle.reportId));
+    // Create a set of report IDs that are already part of an active work order
+    const activeWorkOrderReportIds = new Set(
+        allWorkOrders
+            .filter(wo => wo.status === 'Dalam Pengerjaan')
+            .map(wo => wo.vehicle.reportId)
+    );
 
-    // Find checklists with 'rusak' status that are NOT already in a work order
+    // Find checklists with 'rusak' status that are NOT already in an active work order
     const availableDamaged: DamagedVehicle[] = allChecklists
       .map(report => {
-        const damagedItems = report.items.filter(item => item.status === 'rusak');
+        const damagedItems = report.items.filter(item => item.status === 'rusak' || item.status === 'perlu_perhatian');
         if (damagedItems.length > 0) {
           return {
             reportId: report.id,
@@ -82,7 +87,7 @@ export default function WorkOrderPage() {
         }
         return null;
       })
-      .filter((v): v is DamagedVehicle => v !== null && !workOrderReportIds.has(v.reportId))
+      .filter((v): v is DamagedVehicle => v !== null && !activeWorkOrderReportIds.has(v.reportId))
       .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       
     setDamagedVehicles(availableDamaged);
