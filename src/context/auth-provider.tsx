@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
-      // Ensure user is null if parsing fails
       setUser(null);
       localStorage.removeItem('user');
     } finally {

@@ -111,8 +111,8 @@ export default function LoginPage() {
     const { user, isLoading } = useAuth();
     const router = useRouter();
 
+    // This effect only redirects if a user is ALREADY logged in and lands here.
     useEffect(() => {
-        // This effect only redirects if a user is ALREADY logged in and lands here.
         if (!isLoading && user) {
             const destination = getDefaultRouteForUser(user);
             router.replace(destination);
