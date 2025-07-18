@@ -36,6 +36,7 @@ interface WorkOrder {
   status: 'Menunggu' | 'Dikerjakan' | 'Tunda' | 'Selesai';
   completionTime?: string; // ISO String, set when status becomes 'Selesai'
   notes?: string;
+  actualDamagesNotes?: string;
 }
 
 export default function RiwayatWoPage() {
@@ -173,6 +174,7 @@ export default function RiwayatWoPage() {
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
+                    <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
                     <TableHead>Keterangan</TableHead>
                     </TableRow>
@@ -194,6 +196,7 @@ export default function RiwayatWoPage() {
                                 ))}
                               </ul>
                             </TableCell>
+                            <TableCell className="text-xs whitespace-pre-wrap">{item.actualDamagesNotes || '-'}</TableCell>
                             <TableCell className="text-xs">
                               {isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}
                             </TableCell>

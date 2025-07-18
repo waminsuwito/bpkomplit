@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
 const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
@@ -40,7 +41,7 @@ interface DamagedVehicle {
 type WorkOrderStatus = 'Menunggu' | 'Dikerjakan' | 'Tunda' | 'Selesai';
 
 interface WorkOrder {
-  id: string; // Combination of reportId and mechanicId
+  id: string; // Combination of reportId and mechanicId and timestamp
   mechanicId: string;
   mechanicName: string;
   vehicle: DamagedVehicle;
@@ -49,6 +50,7 @@ interface WorkOrder {
   status: WorkOrderStatus;
   completionTime?: string; // ISO String, set when status becomes 'Selesai'
   notes?: string; // "Tepat Waktu", "Terlambat 1 jam", etc.
+  actualDamagesNotes?: string;
 }
 
 const formatDateTimeLocal = (date: Date) => {
@@ -169,6 +171,7 @@ export default function WorkOrderPage() {
       startTime: new Date().toISOString(),
       targetCompletionTime: new Date(targetTime).toISOString(),
       status: 'Dikerjakan',
+      actualDamagesNotes: '',
     };
 
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
@@ -213,6 +216,23 @@ export default function WorkOrderPage() {
               }
           }
       }
+  };
+
+  const handleActualDamagesChange = (workOrderId: string, text: string) => {
+    const updatedOrders = myWorkOrders.map(wo => 
+      wo.id === workOrderId ? { ...wo, actualDamagesNotes: text } : wo
+    );
+    setMyWorkOrders(updatedOrders);
+  };
+
+  const saveActualDamages = (workOrderId: string, text: string) => {
+    const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
+    const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
+    const updatedAllWorkOrders = allWorkOrders.map(wo => 
+      wo.id === workOrderId ? { ...wo, actualDamagesNotes: text } : wo
+    );
+    localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedAllWorkOrders));
+    toast({ title: 'Catatan disimpan', description: 'Catatan kerusakan aktual telah diperbarui.' });
   };
 
 
@@ -333,6 +353,7 @@ export default function WorkOrderPage() {
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
+                    <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Keterangan</TableHead>
@@ -357,6 +378,17 @@ export default function WorkOrderPage() {
                               ))}
                             </ul>
                           </TableCell>
+                          <TableCell className="w-[250px]">
+                            <Textarea
+                                value={wo.actualDamagesNotes || ''}
+                                onChange={(e) => handleActualDamagesChange(wo.id, e.target.value)}
+                                onBlur={(e) => saveActualDamages(wo.id, e.target.value)}
+                                placeholder="Tuliskan perbaikan yang Anda lakukan di sini..."
+                                rows={3}
+                                className="min-w-[200px]"
+                                disabled={wo.status === 'Selesai'}
+                            />
+                           </TableCell>
                            <TableCell className="text-xs">{isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}</TableCell>
                            <TableCell className="font-semibold">
                               {wo.status}
