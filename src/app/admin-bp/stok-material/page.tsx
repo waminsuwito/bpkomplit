@@ -198,7 +198,7 @@ export default function StokMaterialPage() {
       </CardHeader>
       <CardContent>
         <p className="text-lg font-semibold mb-2">Lokasi: <span className="text-primary">{user?.location}</span></p>
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -215,64 +215,64 @@ export default function StokMaterialPage() {
               <TableRow>
                 <TableCell className="font-semibold">STOK AWAL</TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.pasir.awal} onChange={e => handleStockChange('pasir', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.awal} onChange={e => handleStockChange('pasir', 'awal', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.batu.awal} onChange={e => handleStockChange('batu', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.awal} onChange={e => handleStockChange('batu', 'awal', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.semen.awal} onChange={e => handleStockChange('semen', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.awal} onChange={e => handleStockChange('semen', 'awal', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.vz.awal} onChange={e => handleStockChange('vz', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.awal} onChange={e => handleStockChange('vz', 'awal', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.nn.awal} onChange={e => handleStockChange('nn', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.awal} onChange={e => handleStockChange('nn', 'awal', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.visco.awal} onChange={e => handleStockChange('visco', 'awal', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.awal} onChange={e => handleStockChange('visco', 'awal', e.target.value)} />
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PEMAKAIAN</TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.pasir.pemakaian.toFixed(2)} readOnly disabled />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.batu.pemakaian.toFixed(2)} readOnly disabled />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.semen.pemakaian.toFixed(2)} readOnly disabled />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
                  <TableCell>
-                  <Input type="number" className="text-center" value={stock.vz.pemakaian.toFixed(2)} readOnly disabled />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
                  <TableCell>
-                  <Input type="number" className="text-center" value={stock.nn.pemakaian.toFixed(2)} readOnly disabled />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
                  <TableCell>
-                  <Input type="number" className="text-center" value={stock.visco.pemakaian.toFixed(2)} readOnly disabled />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.pemakaian.toFixed(2)} readOnly disabled />
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PENGIRIMAN</TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.pasir.pengiriman} onChange={e => handleStockChange('pasir', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.pengiriman} onChange={e => handleStockChange('pasir', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.batu.pengiriman} onChange={e => handleStockChange('batu', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.pengiriman} onChange={e => handleStockChange('batu', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.semen.pengiriman} onChange={e => handleStockChange('semen', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.pengiriman} onChange={e => handleStockChange('semen', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.vz.pengiriman} onChange={e => handleStockChange('vz', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.pengiriman} onChange={e => handleStockChange('vz', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.nn.pengiriman} onChange={e => handleStockChange('nn', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.pengiriman} onChange={e => handleStockChange('nn', 'pengiriman', e.target.value)} />
                 </TableCell>
                 <TableCell>
-                  <Input type="number" className="text-center" value={stock.visco.pengiriman} onChange={e => handleStockChange('visco', 'pengiriman', e.target.value)} />
+                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.pengiriman} onChange={e => handleStockChange('visco', 'pengiriman', e.target.value)} />
                 </TableCell>
               </TableRow>
               <TableRow className="bg-muted font-bold">
