@@ -21,6 +21,7 @@ import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
 const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
@@ -360,7 +361,12 @@ export default function WorkOrderPage() {
                            <TableCell className="font-semibold">
                               {wo.status}
                           </TableCell>
-                           <TableCell className="text-xs font-semibold">{wo.notes || '-'}</TableCell>
+                           <TableCell className={cn("text-xs font-semibold", {
+                                'text-green-600': wo.notes?.startsWith('Lebih Cepat'),
+                                'text-destructive': wo.notes?.startsWith('Terlambat'),
+                            })}>
+                                {wo.notes || '-'}
+                            </TableCell>
                           <TableCell className="text-center">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

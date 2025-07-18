@@ -197,7 +197,12 @@ export default function RiwayatWoPage() {
                             <TableCell className="text-xs">
                               {isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}
                             </TableCell>
-                            <TableCell className="text-xs font-semibold">{item.notes || '-'}</TableCell>
+                            <TableCell className={cn("text-xs font-semibold", {
+                                'text-green-600': item.notes?.startsWith('Lebih Cepat'),
+                                'text-destructive': item.notes?.startsWith('Terlambat'),
+                            })}>
+                                {item.notes || '-'}
+                            </TableCell>
                         </TableRow>
                       );
                     })}
