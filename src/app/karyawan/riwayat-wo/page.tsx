@@ -172,7 +172,7 @@ export default function RiwayatWoPage() {
                     <TableHead>Mekanik</TableHead>
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
-                    <TableHead>Detail Kerusakan</TableHead>
+                    <TableHead>Detail Dari Oprator</TableHead>
                     <TableHead>Target Selesai</TableHead>
                     <TableHead>Keterangan</TableHead>
                     </TableRow>

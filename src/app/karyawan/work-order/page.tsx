@@ -332,7 +332,7 @@ export default function WorkOrderPage() {
                   <TableRow>
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
-                    <TableHead>Detail Kerusakan</TableHead>
+                    <TableHead>Detail Dari Oprator</TableHead>
                     <TableHead>Target Selesai</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Keterangan</TableHead>
