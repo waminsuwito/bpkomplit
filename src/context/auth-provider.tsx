@@ -15,7 +15,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const PROTECTED_ROUTES = ['/dashboard', '/admin', '/admin-bp', '/karyawan'];
+// Hardcoded admin user for automatic login
+const hardcodedAdminUser: Omit<User, 'password'> = {
+  id: 'superadmin-main',
+  username: 'admin',
+  jabatan: 'SUPER ADMIN',
+  location: 'BP PEKANBARU',
+  nik: 'SUPER-001',
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
@@ -24,43 +31,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-    } finally {
-      setIsLoading(false);
-    }
+    // Automatically log in as the hardcoded admin user
+    setUser(hardcodedAdminUser);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     if (isLoading) {
-      return;
+      return; // Wait until the hardcoded user is set
     }
 
     const isLoginPage = pathname === '/';
-    const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
 
-    if (!user && isProtectedRoute) {
-      router.replace('/');
-    }
-
+    // If the user is on the login page, redirect them to their default dashboard
     if (user && isLoginPage) {
       router.replace(getDefaultRouteForUser(user));
     }
+    
   }, [isLoading, user, pathname, router]);
 
-
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+    // In this "no-login" setup, logout just reloads to log back in automatically.
+    // To truly log out, one would need to clear the hardcoded user logic.
     window.location.href = '/';
   };
-
-  const isAuthCheckRunning = isLoading || (!user && PROTECTED_ROUTES.some(route => pathname.startsWith(route))) || (user && pathname === '/');
+  
+  // Show a loader while the initial user setup and redirection logic runs.
+  const isAuthCheckRunning = isLoading || (user && pathname === '/');
 
   if (isAuthCheckRunning) {
     return (
@@ -71,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, logout, isLoading: false }}>
       {children}
     </AuthContext.Provider>
   );
