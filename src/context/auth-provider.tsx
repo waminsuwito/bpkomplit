@@ -15,15 +15,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded admin user for automatic login
-const hardcodedAdminUser: Omit<User, 'password'> = {
-  id: 'superadmin-main',
-  username: 'admin',
-  jabatan: 'SUPER ADMIN',
-  location: 'BP PEKANBARU',
-  nik: 'SUPER-001',
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,34 +22,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Automatically log in as the hardcoded admin user
-    setUser(hardcodedAdminUser);
-    setIsLoading(false);
+    try {
+      const storedUser = localStorage.getItem('app-user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     if (isLoading) {
-      return; // Wait until the hardcoded user is set
+      return; // Don't do anything until the user state is resolved
     }
 
     const isLoginPage = pathname === '/';
 
-    // If the user is on the login page, redirect them to their default dashboard
-    if (user && isLoginPage) {
+    if (!user && !isLoginPage) {
+      // If not logged in and not on the login page, redirect to login
+      router.replace('/');
+    } else if (user && isLoginPage) {
+      // If logged in and on the login page, redirect to the default dashboard
       router.replace(getDefaultRouteForUser(user));
     }
-    
-  }, [isLoading, user, pathname, router]);
+  }, [user, isLoading, pathname, router]);
 
   const logout = () => {
-    // In this "no-login" setup, logout just reloads to log back in automatically.
-    // To truly log out, one would need to clear the hardcoded user logic.
-    window.location.href = '/';
+    localStorage.removeItem('app-user');
+    setUser(null);
+    window.location.href = '/'; // Force a full reload to the login page
   };
-  
-  // Show a loader while the initial user setup and redirection logic runs.
-  const isAuthCheckRunning = isLoading || (user && pathname === '/');
 
+  // Show a loader while the initial auth check and redirection logic is running
+  const isAuthCheckRunning = isLoading || (!user && pathname !== '/') || (user && pathname === '/');
+  
   if (isAuthCheckRunning) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, logout, isLoading: false }}>
+    <AuthContext.Provider value={{ user, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

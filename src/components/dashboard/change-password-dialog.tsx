@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,11 +22,11 @@ import { changePassword } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 const passwordSchema = z.object({
-  oldPassword: z.string().min(1, 'Old password is required.'),
-  newPassword: z.string().min(6, 'New password must be at least 6 characters.'),
+  oldPassword: z.string().min(1, 'Password lama harus diisi.'),
+  newPassword: z.string().min(6, 'Password baru minimal 6 karakter.'),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
-  message: 'Passwords do not match.',
+  message: 'Password tidak cocok.',
   path: ['confirmPassword'],
 });
 
@@ -52,14 +53,14 @@ export function ChangePasswordDialog({ isOpen, onOpenChange, userId }: ChangePas
     try {
       const result = await changePassword(userId, values.oldPassword, values.newPassword);
       if (result.success) {
-        toast({ title: 'Success', description: result.message });
+        toast({ title: 'Berhasil', description: result.message });
         form.reset();
         onOpenChange(false);
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.message });
+        toast({ variant: 'destructive', title: 'Gagal', description: result.message });
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'An unexpected error occurred.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Terjadi kesalahan tak terduga.' });
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +83,7 @@ export function ChangePasswordDialog({ isOpen, onOpenChange, userId }: ChangePas
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
               name="oldPassword"
@@ -123,6 +124,9 @@ export function ChangePasswordDialog({ isOpen, onOpenChange, userId }: ChangePas
               )}
             />
             <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary">Batal</Button>
+              </DialogClose>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Simpan Perubahan

@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database } from 'lucide-react';
+import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,70 +47,68 @@ export function Header() {
               <p className="text-xs text-muted-foreground">{user.jabatan}</p>
             </div>
             
-             {user?.jabatan === 'OPRATOR BP' && (
-              <>
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/karyawan/absensi-harian">
-                    <Fingerprint className="mr-2 h-4 w-4" />
-                    Absen & Kegiatan
-                  </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  Menu
+                  <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Setting
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/tombol-manual">Tombol Manual</Link>
-                      </DropdownMenuItem>
-                       <DropdownMenuItem asChild>
-                        <Link href="/dashboard/moisture-control">
-                          <Droplets className="mr-2 h-4 w-4" />
-                          Moisture Control
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/job-mix-formula">Job Mix Formula</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/mixing-settings">Pengaturan Lanjutan</Link>
-                      </DropdownMenuItem>
-                       <DropdownMenuItem asChild>
-                        <Link href="/dashboard/mixer-timer-settings">Timer Pintu Mixer</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                         <Link href="/dashboard/relay-settings">Setting Relay</Link>
-                      </DropdownMenuItem>
-                       <DropdownMenuItem asChild>
-                         <Link href="/dashboard/printer-settings">
-                            <Printer className="mr-2 h-4 w-4" />
-                            Pengaturan Printer
-                         </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                         <Link href="/dashboard/database-produksi">
-                            <Database className="mr-2 h-4 w-4" />
-                            Database Produksi
-                         </Link>
-                      </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => setPasswordDialogOpen(true)}>
-                      <Lock className="mr-2 h-4 w-4" />
-                      <span>Ubah Password</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {user?.jabatan === 'OPRATOR BP' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/karyawan/absensi-harian">
+                        <Fingerprint className="mr-2 h-4 w-4" />
+                        Absen & Kegiatan
+                      </Link>
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-
-            <Button variant="outline" size="sm" onClick={logout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/tombol-manual">Tombol Manual</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/moisture-control">
+                        <Droplets className="mr-2 h-4 w-4" />
+                        Moisture Control
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/job-mix-formula">Job Mix Formula</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/mixing-settings">Pengaturan Lanjutan</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/mixer-timer-settings">Timer Pintu Mixer</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/relay-settings">Setting Relay</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/printer-settings">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Pengaturan Printer
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/database-produksi">
+                        <Database className="mr-2 h-4 w-4" />
+                        Database Produksi
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onSelect={() => setPasswordDialogOpen(true)}>
+                  <Lock className="mr-2 h-4 w-4" />
+                  <span>Ubah Password</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </header>

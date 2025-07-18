@@ -1,12 +1,10 @@
 
+
 'use client';
 
 import { useAuth } from '@/context/auth-provider';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { Header } from '@/components/dashboard/header';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
-import { Loader2 } from 'lucide-react';
 
 const ALLOWED_ROLES = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
 
@@ -15,27 +13,17 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (isLoading) {
-      return; // Wait for user data to be loaded
-    }
+  // The AuthProvider now handles redirection for unauthenticated users.
+  // We just need to make sure the role is correct. 
+  // If an unauthorized role gets here, they will see a blank page.
+  const isAuthorized = user && user.jabatan && ALLOWED_ROLES.includes(user.jabatan);
 
-    if (!user || !user.jabatan || !ALLOWED_ROLES.includes(user.jabatan)) {
-      // If user is not an authorized admin, kick them out.
-      router.replace('/'); 
-    }
-  }, [user, isLoading, router]);
-
-  // While loading or if user is unauthorized, show a loading screen to prevent content flash
-  if (isLoading || !user || !user.jabatan || !ALLOWED_ROLES.includes(user.jabatan)) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+  if (!isAuthorized) {
+    // This can be a simple null or a more descriptive "Access Denied" component.
+    // AuthProvider will redirect if user is null, so this mainly catches wrong roles.
+    return null;
   }
 
   // If authorized, render the admin layout
