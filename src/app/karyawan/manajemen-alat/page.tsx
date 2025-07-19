@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye } from 'lucide-react';
+import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { type TruckChecklistReport, type TruckChecklistItem, type UserLocation } from '@/lib/types';
 import { printElement } from '@/lib/utils';
@@ -202,6 +203,9 @@ export default function ManajemenAlatPage() {
         <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat rincian" icon={CheckCircle2} clickable onClick={() => handleCardClick('Baik')} colorClass="text-green-600" />
         <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} colorClass="text-amber-500" />
         <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} colorClass="text-destructive" />
+        {user?.jabatan === 'KEPALA WORKSHOP' && (
+             <StatCard title="Alat Rusak Berat" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={ShieldAlert} clickable onClick={() => handleCardClick('Rusak')} colorClass="text-destructive font-black" />
+        )}
       </div>
 
       <Card>
