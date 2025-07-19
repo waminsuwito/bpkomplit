@@ -59,7 +59,7 @@ export default function RiwayatWoPage() {
       const lowercasedFilter = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (r) =>
-          r.assignedMechanics.some(m => m.name.toLowerCase().includes(lowercasedFilter)) ||
+          (Array.isArray(r.assignedMechanics) && r.assignedMechanics.some(m => m.name.toLowerCase().includes(lowercasedFilter))) ||
           r.vehicle.username.toLowerCase().includes(lowercasedFilter) ||
           r.vehicle.userNik.toLowerCase().includes(lowercasedFilter)
       );
@@ -173,7 +173,7 @@ export default function RiwayatWoPage() {
                       return (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium whitespace-nowrap">{format(new Date(item.completionTime!), 'd MMM yyyy, HH:mm')}</TableCell>
-                            <TableCell>{item.assignedMechanics.map(m => m.name).join(', ')}</TableCell>
+                            <TableCell>{Array.isArray(item.assignedMechanics) ? item.assignedMechanics.map(m => m.name).join(', ') : '-'}</TableCell>
                             <TableCell>{item.vehicle.username}</TableCell>
                             <TableCell>{item.vehicle.userNik}</TableCell>
                             <TableCell>
