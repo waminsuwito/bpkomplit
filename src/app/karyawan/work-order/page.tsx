@@ -91,7 +91,8 @@ export default function WorkOrderPage() {
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
     const myCurrentWOs = allWorkOrders.filter(wo => {
-        const isAssigned = wo.assignedMechanics.some(m => m.id === user.id);
+        // Fix: Add a defensive check to ensure wo.assignedMechanics exists and is an array.
+        const isAssigned = Array.isArray(wo.assignedMechanics) && wo.assignedMechanics.some(m => m.id === user.id);
         if (!isAssigned) return false;
         
         if (wo.status !== 'Selesai') return true;
