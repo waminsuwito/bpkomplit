@@ -11,6 +11,9 @@ import { printElement } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { userLocations, type UserLocation } from '@/lib/types';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+
 
 const VEHICLES_STORAGE_KEY = 'app-vehicles';
 const TOTAL_ROWS = 300;
@@ -21,7 +24,7 @@ interface Vehicle {
   nomorLambung: string;
   jenisKendaraan: string;
   status: string;
-  mutasiKendaraan: string;
+  mutasiKendaraan: UserLocation | '';
 }
 
 type TableRowData = Partial<Vehicle>;
@@ -35,7 +38,6 @@ export function EditableVehicleList() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // This is the critical fix: localStorage is only accessed inside useEffect.
     try {
       const storedVehicles: Vehicle[] = JSON.parse(localStorage.getItem(VEHICLES_STORAGE_KEY) || '[]');
       const initialData = Array(TOTAL_ROWS).fill({});
@@ -57,6 +59,13 @@ export function EditableVehicleList() {
     updatedData[index] = { ...updatedData[index], [field]: value.toUpperCase() };
     setTableData(updatedData);
   };
+  
+  const handleSelectChange = (index: number, field: keyof Vehicle, value: string) => {
+    const updatedData = [...tableData];
+    updatedData[index] = { ...updatedData[index], [field]: value };
+    setTableData(updatedData);
+  };
+
 
   const handleDeleteRow = (index: number) => {
     const updatedData = [...tableData];
@@ -100,7 +109,7 @@ export function EditableVehicleList() {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLButtonElement>, rowIndex: number, colIndex: number) => {
     const { key } = e;
     let nextRowIndex = rowIndex;
     let nextColIndex = colIndex;
@@ -190,14 +199,36 @@ export function EditableVehicleList() {
                     <TableRow key={row.id || `row-${index}`} className="[&_td]:p-0 [&_td]:border-gray-400">
                         {fields.map((field, colIndex) => (
                             <TableCell key={field} className="border">
-                                <Input
-                                    id={`${field}-${index}`}
-                                    value={row[field] || ''}
-                                    onChange={(e) => handleInputChange(index, field as keyof Vehicle, e.target.value)}
-                                    onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
-                                    className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
-                                    style={{ textTransform: 'uppercase' }}
-                                />
+                                {field === 'mutasiKendaraan' ? (
+                                    <Select
+                                        value={row[field] || ''}
+                                        onValueChange={(value) => handleSelectChange(index, field, value)}
+                                    >
+                                        <SelectTrigger
+                                            id={`${field}-${index}`}
+                                            className="w-full h-full border-none rounded-none text-center bg-transparent text-black focus:ring-0"
+                                            onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
+                                        >
+                                            <SelectValue placeholder="Pilih Lokasi" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {userLocations.map(location => (
+                                                <SelectItem key={location} value={location}>
+                                                    {location}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <Input
+                                        id={`${field}-${index}`}
+                                        value={row[field] || ''}
+                                        onChange={(e) => handleInputChange(index, field as keyof Vehicle, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
+                                        className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
+                                        style={{ textTransform: 'uppercase' }}
+                                    />
+                                )}
                             </TableCell>
                         ))}
                         <TableCell className="border text-center no-print">
