@@ -184,7 +184,7 @@ export default function RiwayatWoPage() {
                                 ))}
                               </ul>
                             </TableCell>
-                            <TableCell className="text-xs whitespace-pre-wrap">{item.actualDamagesNotes || '-'}</TableCell>
+                            <TableCell className="text-xs whitespace-pre-wrap break-words">{item.actualDamagesNotes || '-'}</TableCell>
                             <TableCell>
                                 {item.usedSpareParts && item.usedSpareParts.length > 0 ? (
                                     <ul className="list-disc pl-4 space-y-1 text-xs">
@@ -205,7 +205,7 @@ export default function RiwayatWoPage() {
                               {isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}
                             </TableCell>
                             <TableCell className="text-xs">{calculateDuration(item.processStartTime, item.completionTime)}</TableCell>
-                            <TableCell className={cn("text-xs font-semibold", {
+                            <TableCell className={cn("text-xs font-semibold break-words", {
                                 'text-green-600': item.notes?.startsWith('Lebih Cepat'),
                                 'text-destructive': item.notes?.startsWith('Terlambat'),
                             })}>
