@@ -272,8 +272,11 @@ export default function WorkOrderPage() {
 
   const handleUpdateWorkOrderStatus = (workOrder: WorkOrder, status: WorkOrderStatus | 'Lanjutkan') => {
     if (status === 'Proses') {
-      setWorkOrderToProcess(workOrder);
-      setTargetDialogVisible(true);
+      // Only show dialog if starting from 'Menunggu'
+      if (workOrder.status === 'Menunggu') {
+        setWorkOrderToProcess(workOrder);
+        setTargetDialogVisible(true);
+      }
       return;
     }
     
@@ -542,8 +545,8 @@ export default function WorkOrderPage() {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    {(wo.status === 'Menunggu' || wo.status === 'Tunda') && (
-                                        <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Proses')} disabled={!wo.targetCompletionTime}>
+                                    {wo.status === 'Menunggu' && (
+                                        <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Proses')}>
                                             <Play className="mr-2 h-4 w-4" /> Proses
                                         </DropdownMenuItem>
                                     )}
