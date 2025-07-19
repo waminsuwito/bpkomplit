@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -119,7 +120,8 @@ export default function ManajemenAlatPage() {
       const operator = allUsers.find(u => u.username === vehicle.nomorPolisi);
       const checklist = operator ? checklistReportsByUserNik[operator.nik || ''] : undefined;
 
-      if (!finalStatus || (finalStatus && !['RUSAK BERAT', 'BELUM ADA SOPIR'].includes(finalStatus))) {
+      // Only auto-update status if it's not a manually set special status
+      if (!['RUSAK BERAT', 'BELUM ADA SOPIR'].includes(finalStatus)) {
         if (checklist) {
           const hasDamage = checklist.items.some(item => item.status === 'rusak');
           const needsAttention = checklist.items.some(item => item.status === 'perlu_perhatian');
@@ -131,7 +133,7 @@ export default function ManajemenAlatPage() {
             finalStatus = 'BAIK';
           }
         } else {
-            finalStatus = finalStatus || 'BAIK';
+            finalStatus = finalStatus || 'BAIK'; // Default to 'BAIK' if no checklist and no manual status
         }
       }
       return { ...vehicle, status: finalStatus };
@@ -150,7 +152,9 @@ export default function ManajemenAlatPage() {
     );
     
     const operatorsBelumChecklist = operators.filter(op => {
+      // Find the vehicle associated with this operator
       const associatedVehicle = allVehicles.find(v => v.nomorPolisi === op.username);
+      // Exclude operator if their vehicle is marked as RUSAK BERAT
       return associatedVehicle?.status !== 'RUSAK BERAT' && !checklistSubmittedNiks.has(op.nik || '');
     });
 
