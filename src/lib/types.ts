@@ -280,11 +280,13 @@ export interface WorkOrder {
     timestamp: string;
     damagedItems: TruckChecklistItem[];
   };
-  startTime: string; // ISO String for WO creation
-  processStartTime?: string; // ISO String, set when status becomes 'Proses'
-  targetCompletionTime?: string; // ISO String
+  startTime: string;
+  processStartTime?: string;
+  targetCompletionTime?: string;
   status: WorkOrderStatus;
-  completionTime?: string; // ISO String, set when status becomes 'Selesai'
-  notes?: string; // "Tepat Waktu", "Terlambat 1 jam", etc. or reason for delay
+  completionTime?: string;
+  notes?: string;
   actualDamagesNotes?: string;
+  waktuMulaiTunda?: string | null;
+  totalWaktuTundaMs?: number;
 }

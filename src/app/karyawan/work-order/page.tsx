@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,9 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
-import { ClipboardEdit, Wrench, Inbox, MoreHorizontal } from 'lucide-react';
+import { ClipboardEdit, Wrench, Inbox, MoreHorizontal, Pause, Play, Timer } from 'lucide-react';
 import type { TruckChecklistReport, TruckChecklistItem, UserLocation, WorkOrder, WorkOrderStatus } from '@/lib/types';
-import { format, differenceInMinutes, isValid, formatDistanceStrict } from 'date-fns';
+import { format, differenceInMinutes, isValid, formatDistanceStrict, addMilliseconds } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -63,7 +64,6 @@ export default function WorkOrderPage() {
   const [workOrderToPostpone, setWorkOrderToPostpone] = useState<WorkOrder | null>(null);
   const [postponeReason, setPostponeReason] = useState('');
   
-  // Set default target to 2 hours from now
   const defaultTargetDate = new Date();
   defaultTargetDate.setHours(defaultTargetDate.getHours() + 2);
   const [targetTime, setTargetTime] = useState(formatDateTimeLocal(defaultTargetDate));
@@ -71,7 +71,6 @@ export default function WorkOrderPage() {
   const loadData = () => {
     if (!user) return;
 
-    // Load all checklist reports from both sources
     const tmChecklistsStr = localStorage.getItem(TM_CHECKLIST_STORAGE_KEY);
     const loaderChecklistsStr = localStorage.getItem(LOADER_CHECKLIST_STORAGE_KEY);
     
@@ -80,38 +79,33 @@ export default function WorkOrderPage() {
     
     const allChecklists = [...tmChecklists, ...loaderChecklists];
 
-    // Load all existing work orders
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
-    // Filter for my work orders
     const myCurrentWOs = allWorkOrders.filter(wo => {
         if (wo.mechanicId !== user.id) return false;
         
         if (wo.status !== 'Selesai') {
-            return true; // Always show active work orders
+            return true;
         }
 
-        // If status is 'Selesai', check the completion time
         if (wo.status === 'Selesai' && wo.completionTime) {
             const twentyFourHoursAgo = new Date();
             twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
             const completionDate = new Date(wo.completionTime);
-            return completionDate > twentyFourHoursAgo; // Keep if completed within last 24 hours
+            return completionDate > twentyFourHoursAgo;
         }
 
-        return false; // By default, don't show completed orders without a completion time
+        return false;
     }).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
     setMyWorkOrders(myCurrentWOs);
 
-    // Create a set of report IDs that are already part of an active work order
     const activeWorkOrderReportIds = new Set(
         allWorkOrders
             .filter(wo => wo.status !== 'Selesai')
             .map(wo => wo.vehicle.reportId)
     );
 
-    // Find checklists with 'rusak' or 'perlu_perhatian' status that are NOT already in an active work order
     const availableDamaged: DamagedVehicle[] = allChecklists
       .map(report => {
         const damagedItems = report.items.filter(item => item.status === 'rusak' || item.status === 'perlu_perhatian');
@@ -167,7 +161,6 @@ export default function WorkOrderPage() {
 
     toast({ title: 'Work Order Dibuat', description: `Anda sekarang mengerjakan kendaraan NIK ${vehicleToRepair.userNik}` });
     
-    // Refresh lists and close dialog
     setSelectedVehicleId(null);
     loadData();
   };
@@ -186,9 +179,9 @@ export default function WorkOrderPage() {
                       wasUpdated = true;
                       const repairedItems = report.items.map(item => ({
                           ...item,
-                          status: 'baik' as 'baik', // Reset status
-                          notes: '', // Clear notes
-                          photo: null, // Clear photo
+                          status: 'baik' as 'baik',
+                          notes: '',
+                          photo: null,
                       }));
                       return { ...report, items: repairedItems };
                   }
@@ -197,7 +190,7 @@ export default function WorkOrderPage() {
 
               if (wasUpdated) {
                   localStorage.setItem(key, JSON.stringify(updatedChecklists));
-                  break; // Stop after finding and updating the report
+                  break;
               }
           }
       }
@@ -260,6 +253,7 @@ export default function WorkOrderPage() {
             return {
                 ...wo,
                 status: 'Tunda' as const,
+                waktuMulaiTunda: new Date().toISOString(),
                 notes: `DITUNDA: ${postponeReason.toUpperCase()}`
             };
         }
@@ -276,7 +270,7 @@ export default function WorkOrderPage() {
   };
 
 
-  const handleUpdateWorkOrderStatus = (workOrder: WorkOrder, status: WorkOrderStatus) => {
+  const handleUpdateWorkOrderStatus = (workOrder: WorkOrder, status: WorkOrderStatus | 'Lanjutkan') => {
     if (status === 'Proses') {
       setWorkOrderToProcess(workOrder);
       setTargetDialogVisible(true);
@@ -284,8 +278,12 @@ export default function WorkOrderPage() {
     }
     
     if (status === 'Tunda') {
-        setWorkOrderToPostpone(workOrder);
-        setPostponeDialogVisible(true);
+        if (workOrder.status === 'Proses' || workOrder.status === 'Dikerjakan') {
+          setWorkOrderToPostpone(workOrder);
+          setPostponeDialogVisible(true);
+        } else {
+            toast({ variant: 'destructive', title: 'Aksi tidak valid', description: 'Hanya pekerjaan yang sedang berjalan yang bisa ditunda.' });
+        }
         return;
     }
 
@@ -294,7 +292,27 @@ export default function WorkOrderPage() {
 
     const updatedWorkOrders = allWorkOrders.map(wo => {
         if (wo.id === workOrder.id) {
-            const updatedWo: WorkOrder = { ...wo, status, notes: '' }; // Clear previous notes
+            let updatedWo: WorkOrder = { ...wo };
+
+            if (status === 'Lanjutkan') {
+                if (wo.status === 'Tunda' && wo.waktuMulaiTunda && wo.targetCompletionTime) {
+                    const waktuJedaMs = new Date().getTime() - new Date(wo.waktuMulaiTunda).getTime();
+                    const totalJedaBaru = (wo.totalWaktuTundaMs || 0) + waktuJedaMs;
+                    const targetBaru = addMilliseconds(new Date(wo.targetCompletionTime), waktuJedaMs);
+
+                    updatedWo = {
+                        ...updatedWo,
+                        status: 'Proses',
+                        notes: `Pekerjaan dilanjutkan. Total jeda: ${formatDistanceStrict(totalJedaBaru, 0, { locale: localeID })}.`,
+                        waktuMulaiTunda: null,
+                        totalWaktuTundaMs: totalJedaBaru,
+                        targetCompletionTime: targetBaru.toISOString(),
+                    };
+                }
+            } else {
+                updatedWo.status = status;
+                updatedWo.notes = ''; // Clear previous notes on other status changes
+            }
             
             if (status === 'Selesai') {
                 const now = new Date();
@@ -325,7 +343,7 @@ export default function WorkOrderPage() {
                 }
 
                 updatedWo.completionTime = now.toISOString();
-            } else {
+            } else if (status !== 'Lanjutkan') { // Ensure completion time is cleared if not 'Selesai'
                 delete updatedWo.completionTime;
             }
             return updatedWo;
@@ -345,10 +363,19 @@ export default function WorkOrderPage() {
     loadData();
   };
   
-    const calculateDuration = (start?: string, end?: string): string => {
-        if (!start || !end) return '-';
-        return formatDistanceStrict(new Date(end), new Date(start), { locale: localeID, unit: 'minute' });
+    const calculateDuration = (wo: WorkOrder): string => {
+        if (!wo.processStartTime || !wo.completionTime) return '-';
+        const totalDurationMs = new Date(wo.completionTime).getTime() - new Date(wo.processStartTime).getTime();
+        const effectiveDurationMs = totalDurationMs - (wo.totalWaktuTundaMs || 0);
+
+        if (effectiveDurationMs < 0) return 'N/A';
+        return formatDistanceStrict(effectiveDurationMs, 0, { locale: localeID });
     };
+
+    const formatPauseDuration = (ms?: number) => {
+        if (!ms || ms <= 0) return '-';
+        return formatDistanceStrict(ms, 0, { locale: localeID });
+    }
 
   return (
     <div className="space-y-6">
@@ -453,6 +480,7 @@ export default function WorkOrderPage() {
                     <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
                     <TableHead>Mulai Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
+                    <TableHead>Total Jeda</TableHead>
                     <TableHead>Lama Pengerjaan</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Keterangan</TableHead>
@@ -493,7 +521,8 @@ export default function WorkOrderPage() {
                              {wo.processStartTime ? format(new Date(wo.processStartTime), 'd MMM, HH:mm') : '-'}
                            </TableCell>
                            <TableCell className="text-xs">{isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}</TableCell>
-                           <TableCell className="text-xs">{calculateDuration(wo.processStartTime, wo.completionTime)}</TableCell>
+                           <TableCell className="text-xs">{formatPauseDuration(wo.totalWaktuTundaMs)}</TableCell>
+                           <TableCell className="text-xs">{calculateDuration(wo)}</TableCell>
                            <TableCell className="font-semibold">
                               {wo.status}
                           </TableCell>
@@ -513,18 +542,26 @@ export default function WorkOrderPage() {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Menunggu')} disabled={wo.status === 'Menunggu'}>
-                                        Menunggu
-                                    </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Proses')} disabled={wo.status === 'Proses'}>
-                                        Proses
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')} disabled={wo.status === 'Dikerjakan'}>
-                                        Dikerjakan
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Tunda')} disabled={wo.status === 'Tunda'}>
-                                        Tunda
-                                    </DropdownMenuItem>
+                                    {(wo.status === 'Menunggu' || wo.status === 'Tunda') && (
+                                        <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Proses')} disabled={!wo.targetCompletionTime}>
+                                            <Play className="mr-2 h-4 w-4" /> Proses
+                                        </DropdownMenuItem>
+                                    )}
+                                    {wo.status === 'Tunda' && (
+                                        <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Lanjutkan')}>
+                                            <Play className="mr-2 h-4 w-4" /> Lanjutkan
+                                        </DropdownMenuItem>
+                                    )}
+                                    {(wo.status === 'Proses' || wo.status === 'Dikerjakan') && (
+                                        <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Tunda')}>
+                                            <Pause className="mr-2 h-4 w-4" /> Tunda
+                                        </DropdownMenuItem>
+                                    )}
+                                    {(wo.status === 'Proses' || wo.status === 'Tunda' || wo.status === 'Menunggu') && (
+                                        <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')} disabled={wo.status === 'Dikerjakan'}>
+                                            <Timer className="mr-2 h-4 w-4" /> Dikerjakan
+                                        </DropdownMenuItem>
+                                    )}
                                     <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo, 'Selesai')}>
                                         Selesai
                                     </DropdownMenuItem>
