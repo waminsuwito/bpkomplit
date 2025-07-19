@@ -79,6 +79,15 @@ export interface User {
   nik?: string;
 }
 
+export interface Vehicle {
+  id: string;
+  nomorPolisi: string;
+  nomorLambung: string;
+  jenisKendaraan: string;
+  status: string;
+  location: UserLocation;
+}
+
 export interface JobMixFormula {
   id: string;
   mutuBeton: string;
