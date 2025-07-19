@@ -6,8 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ShieldX } from 'lucide-react';
-import type { TruckChecklistReport } from '@/lib/types';
+import { ArrowLeft, ShieldX, Inbox } from 'lucide-react';
+import type { Vehicle, UserLocation } from '@/lib/types';
 import Link from 'next/link';
 import {
   AlertDialog,
@@ -20,47 +20,42 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/context/auth-provider';
 
 
-const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
-const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
-const HEAVY_DAMAGE_STORAGE_KEY = 'app-heavy-damage-vehicles';
+const VEHICLES_STORAGE_KEY_PREFIX = 'app-vehicles-';
 
-interface HeavyDamageVehicle {
-  id: string | number;
-  nomorLambung: string;
-  nomorPolisi: string;
-  jenisKendaraan: string;
-  statusAlat: 'Rusak Berat';
+const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
+    try {
+        const key = `${VEHICLES_STORAGE_KEY_PREFIX}${location}`;
+        const storedVehicles = localStorage.getItem(key);
+        return storedVehicles ? JSON.parse(storedVehicles) : [];
+    } catch (error) {
+        console.error(`Failed to load vehicles for ${location}:`, error);
+        return [];
+    }
+}
+
+const saveVehiclesForLocation = (location: UserLocation, vehicles: Vehicle[]) => {
+    try {
+        const key = `${VEHICLES_STORAGE_KEY_PREFIX}${location}`;
+        localStorage.setItem(key, JSON.stringify(vehicles));
+    } catch (error) {
+        console.error(`Failed to save vehicles for ${location}:`, error);
+    }
 }
 
 export default function AlatRusakBeratPage() {
-  const [vehicles, setVehicles] = useState<HeavyDamageVehicle[]>([]);
+  const { user } = useAuth();
+  const [heavyDamageVehicles, setHeavyDamageVehicles] = useState<Vehicle[]>([]);
   const { toast } = useToast();
 
-  const loadHeavyDamageVehicles = () => {
+  const loadHeavyDamageData = () => {
+    if (!user?.location) return;
     try {
-      const storedHeavyDamage = localStorage.getItem(HEAVY_DAMAGE_STORAGE_KEY);
-      const heavyDamageIds: Set<string|number> = storedHeavyDamage ? new Set(JSON.parse(storedHeavyDamage)) : new Set();
-      
-      const tmReportsStr = localStorage.getItem(TM_CHECKLIST_STORAGE_KEY);
-      const loaderReportsStr = localStorage.getItem(LOADER_CHECKLIST_STORAGE_KEY);
-      const allTmChecklists: TruckChecklistReport[] = tmReportsStr ? JSON.parse(tmReportsStr) : [];
-      const allLoaderChecklists: TruckChecklistReport[] = loaderReportsStr ? JSON.parse(loaderReportsStr) : [];
-      const allChecklists = [...allTmChecklists, ...allLoaderChecklists];
-
-      const heavyDamageVehicles = allChecklists
-        .filter(report => heavyDamageIds.has(report.id))
-        .map(report => ({
-          id: report.id,
-          // Placeholder data until we have a central vehicle list
-          nomorLambung: `NL-${report.userNik.slice(-4)}`,
-          nomorPolisi: 'N/A',
-          jenisKendaraan: report.id.startsWith('tm-') ? 'Truck Mixer' : 'Wheel Loader',
-          statusAlat: 'Rusak Berat' as const,
-        }));
-      
-      setVehicles(heavyDamageVehicles);
+      const allVehicles = getVehiclesForLocation(user.location);
+      const filtered = allVehicles.filter(v => v.status === 'RUSAK BERAT');
+      setHeavyDamageVehicles(filtered);
     } catch (error) {
       console.error("Failed to load heavily damaged vehicles:", error);
       toast({ variant: 'destructive', title: 'Gagal Memuat Data', description: 'Tidak bisa memuat data alat rusak berat.' });
@@ -68,22 +63,28 @@ export default function AlatRusakBeratPage() {
   };
 
   useEffect(() => {
-    loadHeavyDamageVehicles();
-  }, []);
+    loadHeavyDamageData();
+    // Add event listener to react to changes from other pages
+    window.addEventListener('storage', loadHeavyDamageData);
+    return () => window.removeEventListener('storage', loadHeavyDamageData);
+  }, [user]);
 
-  const handleReleaseVehicle = (vehicleId: string | number) => {
+  const handleReleaseVehicle = (vehicleId: string) => {
+    if (!user?.location) return;
     try {
-      const storedHeavyDamage = localStorage.getItem(HEAVY_DAMAGE_STORAGE_KEY);
-      let heavyDamageIds: (string|number)[] = storedHeavyDamage ? JSON.parse(storedHeavyDamage) : [];
+      let allVehicles = getVehiclesForLocation(user.location);
       
-      const updatedIds = heavyDamageIds.filter(id => id !== vehicleId);
-      localStorage.setItem(HEAVY_DAMAGE_STORAGE_KEY, JSON.stringify(updatedIds));
+      const updatedVehicles = allVehicles.map(v => 
+        v.id === vehicleId ? { ...v, status: 'BAIK' } : v
+      );
+
+      saveVehiclesForLocation(user.location, updatedVehicles);
       
-      loadHeavyDamageVehicles(); // Reload the list
+      loadHeavyDamageData(); // Reload the list on this page
       
       toast({
         title: 'Alat Dikeluarkan',
-        description: 'Alat telah dikeluarkan dari daftar rusak berat dan akan muncul di pemantauan normal.',
+        description: 'Alat telah dikeluarkan dari daftar rusak berat dan statusnya diubah menjadi "BAIK".',
       });
     } catch (error) {
        toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal mengeluarkan alat dari daftar.' });
@@ -103,7 +104,7 @@ export default function AlatRusakBeratPage() {
           </Button>
         </div>
         <CardDescription>
-            Kelola daftar alat yang memerlukan perhatian khusus atau perbaikan besar.
+            Kelola daftar alat yang memerlukan perhatian khusus atau perbaikan besar. Alat yang dikeluarkan akan berstatus "BAIK".
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -119,13 +120,13 @@ export default function AlatRusakBeratPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vehicles.length > 0 ? (
-                vehicles.map((vehicle) => (
+              {heavyDamageVehicles.length > 0 ? (
+                heavyDamageVehicles.map((vehicle) => (
                   <TableRow key={vehicle.id}>
                     <TableCell>{vehicle.nomorLambung}</TableCell>
                     <TableCell>{vehicle.nomorPolisi}</TableCell>
                     <TableCell>{vehicle.jenisKendaraan}</TableCell>
-                    <TableCell className="font-semibold text-destructive">{vehicle.statusAlat}</TableCell>
+                    <TableCell className="font-semibold text-destructive">{vehicle.status}</TableCell>
                     <TableCell className="text-center">
                       <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -138,7 +139,7 @@ export default function AlatRusakBeratPage() {
                               <AlertDialogHeader>
                                   <AlertDialogTitle>Konfirmasi</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                      Apakah Anda yakin ingin mengeluarkan alat ini dari daftar kerusakan berat? Alat ini akan kembali ke pemantauan normal.
+                                      Apakah Anda yakin ingin mengeluarkan alat ini dari daftar kerusakan berat? Alat ini akan kembali ke pemantauan normal dengan status "BAIK".
                                   </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -155,7 +156,8 @@ export default function AlatRusakBeratPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-48 text-center text-muted-foreground">
-                    Tidak ada alat dalam daftar kerusakan berat saat ini.
+                    <Inbox className="mx-auto h-12 w-12" />
+                    <p className="mt-2">Tidak ada alat dalam daftar kerusakan berat saat ini.</p>
                   </TableCell>
                 </TableRow>
               )}

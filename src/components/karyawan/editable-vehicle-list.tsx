@@ -22,6 +22,7 @@ type TableRowData = Partial<Vehicle>;
 
 const fields: (keyof Omit<Vehicle, 'id'>)[] = ['nomorLambung', 'nomorPolisi', 'jenisKendaraan', 'status', 'location'];
 const headers = ['NOMOR LAMBUNG', 'NOMOR POLISI', 'JENIS KENDARAAN', 'STATUS', 'MUTASI KENDARAAN'];
+const statusOptions = ['BAIK', 'PERLU PERHATIAN', 'RUSAK', 'RUSAK BERAT'];
 
 
 const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
@@ -318,6 +319,26 @@ export function EditableVehicleList() {
                                                 {userLocations.map(location => (
                                                     <SelectItem key={location} value={location}>
                                                         {location}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : field === 'status' ? (
+                                        <Select
+                                            value={row[field] || ''}
+                                            onValueChange={(value) => handleSelectChange(index, field, value)}
+                                        >
+                                            <SelectTrigger
+                                                id={`${field}-${index}`}
+                                                className="w-full h-full border-none rounded-none text-center bg-transparent text-black focus:ring-0 uppercase"
+                                                onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
+                                            >
+                                                <SelectValue placeholder="Pilih Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {statusOptions.map(option => (
+                                                    <SelectItem key={option} value={option}>
+                                                        {option}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { type TruckChecklistReport, type TruckChecklistItem, type UserLocation } from '@/lib/types';
+import { type TruckChecklistReport, type TruckChecklistItem, type UserLocation, type Vehicle } from '@/lib/types';
 import { printElement } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import {
@@ -23,11 +23,18 @@ import { getUsers } from '@/lib/auth';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-provider';
 
+const VEHICLES_STORAGE_KEY_PREFIX = 'app-vehicles-';
 
-const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
-const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
-const HEAVY_DAMAGE_STORAGE_KEY = 'app-heavy-damage-vehicles';
-
+const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
+    try {
+        const key = `${VEHICLES_STORAGE_KEY_PREFIX}${location}`;
+        const storedVehicles = localStorage.getItem(key);
+        return storedVehicles ? JSON.parse(storedVehicles) : [];
+    } catch (error) {
+        console.error(`Failed to load vehicles for ${location}:`, error);
+        return [];
+    }
+}
 
 interface Report {
   id: string | number;
@@ -67,141 +74,63 @@ export default function ManajemenAlatPage() {
   const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
   const [detailReport, setDetailReport] = useState<Report | null>(null);
   
-  const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
-  const [notSubmittedReports, setNotSubmittedReports] = useState<Report[]>([]);
-  const [heavyDamageIds, setHeavyDamageIds] = useState<Set<string | number>>(new Set());
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
 
   useEffect(() => {
-    // 1. Get today's date string
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (!user?.location) return;
 
-    // 2. Get all relevant users (operators)
-    const allUsers = getUsers();
-    const operatorUsers = allUsers.filter(u => 
-        u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR')
-    );
+    const loadData = () => {
+        const vehicles = getVehiclesForLocation(user.location as UserLocation);
+        setAllVehicles(vehicles);
+    }
     
-    // 3. Get all checklist reports from both sources
-    const tmReportsStr = localStorage.getItem(TM_CHECKLIST_STORAGE_KEY);
-    const loaderReportsStr = localStorage.getItem(LOADER_CHECKLIST_STORAGE_KEY);
+    loadData();
 
-    const allTmChecklists: TruckChecklistReport[] = tmReportsStr ? JSON.parse(tmReportsStr) : [];
-    const allLoaderChecklists: TruckChecklistReport[] = loaderReportsStr ? JSON.parse(loaderReportsStr) : [];
-    
-    const allChecklists = [...allTmChecklists, ...allLoaderChecklists];
+    // Listen for storage changes to update the view in real-time
+    const handleStorageChange = () => loadData();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
 
-    const storedHeavyDamage = localStorage.getItem(HEAVY_DAMAGE_STORAGE_KEY);
-    const currentHeavyDamageIds: Set<string|number> = storedHeavyDamage ? new Set(JSON.parse(storedHeavyDamage)) : new Set();
-    setHeavyDamageIds(currentHeavyDamageIds);
-
-    // 4. Filter for today's reports only
-    // Note: The loader checklist ID is now `userId-date`, not composite key
-    const todaysChecklists = allChecklists.filter(report => report.id.includes(todayStr));
-
-    // 5. Create a Set of user IDs who have submitted a report today for quick lookup
-    const submittedUserIds = new Set(todaysChecklists.map(r => r.userId));
-
-    // 6. Process the reports that were submitted today
-    const processedSubmittedReports: Report[] = todaysChecklists.map(report => {
-        const getOverallStatus = (items: TruckChecklistItem[]): 'Baik' | 'Rusak' | 'Perlu Perhatian' => {
-            if (items.some(item => item.status === 'rusak')) return 'Rusak';
-            if (items.some(item => item.status === 'perlu_perhatian')) return 'Perlu Perhatian';
-            return 'Baik';
-        };
-
-        const status = getOverallStatus(report.items);
-
-        return {
-            id: report.id,
-            operator: report.username,
-            kendaraan: `Kendaraan NIK: ${report.userNik}`, // Using NIK as vehicle identifier
-            lokasi: report.location,
-            status: status,
-            waktu: format(new Date(report.timestamp), 'HH:mm'),
-            items: report.items.filter(item => item.status === 'rusak' || item.status === 'perlu_perhatian'),
-            isHeavilyDamaged: status === 'Rusak' && currentHeavyDamageIds.has(report.id),
-        };
-    }).filter(report => !currentHeavyDamageIds.has(report.id)); // Exclude heavily damaged from this list
-    setSubmittedReports(processedSubmittedReports);
-
-    // 7. Identify users who have NOT submitted a report today
-    const usersWhoDidNotSubmit = operatorUsers.filter(user => !submittedUserIds.has(user.id));
-    const processedNotSubmittedReports: Report[] = usersWhoDidNotSubmit.map(user => ({
-        id: user.id, // Use user ID as a unique key
-        operator: user.username,
-        kendaraan: `Kendaraan NIK: ${user.nik || 'N/A'}`,
-        lokasi: user.location || 'N/A',
-        status: 'Belum Checklist',
-        waktu: '-',
-        items: [],
-    }));
-    setNotSubmittedReports(processedNotSubmittedReports);
-
-  }, []);
-
+  }, [user]);
 
   const filteredData = useMemo(() => {
     if (!user?.location) {
       return { totalAlat: 0, sudahChecklistReports: [], belumChecklistReports: [], alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: 0 };
     }
 
-    const sudah = submittedReports.filter(r => r.lokasi === user.location);
-    const belum = notSubmittedReports.filter(r => r.lokasi === user.location);
+    const alatBaik = allVehicles.filter(v => v.status === 'BAIK');
+    const perluPerhatian = allVehicles.filter(v => v.status === 'PERLU PERHATIAN');
+    const alatRusak = allVehicles.filter(v => v.status === 'RUSAK');
+    const alatRusakBerat = allVehicles.filter(v => v.status === 'RUSAK BERAT');
 
     return {
-      totalAlat: sudah.length + belum.length + heavyDamageIds.size,
-      sudahChecklistReports: sudah,
-      belumChecklistReports: belum,
-      alatBaik: sudah.filter(r => r.status === 'Baik'),
-      perluPerhatian: sudah.filter(r => r.status === 'Perlu Perhatian'),
-      alatRusak: sudah.filter(r => r.status === 'Rusak'),
-      alatRusakBerat: heavyDamageIds.size,
+      totalAlat: allVehicles.length,
+      alatBaik,
+      perluPerhatian,
+      alatRusak,
+      alatRusakBerat: alatRusakBerat.length,
+      // The logic for 'checklist' status is no longer relevant with the new vehicle management system.
+      // These are kept as empty arrays to prevent breaking the dialog logic.
+      sudahChecklistReports: [],
+      belumChecklistReports: [],
     };
-  }, [user, submittedReports, notSubmittedReports, heavyDamageIds]);
+  }, [user, allVehicles]);
   
   const getBadgeVariant = (status: string) => {
     switch (status) {
-      case 'Baik': return 'default';
-      case 'Perlu Perhatian': return 'secondary';
-      case 'Rusak': return 'destructive';
-      case 'Belum Checklist': return 'outline';
+      case 'BAIK': return 'default';
+      case 'PERLU PERHATIAN': return 'secondary';
+      case 'RUSAK': return 'destructive';
+      case 'RUSAK BERAT': return 'destructive';
       default: return 'outline';
     }
   };
 
-  const handleCardClick = (type: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Sudah Checklist' | 'Belum Checklist' | 'Total') => {
-    const titleMap = {
-      'Total': 'Daftar Semua Alat',
-      'Sudah Checklist': 'Daftar Alat Sudah Checklist',
-      'Belum Checklist': 'Daftar Alat Belum Checklist',
-      'Baik': 'Daftar Alat Kondisi Baik',
-      'Perlu Perhatian': 'Daftar Alat Perlu Perhatian',
-      'Rusak': 'Daftar Alat Kondisi Rusak',
-    };
-    
-    let reportsToShow: Report[] = [];
-    switch(type) {
-        case 'Total':
-            reportsToShow = [...filteredData.sudahChecklistReports, ...filteredData.belumChecklistReports];
-            break;
-        case 'Sudah Checklist':
-            reportsToShow = filteredData.sudahChecklistReports;
-            break;
-        case 'Belum Checklist':
-            reportsToShow = filteredData.belumChecklistReports;
-            break;
-        case 'Baik':
-            reportsToShow = filteredData.alatBaik;
-            break;
-        case 'Perlu Perhatian':
-            reportsToShow = filteredData.perluPerhatian;
-            break;
-        case 'Rusak':
-            reportsToShow = filteredData.alatRusak;
-            break;
-    }
-      
-    setDialogContent({ title: titleMap[type], reports: reportsToShow.sort((a,b) => a.kendaraan.localeCompare(b.kendaraan)) });
+  // This function is kept for potential future use but is simplified.
+  const handleCardClick = (type: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Total') => {
+      // In a real implementation, this would show a dialog with the filtered vehicles.
+      // For now, it's a placeholder.
+      toast({ title: `Menampilkan Alat: ${type}`, description: "Fungsi dialog rincian sedang dikembangkan." });
   };
 
 
@@ -217,14 +146,12 @@ export default function ManajemenAlatPage() {
         </Button>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="Total Alat" value={filteredData.totalAlat} description="Klik untuk melihat rincian" icon={Package} clickable onClick={() => handleCardClick('Total')} />
-        <StatCard title="Alat Sudah Checklist" value={filteredData.sudahChecklistReports.length} description="Klik untuk melihat rincian" icon={CheckSquare} clickable onClick={() => handleCardClick('Sudah Checklist')} />
-        <StatCard title="Alat Belum Checklist" value={filteredData.belumChecklistReports.length} description="Klik untuk melihat rincian" icon={XSquare} clickable onClick={() => handleCardClick('Belum Checklist')} />
-        <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat rincian" icon={CheckCircle2} clickable onClick={() => handleCardClick('Baik')} colorClass="text-green-600" />
-        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} colorClass="text-amber-500" />
-        <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} colorClass="text-destructive" />
-        {user?.jabatan === 'KEPALA WORKSHOP' && (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Total Alat" value={filteredData.totalAlat} description="Jumlah semua armada terdaftar" icon={Package} />
+        <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Armada dalam kondisi operasional" icon={CheckCircle2} colorClass="text-green-600" />
+        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Armada dengan catatan minor" icon={AlertTriangle} colorClass="text-amber-500" />
+        <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Armada yang membutuhkan perbaikan" icon={Wrench} colorClass="text-destructive" />
+        {(user?.jabatan === 'KEPALA WORKSHOP' || user?.jabatan === 'KEPALA MEKANIK') && (
              <StatCard 
                 title="Alat Rusak Berat" 
                 value={filteredData.alatRusakBerat} 
@@ -239,9 +166,9 @@ export default function ManajemenAlatPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Laporan Terbaru Hari Ini</CardTitle>
+          <CardTitle>Ringkasan Status Armada</CardTitle>
           <CardDescription>
-            Checklist yang baru saja dikirim oleh operator di lokasi Anda hari ini.
+            Daftar semua armada dan status terakhirnya di lokasi Anda.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -249,37 +176,36 @@ export default function ManajemenAlatPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Operator</TableHead>
-                  <TableHead>Kendaraan</TableHead>
-                  <TableHead>Lokasi</TableHead>
+                  <TableHead>No. Lambung</TableHead>
+                  <TableHead>No. Polisi</TableHead>
+                  <TableHead>Jenis Kendaraan</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Waktu Lapor</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.sudahChecklistReports.length > 0 ? (
-                  filteredData.sudahChecklistReports.map((report) => (
-                    <TableRow key={report.id}>
-                      <TableCell className="font-medium">{report.operator}</TableCell>
-                      <TableCell>{report.kendaraan}</TableCell>
-                      <TableCell>{report.lokasi}</TableCell>
+                {allVehicles.length > 0 ? (
+                  allVehicles.map((vehicle) => (
+                    <TableRow key={vehicle.id}>
+                      <TableCell className="font-medium">{vehicle.nomorLambung}</TableCell>
+                      <TableCell>{vehicle.nomorPolisi}</TableCell>
+                      <TableCell>{vehicle.jenisKendaraan}</TableCell>
                       <TableCell>
-                        <Badge variant={getBadgeVariant(report.status)}
+                        <Badge variant={getBadgeVariant(vehicle.status)}
                           className={cn({
-                            'bg-green-600 hover:bg-green-700 text-white': report.status === 'Baik',
-                            'bg-amber-500 hover:bg-amber-600 text-white': report.status === 'Perlu Perhatian',
+                            'bg-green-600 hover:bg-green-700 text-white': vehicle.status === 'BAIK',
+                            'bg-amber-500 hover:bg-amber-600 text-white': vehicle.status === 'PERLU PERHATIAN',
+                            'font-bold': vehicle.status === 'RUSAK BERAT'
                           })}
                         >
-                          {report.status}
+                          {vehicle.status || 'TIDAK DIKETAHUI'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{report.waktu}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      Tidak ada laporan untuk lokasi Anda hari ini.
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      Belum ada data armada untuk lokasi Anda.
                     </TableCell>
                   </TableRow>
                 )}
@@ -288,98 +214,6 @@ export default function ManajemenAlatPage() {
           </div>
         </CardContent>
       </Card>
-
-      <Dialog open={!!dialogContent} onOpenChange={(open) => !open && setDialogContent(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{dialogContent?.title}</DialogTitle>
-            <DialogDescription>
-              Menampilkan daftar rinci alat berdasarkan status yang dipilih untuk lokasi Anda: {user?.location}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto mt-4">
-            {dialogContent?.reports && dialogContent.reports.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Operator</TableHead>
-                    <TableHead>Kendaraan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Waktu Lapor</TableHead>
-                    <TableHead>Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dialogContent.reports.map((report) => (
-                    <TableRow key={report.id}>
-                      <TableCell className="font-medium">{report.operator}</TableCell>
-                      <TableCell>{report.kendaraan}</TableCell>
-                      <TableCell>
-                        <Badge variant={getBadgeVariant(report.status)}
-                          className={cn({
-                            'bg-green-600 hover:bg-green-700 text-white': report.status === 'Baik',
-                            'bg-amber-500 hover:bg-amber-600 text-white': report.status === 'Perlu Perhatian',
-                          })}
-                        >
-                          {report.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{report.waktu}</TableCell>
-                       <TableCell>
-                        {(report.status === 'Rusak' || report.status === 'Perlu Perhatian') && (
-                            <Button variant="outline" size="sm" onClick={() => setDetailReport(report)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Detail
-                            </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">Tidak ada data untuk ditampilkan.</p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={!!detailReport} onOpenChange={(open) => !open && setDetailReport(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detail Kerusakan</DialogTitle>
-            <DialogDescription>
-              Rincian laporan kerusakan untuk kendaraan <span className="font-bold">{detailReport?.kendaraan}</span> oleh operator {detailReport?.operator}.
-            </DialogDescription>
-          </DialogHeader>
-           <div className="max-h-[60vh] overflow-y-auto mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item Pemeriksaan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Catatan Operator</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detailReport?.items?.map(item => (
-                     <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.label}</TableCell>
-                        <TableCell>
-                           <Badge variant={item.status === 'rusak' ? 'destructive' : 'secondary'}
-                            className={cn(item.status === 'perlu_perhatian' && 'bg-amber-500 hover:bg-amber-600 text-white')}
-                           >
-                            {item.status}
-                           </Badge>
-                        </TableCell>
-                        <TableCell>{item.notes || '-'}</TableCell>
-                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-           </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
