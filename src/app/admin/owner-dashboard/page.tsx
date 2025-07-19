@@ -138,10 +138,8 @@ export default function OwnerDashboardPage() {
                 <DataRow label="NN" value={0} unit="L" />
                 <DataRow label="Visco" value={0} unit="L" />
             </SectionCard>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-             <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
+            
+            <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
                  <DataRow label="Menunggu" value={2} />
                  <DataRow label="Dikerjakan" value={3} />
                  <DataRow label="Selesai Hari Ini" value={5} />
