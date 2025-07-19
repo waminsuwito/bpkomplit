@@ -25,13 +25,15 @@ export default function AdminLayout({
     // AuthProvider will redirect if user is null, so this mainly catches wrong roles.
     return null;
   }
+  
+  const isOwner = user.jabatan === 'OWNER';
 
   // If authorized, render the admin layout
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <Header />
       <div className="flex flex-1">
-        <AdminSidebar />
+        {!isOwner && <AdminSidebar />}
         <main className="flex-1 p-4 md:p-6">
           {children}
         </main>
