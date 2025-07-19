@@ -140,29 +140,25 @@ export default function OwnerDashboardPage() {
             </SectionCard>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2">
-                <SectionCard title="Armada" icon={Truck}>
-                    <ArmadaTable data={dummyArmadaData} />
-                </SectionCard>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
+                 <DataRow label="Menunggu" value={2} />
+                 <DataRow label="Dikerjakan" value={3} />
+                 <DataRow label="Selesai Hari Ini" value={5} />
+            </SectionCard>
             
-            <div className="space-y-6">
-                <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
-                     <DataRow label="Menunggu" value={2} />
-                     <DataRow label="Dikerjakan" value={3} />
-                     <DataRow label="Selesai Hari Ini" value={5} />
-                </SectionCard>
-                
-                <SectionCard title="QC Monitoring" icon={Beaker}>
-                     <DataRow label="Suhu Air" value={28} unit="°C" />
-                     <DataRow label="pH Air" value={7.2} />
-                     <DataRow label="TDS Air" value={150} unit="ppm" />
-                     <DataRow label="Check Slump" value={12} unit="cm" />
-                     <DataRow label="Jumlah Sample" value={5} />
-                </SectionCard>
-            </div>
+            <SectionCard title="QC Monitoring" icon={Beaker}>
+                 <DataRow label="Suhu Air" value={28} unit="°C" />
+                 <DataRow label="pH Air" value={7.2} />
+                 <DataRow label="TDS Air" value={150} unit="ppm" />
+                 <DataRow label="Check Slump" value={12} unit="cm" />
+                 <DataRow label="Jumlah Sample" value={5} />
+            </SectionCard>
         </div>
+
+        <SectionCard title="Armada" icon={Truck}>
+            <ArmadaTable data={dummyArmadaData} />
+        </SectionCard>
     </div>
   );
 }
