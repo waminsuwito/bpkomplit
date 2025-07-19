@@ -474,6 +474,7 @@ export function Dashboard() {
                 </SheetHeader>
                 <PrintPreview 
                     data={completedBatchData}
+                    operatorName={user?.username}
                     onClose={() => setShowPrintPreview(false)} 
                 />
             </SheetContent>
@@ -481,7 +482,7 @@ export function Dashboard() {
           
           <div className="hidden">
               <div id="direct-print-content">
-                  {completedBatchData && <PrintPreview data={completedBatchData} onClose={() => {}} />}
+                  {completedBatchData && <PrintPreview data={completedBatchData} operatorName={user?.username} onClose={() => {}} />}
               </div>
           </div>
         </>

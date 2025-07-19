@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -9,6 +10,7 @@ import { printElement } from '@/lib/utils';
 interface PrintPreviewProps {
   data: any; // Ideally, a well-defined type
   onClose: () => void;
+  operatorName?: string;
 }
 
 // Helper function to round to the nearest multiple
@@ -17,7 +19,7 @@ const roundToNearest = (value: number, multiple: number) => {
 };
 
 
-export function PrintPreview({ data, onClose }: PrintPreviewProps) {
+export function PrintPreview({ data, onClose, operatorName }: PrintPreviewProps) {
   
   if (!data || !data.startTime || !data.endTime) return null;
 
@@ -146,7 +148,7 @@ export function PrintPreview({ data, onClose }: PrintPreviewProps) {
                 </div>
                  <div>
                     <p className="mb-12">Operator,</p>
-                     <p>(_________________________)</p>
+                     <p className="font-semibold uppercase">{operatorName || '(_________________________)'}</p>
                 </div>
                  <div>
                     <p className="mb-12">Quality Control,</p>
