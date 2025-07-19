@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
-import { ClipboardEdit, Wrench, Inbox, MoreHorizontal, Pause, Play, Timer, Users } from 'lucide-react';
-import type { User, TruckChecklistReport, TruckChecklistItem, UserLocation, WorkOrder, WorkOrderStatus } from '@/lib/types';
+import { ClipboardEdit, Wrench, Inbox, MoreHorizontal, Pause, Play, Timer, Users, HardHat, PlusCircle, Trash2 } from 'lucide-react';
+import type { User, TruckChecklistReport, TruckChecklistItem, UserLocation, WorkOrder, WorkOrderStatus, SparePartUsage } from '@/lib/types';
 import { format, differenceInMinutes, isValid, formatDistanceStrict, addMilliseconds } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -42,6 +42,12 @@ interface DamagedVehicle {
   timestamp: string;
   damagedItems: TruckChecklistItem[];
 }
+
+const initialSparePartFormState = {
+    code: '',
+    name: '',
+    quantity: 1,
+};
 
 
 const formatDateTimeLocal = (date: Date) => {
@@ -71,6 +77,10 @@ export default function WorkOrderPage() {
   const [isAssignDialogVisible, setAssignDialogVisible] = useState(false);
   const [mechanicsToAssign, setMechanicsToAssign] = useState<User[]>([]);
   const [selectedMechanics, setSelectedMechanics] = useState<Record<string, boolean>>({});
+  
+  const [isSparePartDialogVisible, setSparePartDialogVisible] = useState(false);
+  const [workOrderToManageParts, setWorkOrderToManageParts] = useState<WorkOrder | null>(null);
+  const [sparePartForm, setSparePartForm] = useState(initialSparePartFormState);
 
   const defaultTargetDate = new Date();
   defaultTargetDate.setHours(defaultTargetDate.getHours() + 2);
@@ -96,6 +106,7 @@ export default function WorkOrderPage() {
         
         if (wo.status !== 'Selesai') return true;
 
+        // Show completed WO only on the same day it was completed
         if (wo.status === 'Selesai' && wo.completionTime) {
             const todayStr = format(new Date(), 'yyyy-MM-dd');
             const completionDateStr = format(new Date(wo.completionTime), 'yyyy-MM-dd');
@@ -129,7 +140,7 @@ export default function WorkOrderPage() {
         return null;
       })
       .filter((v): v is DamagedVehicle => v !== null && !activeWorkOrderReportIds.has(v.reportId))
-      .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.startTime).getTime());
       
     setDamagedVehicles(availableDamaged);
   };
@@ -178,6 +189,7 @@ export default function WorkOrderPage() {
       startTime: new Date().toISOString(),
       status: 'Menunggu',
       actualDamagesNotes: '',
+      usedSpareParts: [],
     };
 
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
@@ -343,7 +355,9 @@ export default function WorkOrderPage() {
             } else {
                 updatedWo.status = status;
                 if(status !== 'Tunda' && wo.status !== 'Tunda') {
-                  updatedWo.notes = '';
+                   if (!updatedWo.notes?.startsWith('DITUNDA')) {
+                       updatedWo.notes = '';
+                   }
                 }
             }
             
@@ -393,6 +407,58 @@ export default function WorkOrderPage() {
         toast({ title: 'Status Diperbarui', description: `Work Order telah diperbarui menjadi "${status}".` });
     }
 
+    loadData();
+  };
+
+  const handleOpenSparePartDialog = (workOrder: WorkOrder) => {
+    setWorkOrderToManageParts(workOrder);
+    setSparePartForm(initialSparePartFormState);
+    setSparePartDialogVisible(true);
+  };
+
+  const handleAddSparePart = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!workOrderToManageParts || !sparePartForm.name.trim() || sparePartForm.quantity <= 0) {
+        toast({ variant: 'destructive', title: 'Data tidak valid', description: 'Pastikan nama spare part diisi dan jumlah lebih dari 0.' });
+        return;
+    }
+
+    const newPart: SparePartUsage = {
+        id: new Date().toISOString() + Math.random(),
+        ...sparePartForm,
+    };
+
+    const updatedWO = {
+        ...workOrderToManageParts,
+        usedSpareParts: [...(workOrderToManageParts.usedSpareParts || []), newPart],
+    };
+
+    const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
+    const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
+    const updatedAllWorkOrders = allWorkOrders.map(wo =>
+      wo.id === updatedWO.id ? updatedWO : wo
+    );
+
+    localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedAllWorkOrders));
+    setWorkOrderToManageParts(updatedWO);
+    setSparePartForm(initialSparePartFormState);
+    loadData();
+  };
+
+  const handleDeleteSparePart = (partId: string) => {
+    if (!workOrderToManageParts) return;
+
+    const updatedParts = workOrderToManageParts.usedSpareParts?.filter(p => p.id !== partId);
+    const updatedWO = { ...workOrderToManageParts, usedSpareParts: updatedParts };
+
+    const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
+    const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
+    const updatedAllWorkOrders = allWorkOrders.map(wo =>
+      wo.id === updatedWO.id ? updatedWO : wo
+    );
+    
+    localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedAllWorkOrders));
+    setWorkOrderToManageParts(updatedWO);
     loadData();
   };
   
@@ -514,12 +580,69 @@ export default function WorkOrderPage() {
                     onChange={e => setPostponeReason(e.target.value)}
                     placeholder="Contoh: Menunggu spare part, perlu alat khusus, dll."
                     rows={4}
+                    style={{ textTransform: 'uppercase' }}
                 />
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={() => { setPostponeDialogVisible(false); setWorkOrderToPostpone(null); setPostponeReason(''); }}>Batal</Button>
                 <Button onClick={handleConfirmPostpone}>Simpan Alasan & Tunda</Button>
             </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isSparePartDialogVisible} onOpenChange={setSparePartDialogVisible}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manajemen Pemakaian Spare Part</DialogTitle>
+            <DialogDescription>
+              Tambah atau hapus spare part yang digunakan untuk Work Order kendaraan {workOrderToManageParts?.vehicle.userNik}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-6">
+            <form onSubmit={handleAddSparePart} className="grid grid-cols-12 gap-2 items-end border-b pb-4">
+              <div className="col-span-3 space-y-1">
+                <Label htmlFor="sp-code" className="text-xs">Kode Spare Part</Label>
+                <Input id="sp-code" value={sparePartForm.code} onChange={e => setSparePartForm(p => ({ ...p, code: e.target.value.toUpperCase() }))} />
+              </div>
+              <div className="col-span-5 space-y-1">
+                <Label htmlFor="sp-name" className="text-xs">Nama Spare Part</Label>
+                <Input id="sp-name" value={sparePartForm.name} onChange={e => setSparePartForm(p => ({ ...p, name: e.target.value.toUpperCase() }))} />
+              </div>
+              <div className="col-span-2 space-y-1">
+                <Label htmlFor="sp-qty" className="text-xs">Jumlah</Label>
+                <Input id="sp-qty" type="number" min="1" value={sparePartForm.quantity} onChange={e => setSparePartForm(p => ({ ...p, quantity: Number(e.target.value) }))} />
+              </div>
+              <div className="col-span-2">
+                <Button type="submit" className="w-full"><PlusCircle className="mr-2 h-4 w-4" />Tambah</Button>
+              </div>
+            </form>
+            <div>
+              <h4 className="font-semibold mb-2">Daftar Spare Part Digunakan:</h4>
+              <ScrollArea className="h-48 border rounded-md p-2">
+                {workOrderToManageParts?.usedSpareParts && workOrderToManageParts.usedSpareParts.length > 0 ? (
+                  <ul className="space-y-2">
+                    {workOrderToManageParts.usedSpareParts.map(part => (
+                      <li key={part.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                        <div className="flex-1">
+                          <span className="font-semibold">{part.name}</span>
+                          <span className="text-muted-foreground ml-2">({part.code})</span>
+                        </div>
+                        <span className="font-mono bg-background px-2 py-0.5 rounded-md text-sm">{part.quantity} Pcs</span>
+                        <Button variant="ghost" size="icon" className="ml-2 h-7 w-7" onClick={() => handleDeleteSparePart(part.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-center text-muted-foreground text-sm py-8">Belum ada spare part yang ditambahkan.</p>
+                )}
+              </ScrollArea>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setSparePartDialogVisible(false)}>Tutup</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
@@ -541,6 +664,7 @@ export default function WorkOrderPage() {
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
                     <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
+                    <TableHead>Pemakaian Spare Parts</TableHead>
                     <TableHead>Mulai Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
                     <TableHead>Total Jeda</TableHead>
@@ -557,7 +681,7 @@ export default function WorkOrderPage() {
                     return (
                         <TableRow key={wo.id}>
                           <TableCell className="text-xs">
-                              {wo.assignedMechanics.map(m => m.name).join(', ')}
+                              {Array.isArray(wo.assignedMechanics) ? wo.assignedMechanics.map(m => m.name).join(', ') : '-'}
                           </TableCell>
                           <TableCell className="font-medium">{wo.vehicle.username}</TableCell>
                           <TableCell>{wo.vehicle.userNik}</TableCell>
@@ -582,6 +706,22 @@ export default function WorkOrderPage() {
                                 disabled={wo.status === 'Selesai'}
                                 style={{ textTransform: 'uppercase' }}
                             />
+                           </TableCell>
+                          <TableCell className="w-[250px] align-top">
+                            <div className="flex flex-col items-start gap-2">
+                                {wo.usedSpareParts && wo.usedSpareParts.length > 0 && (
+                                    <ul className="list-disc pl-5 text-xs space-y-1">
+                                        {wo.usedSpareParts.map(part => (
+                                            <li key={part.id}>
+                                                <span className="font-semibold">{part.name}</span> ({part.code}) - {part.quantity} Pcs
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                <Button size="sm" variant="outline" className="text-xs" onClick={() => handleOpenSparePartDialog(wo)} disabled={wo.status === 'Selesai'}>
+                                    <HardHat className="mr-2 h-3 w-3" /> Kelola Spare Part
+                                </Button>
+                            </div>
                            </TableCell>
                            <TableCell className="text-xs">
                              {wo.processStartTime ? format(new Date(wo.processStartTime), 'd MMM, HH:mm') : '-'}

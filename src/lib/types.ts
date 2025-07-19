@@ -267,6 +267,13 @@ export interface ProductionHistoryEntry {
 
 export type WorkOrderStatus = 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | 'Selesai';
 
+export interface SparePartUsage {
+  id: string;
+  code: string;
+  name: string;
+  quantity: number;
+}
+
 export interface WorkOrder {
   id: string;
   assignedMechanics: { id: string; name: string }[];
@@ -288,4 +295,5 @@ export interface WorkOrder {
   actualDamagesNotes?: string;
   waktuMulaiTunda?: string | null;
   totalWaktuTundaMs?: number;
+  usedSpareParts?: SparePartUsage[];
 }
