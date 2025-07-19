@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/context/auth-provider';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BarChart, Package, Users, Truck, Beaker, CalendarClock, HardHat } from 'lucide-react';
+import { BarChart, Package, Users, Truck, Beaker, HardHat } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { userLocations } from '@/lib/types';
 import { Label } from '@/components/ui/label';
@@ -148,19 +148,21 @@ export default function OwnerDashboardPage() {
             </div>
             
             <div className="space-y-6">
-                <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
-                     <DataRow label="Menunggu" value={2} />
-                     <DataRow label="Dikerjakan" value={3} />
-                     <DataRow label="Selesai Hari Ini" value={5} />
-                </SectionCard>
-                
-                <SectionCard title="QC Monitoring" icon={Beaker}>
-                     <DataRow label="Suhu Air" value={28} unit="°C" />
-                     <DataRow label="pH Air" value={7.2} />
-                     <DataRow label="TDS Air" value={150} unit="ppm" />
-                     <DataRow label="Check Slump" value={12} unit="cm" />
-                     <DataRow label="Jumlah Sample" value={5} />
-                </SectionCard>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-6">
+                     <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
+                         <DataRow label="Menunggu" value={2} />
+                         <DataRow label="Dikerjakan" value={3} />
+                         <DataRow label="Selesai Hari Ini" value={5} />
+                    </SectionCard>
+                    
+                    <SectionCard title="QC Monitoring" icon={Beaker}>
+                         <DataRow label="Suhu Air" value={28} unit="°C" />
+                         <DataRow label="pH Air" value={7.2} />
+                         <DataRow label="TDS Air" value={150} unit="ppm" />
+                         <DataRow label="Check Slump" value={12} unit="cm" />
+                         <DataRow label="Jumlah Sample" value={5} />
+                    </SectionCard>
+                </div>
             </div>
         </div>
     </div>
