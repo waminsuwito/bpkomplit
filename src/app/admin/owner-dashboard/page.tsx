@@ -10,6 +10,7 @@ import { id } from 'date-fns/locale';
 import { BarChart, Package, Users, Truck, Beaker, CalendarClock, HardHat } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { userLocations } from '@/lib/types';
+import { Label } from '@/components/ui/label';
 
 
 const SectionCard = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType, children: React.ReactNode }) => (
