@@ -155,28 +155,34 @@ export default function ManajemenAlatPage() {
         const assignment = assignments.find(a => a.vehicleId === vehicle.id);
         const assignedUser = assignment ? userMap.get(assignment.userId) : undefined;
         
+        let checklistStatus: 'BAIK' | 'RUSAK' | 'PERLU PERHATIAN' | null = null;
         if (assignedUser) {
             operator = { name: assignedUser.username, nik: assignedUser.nik || '' };
-
             const checklist = checklistReportsByUserNik[assignedUser.nik || ''];
-            
-            // Auto-update status only if not manually set to a special status
-            if (!['RUSAK BERAT', 'BELUM ADA SOPIR'].includes(finalStatus)) {
-                if (checklist) {
-                    const hasDamage = checklist.items.some(item => item.status === 'rusak');
-                    const needsAttention = checklist.items.some(item => item.status === 'perlu_perhatian');
-                    if (hasDamage) finalStatus = 'RUSAK';
-                    else if (needsAttention) finalStatus = 'PERLU PERHATIAN';
-                    else finalStatus = 'BAIK';
-                } else {
-                    finalStatus = finalStatus || 'BAIK';
-                }
+            if (checklist) {
+                const hasDamage = checklist.items.some(item => item.status === 'rusak');
+                const needsAttention = checklist.items.some(item => item.status === 'perlu_perhatian');
+                if (hasDamage) checklistStatus = 'RUSAK';
+                else if (needsAttention) checklistStatus = 'PERLU PERHATIAN';
+                else checklistStatus = 'BAIK';
             }
+        }
+        
+        // Priority logic for status
+        if (finalStatus === 'RUSAK BERAT') {
+            // Manual RUSAK BERAT overrides everything
+        } else if (checklistStatus === 'RUSAK' || checklistStatus === 'PERLU PERHATIAN') {
+            // Checklist damage status takes priority over operational status
+            finalStatus = checklistStatus;
+        } else if (!assignedUser) {
+            // If no operator and no damage, it's waiting for an operator
+            finalStatus = 'BELUM ADA SOPIR';
+        } else if (checklistStatus) {
+            // If there's an operator and a clean checklist
+            finalStatus = checklistStatus; // Will be 'BAIK'
         } else {
-            // If no assignment, status should be 'BELUM ADA SOPIR' unless manually set to RUSAK BERAT
-            if (finalStatus !== 'RUSAK BERAT') {
-                finalStatus = 'BELUM ADA SOPIR';
-            }
+            // Default to BAIK if status was empty and has an operator but no checklist yet
+            finalStatus = 'BAIK';
         }
         
         return { ...vehicle, status: finalStatus, operator };
@@ -195,9 +201,7 @@ export default function ManajemenAlatPage() {
     );
     
     const operatorsBelumChecklist = operators.filter(op => {
-      // Find the vehicle associated with this operator
       const associatedVehicle = processedVehicles.find(v => v.operator?.nik === op.nik);
-      // Exclude operator if their vehicle is marked as RUSAK BERAT
       return associatedVehicle?.status !== 'RUSAK BERAT' && !checklistSubmittedNiks.has(op.nik || '');
     });
 
