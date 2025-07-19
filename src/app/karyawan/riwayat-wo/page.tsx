@@ -159,8 +159,8 @@ export default function RiwayatWoPage() {
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
-                    <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
-                    <TableHead>Pemakaian Spare Part</TableHead>
+                    <TableHead className="w-[15%]">Aktual Kerusakan yang Dikerjakan</TableHead>
+                    <TableHead className="w-[15%]">Pemakaian Spare Part</TableHead>
                     <TableHead>Mulai Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
                     <TableHead>Lama Pengerjaan</TableHead>
@@ -174,7 +174,7 @@ export default function RiwayatWoPage() {
                       return (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium whitespace-nowrap">{format(new Date(item.completionTime!), 'd MMM yyyy, HH:mm')}</TableCell>
-                            <TableCell>{Array.isArray(item.assignedMechanics) ? item.assignedMechanics.map(m => m.name).join(', ') : '-'}</TableCell>
+                            <TableCell>{(Array.isArray(item.assignedMechanics) ? item.assignedMechanics.map(m => m.name).join(', ') : '-')}</TableCell>
                             <TableCell>{item.vehicle.username}</TableCell>
                             <TableCell>{item.vehicle.userNik}</TableCell>
                             <TableCell>
