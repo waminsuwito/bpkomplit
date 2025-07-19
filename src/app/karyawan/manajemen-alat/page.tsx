@@ -22,7 +22,8 @@ import {
 import { getUsers } from '@/lib/auth';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-provider';
-import { useToast } from '@/hooks/use-toast';
+import type { User } from '@/lib/types';
+
 
 const VEHICLES_STORAGE_KEY_PREFIX = 'app-vehicles-';
 const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
@@ -39,21 +40,16 @@ const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
     }
 }
 
-interface Report {
-  id: string | number;
-  operator: string;
-  kendaraan: string;
-  lokasi: UserLocation | 'N/A';
-  status: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Belum Checklist';
-  waktu: string;
-  items?: TruckChecklistItem[];
-  isHeavilyDamaged?: boolean;
+interface DialogInfo {
+  title: string;
+  vehicles?: Vehicle[];
+  users?: User[];
 }
 
 
 const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, colorClass, asLink, href }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean, colorClass?: string, asLink?: boolean, href?: string }) => {
     const cardContent = (
-      <Card onClick={onClick} className={cn(clickable && 'cursor-pointer transition-colors hover:bg-muted/50')}>
+      <Card onClick={onClick} className={cn('transition-transform hover:scale-105', clickable && 'cursor-pointer hover:bg-muted/50')}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{title}</CardTitle>
           <Icon className="h-4 w-4 text-muted-foreground" />
@@ -74,9 +70,7 @@ const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, c
 
 export default function ManajemenAlatPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
-  const [detailReport, setDetailReport] = useState<Report | null>(null);
+  const [dialogContent, setDialogContent] = useState<DialogInfo | null>(null);
   
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
   const [allUsers, setAllUsers] = useState<Omit<User, 'password'>[]>([]);
@@ -112,30 +106,26 @@ export default function ManajemenAlatPage() {
 
   const filteredData = useMemo(() => {
     if (!user?.location) {
-      return { totalAlat: 0, alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: 0, belumChecklist: [] };
+      return { totalAlat: [], alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: [], belumChecklist: [] };
     }
-
+    
     const alatBaik = allVehicles.filter(v => v.status === 'BAIK');
     const perluPerhatian = allVehicles.filter(v => v.status === 'PERLU PERHATIAN');
     const alatRusak = allVehicles.filter(v => v.status === 'RUSAK');
     const alatRusakBerat = allVehicles.filter(v => v.status === 'RUSAK BERAT');
 
     const checklistSubmittedNiks = new Set(checklistReports.map(report => report.userNik));
-    const operators = allUsers.filter(u => u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR'));
+    const operators = allUsers.filter(u => (u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR')) && u.location === user.location);
 
     const operatorsBelumChecklist = operators.filter(op => !checklistSubmittedNiks.has(op.nik || ''));
 
-    // Note: This logic assumes a 1-to-1 mapping of operator to vehicle, which might not be perfect.
-    // It's a best-effort based on the current data structure.
-    const belumChecklist = operatorsBelumChecklist;
-
     return {
-      totalAlat: allVehicles.length,
+      totalAlat: allVehicles,
       alatBaik,
       perluPerhatian,
       alatRusak,
-      alatRusakBerat: alatRusakBerat.length,
-      belumChecklist,
+      alatRusakBerat,
+      belumChecklist: operatorsBelumChecklist,
     };
   }, [user, allVehicles, checklistReports, allUsers]);
   
@@ -149,42 +139,59 @@ export default function ManajemenAlatPage() {
     }
   };
 
-  const handleShowBelumChecklist = () => {
-    setDialogContent({
-        title: "Daftar Operator Belum Checklist",
-        reports: filteredData.belumChecklist.map(user => ({
-            id: user.id,
-            operator: user.username,
-            kendaraan: 'N/A', // Vehicle info isn't directly linked to user
-            lokasi: user.location || 'N/A',
-            status: 'Belum Checklist',
-            waktu: '-'
-        }))
-    });
+  const handleShowDialog = (title: string, vehicles: Vehicle[] = [], users: User[] = []) => {
+    setDialogContent({ title, vehicles, users });
   }
 
   return (
     <div className="space-y-6" id="manajemen-alat-content">
       <Dialog open={!!dialogContent} onOpenChange={() => setDialogContent(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{dialogContent?.title}</DialogTitle>
+             <DialogDescription>
+                Berikut adalah daftar yang sesuai dengan kategori yang Anda pilih.
+             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Operator</TableHead>
-                        <TableHead>Lokasi</TableHead>
-                        <TableHead>Status</TableHead>
+                        {dialogContent?.vehicles && dialogContent.vehicles.length > 0 && (
+                            <>
+                                <TableHead>No. Lambung</TableHead>
+                                <TableHead>No. Polisi</TableHead>
+                                <TableHead>Jenis Kendaraan</TableHead>
+                                <TableHead>Status</TableHead>
+                            </>
+                        )}
+                        {dialogContent?.users && dialogContent.users.length > 0 && (
+                            <>
+                                <TableHead>Nama Operator</TableHead>
+                                <TableHead>NIK</TableHead>
+                                <TableHead>Jabatan</TableHead>
+                            </>
+                        )}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {dialogContent?.reports.map(report => (
-                        <TableRow key={report.id}>
-                            <TableCell>{report.operator}</TableCell>
-                            <TableCell>{report.lokasi}</TableCell>
-                            <TableCell><Badge variant="outline">{report.status}</Badge></TableCell>
+                    {dialogContent?.vehicles?.map(vehicle => (
+                        <TableRow key={vehicle.id}>
+                            <TableCell>{vehicle.nomorLambung}</TableCell>
+                            <TableCell>{vehicle.nomorPolisi}</TableCell>
+                            <TableCell>{vehicle.jenisKendaraan}</TableCell>
+                            <TableCell>
+                                <Badge variant={getBadgeVariant(vehicle.status)} className={cn({'bg-green-600 hover:bg-green-700 text-white': vehicle.status === 'BAIK', 'bg-amber-500 hover:bg-amber-600 text-white': vehicle.status === 'PERLU PERHATIAN' })}>
+                                    {vehicle.status}
+                                </Badge>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                    {dialogContent?.users?.map(user => (
+                        <TableRow key={user.id}>
+                            <TableCell>{user.username}</TableCell>
+                            <TableCell>{user.nik}</TableCell>
+                            <TableCell>{user.jabatan}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -204,15 +211,15 @@ export default function ManajemenAlatPage() {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <StatCard title="Total Alat" value={filteredData.totalAlat} description="Jumlah semua armada terdaftar" icon={Package} />
-        <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Armada dalam kondisi operasional" icon={CheckCircle2} colorClass="text-green-600" />
-        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Armada dengan catatan minor" icon={AlertTriangle} colorClass="text-amber-500" />
-        <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Armada yang membutuhkan perbaikan" icon={Wrench} colorClass="text-destructive" />
-        <StatCard title="Belum Checklist" value={filteredData.belumChecklist.length} description="Klik untuk melihat daftar" icon={FileWarning} colorClass="text-sky-600" clickable onClick={handleShowBelumChecklist} />
+        <StatCard title="Total Alat" value={filteredData.totalAlat.length} description="Klik untuk melihat semua" icon={Package} clickable onClick={() => handleShowDialog('Daftar Semua Alat', filteredData.totalAlat)} />
+        <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat daftar" icon={CheckCircle2} colorClass="text-green-600" clickable onClick={() => handleShowDialog('Daftar Alat Baik', filteredData.alatBaik)} />
+        <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat daftar" icon={AlertTriangle} colorClass="text-amber-500" clickable onClick={() => handleShowDialog('Daftar Alat Perlu Perhatian', filteredData.perluPerhatian)} />
+        <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat daftar" icon={Wrench} colorClass="text-destructive" clickable onClick={() => handleShowDialog('Daftar Alat Rusak', filteredData.alatRusak)} />
+        <StatCard title="Belum Checklist" value={filteredData.belumChecklist.length} description="Klik untuk melihat operator" icon={FileWarning} colorClass="text-sky-600" clickable onClick={() => handleShowDialog('Operator Belum Checklist', [], filteredData.belumChecklist)} />
         {(user?.jabatan === 'KEPALA WORKSHOP' || user?.jabatan === 'KEPALA MEKANIK') && (
              <StatCard 
                 title="Alat Rusak Berat" 
-                value={filteredData.alatRusakBerat} 
+                value={filteredData.alatRusakBerat.length} 
                 description="Klik untuk mengelola" 
                 icon={ShieldAlert} 
                 clickable 
