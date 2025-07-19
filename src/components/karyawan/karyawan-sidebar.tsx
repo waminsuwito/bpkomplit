@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck, Construction, Wrench, ClipboardEdit, ScrollText, Users } from 'lucide-react';
+import { Fingerprint, ClipboardList, Megaphone, ShieldAlert, AlertTriangle, Lightbulb, MessageSquareWarning, ArrowLeft, ClipboardCheck, Construction, Wrench, ClipboardEdit, ScrollText, Users, SteeringWheel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-provider';
@@ -77,9 +77,9 @@ export function KaryawanSidebar() {
             icon: Wrench,
         },
         {
-            href: '/karyawan/manajemen-operator-sopir',
-            label: 'Manajemen Oprator/Sopir',
-            icon: Users,
+            href: '/karyawan/sopir-batangan',
+            label: 'Sopir Batangan',
+            icon: SteeringWheel,
         }
       );
   }
