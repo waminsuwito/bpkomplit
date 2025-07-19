@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye, ShieldAlert } from 'lucide-react';
+import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye, ShieldAlert, FileWarning } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { type TruckChecklistReport, type TruckChecklistItem, type UserLocation, type Vehicle } from '@/lib/types';
 import { printElement } from '@/lib/utils';
@@ -22,8 +22,11 @@ import {
 import { getUsers } from '@/lib/auth';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-provider';
+import { useToast } from '@/hooks/use-toast';
 
 const VEHICLES_STORAGE_KEY_PREFIX = 'app-vehicles-';
+const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
+const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
 
 const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
     try {
@@ -71,10 +74,13 @@ const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, c
 
 export default function ManajemenAlatPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [dialogContent, setDialogContent] = useState<{ title: string; reports: Report[] } | null>(null);
   const [detailReport, setDetailReport] = useState<Report | null>(null);
   
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+  const [allUsers, setAllUsers] = useState<Omit<User, 'password'>[]>([]);
+  const [checklistReports, setChecklistReports] = useState<TruckChecklistReport[]>([]);
 
   useEffect(() => {
     if (!user?.location) return;
@@ -82,6 +88,17 @@ export default function ManajemenAlatPage() {
     const loadData = () => {
         const vehicles = getVehiclesForLocation(user.location as UserLocation);
         setAllVehicles(vehicles);
+
+        const users = getUsers().map(({ password, ...rest }) => rest);
+        setAllUsers(users);
+
+        const tmChecklistsStr = localStorage.getItem(TM_CHECKLIST_STORAGE_KEY) || '[]';
+        const loaderChecklistsStr = localStorage.getItem(LOADER_CHECKLIST_STORAGE_KEY) || '[]';
+        const tmReports: TruckChecklistReport[] = JSON.parse(tmChecklistsStr);
+        const loaderReports: TruckChecklistReport[] = JSON.parse(loaderChecklistsStr);
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const todaysReports = [...tmReports, ...loaderReports].filter(r => r.id.includes(todayStr));
+        setChecklistReports(todaysReports);
     }
     
     loadData();
@@ -95,7 +112,7 @@ export default function ManajemenAlatPage() {
 
   const filteredData = useMemo(() => {
     if (!user?.location) {
-      return { totalAlat: 0, sudahChecklistReports: [], belumChecklistReports: [], alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: 0 };
+      return { totalAlat: 0, alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: 0, belumChecklist: [] };
     }
 
     const alatBaik = allVehicles.filter(v => v.status === 'BAIK');
@@ -103,18 +120,24 @@ export default function ManajemenAlatPage() {
     const alatRusak = allVehicles.filter(v => v.status === 'RUSAK');
     const alatRusakBerat = allVehicles.filter(v => v.status === 'RUSAK BERAT');
 
+    const checklistSubmittedNiks = new Set(checklistReports.map(report => report.userNik));
+    const operators = allUsers.filter(u => u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR'));
+
+    const operatorsBelumChecklist = operators.filter(op => !checklistSubmittedNiks.has(op.nik || ''));
+
+    // Note: This logic assumes a 1-to-1 mapping of operator to vehicle, which might not be perfect.
+    // It's a best-effort based on the current data structure.
+    const belumChecklist = operatorsBelumChecklist;
+
     return {
       totalAlat: allVehicles.length,
       alatBaik,
       perluPerhatian,
       alatRusak,
       alatRusakBerat: alatRusakBerat.length,
-      // The logic for 'checklist' status is no longer relevant with the new vehicle management system.
-      // These are kept as empty arrays to prevent breaking the dialog logic.
-      sudahChecklistReports: [],
-      belumChecklistReports: [],
+      belumChecklist,
     };
-  }, [user, allVehicles]);
+  }, [user, allVehicles, checklistReports, allUsers]);
   
   const getBadgeVariant = (status: string) => {
     switch (status) {
@@ -126,16 +149,50 @@ export default function ManajemenAlatPage() {
     }
   };
 
-  // This function is kept for potential future use but is simplified.
-  const handleCardClick = (type: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Total') => {
-      // In a real implementation, this would show a dialog with the filtered vehicles.
-      // For now, it's a placeholder.
-      toast({ title: `Menampilkan Alat: ${type}`, description: "Fungsi dialog rincian sedang dikembangkan." });
-  };
-
+  const handleShowBelumChecklist = () => {
+    setDialogContent({
+        title: "Daftar Operator Belum Checklist",
+        reports: filteredData.belumChecklist.map(user => ({
+            id: user.id,
+            operator: user.username,
+            kendaraan: 'N/A', // Vehicle info isn't directly linked to user
+            lokasi: user.location || 'N/A',
+            status: 'Belum Checklist',
+            waktu: '-'
+        }))
+    });
+  }
 
   return (
     <div className="space-y-6" id="manajemen-alat-content">
+      <Dialog open={!!dialogContent} onOpenChange={() => setDialogContent(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{dialogContent?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Operator</TableHead>
+                        <TableHead>Lokasi</TableHead>
+                        <TableHead>Status</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {dialogContent?.reports.map(report => (
+                        <TableRow key={report.id}>
+                            <TableCell>{report.operator}</TableCell>
+                            <TableCell>{report.lokasi}</TableCell>
+                            <TableCell><Badge variant="outline">{report.status}</Badge></TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-2 text-lg">
           <Building className="h-6 w-6 text-muted-foreground" />
@@ -146,11 +203,12 @@ export default function ManajemenAlatPage() {
         </Button>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <StatCard title="Total Alat" value={filteredData.totalAlat} description="Jumlah semua armada terdaftar" icon={Package} />
         <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Armada dalam kondisi operasional" icon={CheckCircle2} colorClass="text-green-600" />
         <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Armada dengan catatan minor" icon={AlertTriangle} colorClass="text-amber-500" />
         <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Armada yang membutuhkan perbaikan" icon={Wrench} colorClass="text-destructive" />
+        <StatCard title="Belum Checklist" value={filteredData.belumChecklist.length} description="Klik untuk melihat daftar" icon={FileWarning} colorClass="text-sky-600" clickable onClick={handleShowBelumChecklist} />
         {(user?.jabatan === 'KEPALA WORKSHOP' || user?.jabatan === 'KEPALA MEKANIK') && (
              <StatCard 
                 title="Alat Rusak Berat" 
