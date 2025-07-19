@@ -160,6 +160,7 @@ export default function RiwayatWoPage() {
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
                     <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
+                    <TableHead>Pemakaian Spare Part</TableHead>
                     <TableHead>Mulai Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
                     <TableHead>Lama Pengerjaan</TableHead>
@@ -184,6 +185,19 @@ export default function RiwayatWoPage() {
                               </ul>
                             </TableCell>
                             <TableCell className="text-xs whitespace-pre-wrap">{item.actualDamagesNotes || '-'}</TableCell>
+                            <TableCell>
+                                {item.usedSpareParts && item.usedSpareParts.length > 0 ? (
+                                    <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    {item.usedSpareParts.map(part => (
+                                        <li key={part.id}>
+                                        {part.name} ({part.code}) - {part.quantity} Pcs
+                                        </li>
+                                    ))}
+                                    </ul>
+                                ) : (
+                                    '-'
+                                )}
+                            </TableCell>
                              <TableCell className="text-xs">
                                 {item.processStartTime ? format(new Date(item.processStartTime), 'd MMM, HH:mm') : '-'}
                             </TableCell>
