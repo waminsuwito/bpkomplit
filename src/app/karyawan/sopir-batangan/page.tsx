@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import type { User, Vehicle, UserLocation } from '@/lib/types';
 import { getUsers } from '@/lib/auth';
-import { SteeringWheel, Trash2, PlusCircle, Inbox } from 'lucide-react';
+import { Users, Trash2, PlusCircle, Inbox } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 
@@ -132,7 +132,7 @@ export default function SopirBatanganPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <SteeringWheel className="h-6 w-6 text-primary" />
+            <Users className="h-6 w-6 text-primary" />
             Penugasan Sopir/Operator ke Kendaraan (Batangan)
           </CardTitle>
           <CardDescription>
