@@ -228,17 +228,17 @@ export default function ManajemenAlatPage() {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard title="Total Alat" value={filteredData.totalAlat.length} description="Klik untuk melihat semua" icon={Package} clickable onClick={() => handleShowDialog('Daftar Semua Alat', filteredData.totalAlat)} />
+        <StatCard title="Total Alat" value={filteredData.totalAlat.length} description="Klik untuk melihat daftar" icon={Package} clickable onClick={() => handleShowDialog('Daftar Semua Alat', filteredData.totalAlat)} />
         <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat daftar" icon={CheckCircle2} colorClass="text-green-600" clickable onClick={() => handleShowDialog('Daftar Alat Baik', filteredData.alatBaik)} />
-        <StatCard title="Alat Baik, Belum Ada Oprator/Driver" value={filteredData.alatBaikNoOperator.length} description="Klik untuk melihat operator" icon={UserX} colorClass="text-blue-600" clickable onClick={() => handleShowDialog('Operator Tersedia (Belum Checklist)', [], filteredData.alatBaikNoOperator)} />
+        <StatCard title="Alat Baik, Belum Ada Oprator/Driver" value={filteredData.alatBaikNoOperator.length} description="Klik untuk melihat daftar" icon={UserX} colorClass="text-blue-600" clickable onClick={() => handleShowDialog('Operator Tersedia (Belum Checklist)', [], filteredData.alatBaikNoOperator)} />
         <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat daftar" icon={AlertTriangle} colorClass="text-amber-500" clickable onClick={() => handleShowDialog('Daftar Alat Perlu Perhatian', filteredData.perluPerhatian)} />
         <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat daftar" icon={Wrench} colorClass="text-destructive" clickable onClick={() => handleShowDialog('Daftar Alat Rusak', filteredData.alatRusak)} />
-        <StatCard title="Belum Checklist" value={filteredData.belumChecklist.length} description="Klik untuk melihat operator" icon={FileWarning} colorClass="text-sky-600" clickable onClick={() => handleShowDialog('Operator Belum Checklist', [], filteredData.belumChecklist)} />
+        <StatCard title="Belum Checklist" value={filteredData.belumChecklist.length} description="Klik untuk melihat daftar" icon={FileWarning} colorClass="text-sky-600" clickable onClick={() => handleShowDialog('Operator Belum Checklist', [], filteredData.belumChecklist)} />
         {(user?.jabatan === 'KEPALA WORKSHOP' || user?.jabatan === 'KEPALA MEKANIK') && (
              <StatCard 
                 title="Alat Rusak Berat" 
                 value={filteredData.alatRusakBerat.length} 
-                description="Klik untuk mengelola" 
+                description="Klik untuk melihat daftar" 
                 icon={ShieldAlert} 
                 clickable 
                 asLink
