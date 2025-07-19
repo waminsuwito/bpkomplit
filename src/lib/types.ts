@@ -263,3 +263,28 @@ export interface ProductionHistoryEntry {
     semen: number;
   };
 }
+
+
+export type WorkOrderStatus = 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | 'Selesai';
+
+export interface WorkOrder {
+  id: string;
+  mechanicId: string;
+  mechanicName: string;
+  vehicle: {
+    reportId: string;
+    userId: string;
+    userNik: string;
+    username: string;
+    location: UserLocation;
+    timestamp: string;
+    damagedItems: TruckChecklistItem[];
+  };
+  startTime: string; // ISO String for WO creation
+  processStartTime?: string; // ISO String, set when status becomes 'Proses'
+  targetCompletionTime?: string; // ISO String
+  status: WorkOrderStatus;
+  completionTime?: string; // ISO String, set when status becomes 'Selesai'
+  notes?: string; // "Tepat Waktu", "Terlambat 1 jam", etc. or reason for delay
+  actualDamagesNotes?: string;
+}

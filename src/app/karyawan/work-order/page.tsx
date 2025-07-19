@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import { ClipboardEdit, Wrench, Inbox, MoreHorizontal } from 'lucide-react';
-import type { TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
+import type { TruckChecklistReport, TruckChecklistItem, UserLocation, WorkOrder, WorkOrderStatus } from '@/lib/types';
 import { format, differenceInMinutes, isValid, formatDistanceStrict } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -38,21 +38,6 @@ interface DamagedVehicle {
   damagedItems: TruckChecklistItem[];
 }
 
-type WorkOrderStatus = 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | 'Selesai';
-
-interface WorkOrder {
-  id: string; // Combination of reportId and mechanicId and timestamp
-  mechanicId: string;
-  mechanicName: string;
-  vehicle: DamagedVehicle;
-  startTime: string; // ISO String for WO creation
-  processStartTime?: string; // ISO String, set when status becomes 'Proses'
-  targetCompletionTime?: string; // ISO String
-  status: WorkOrderStatus;
-  completionTime?: string; // ISO String, set when status becomes 'Selesai'
-  notes?: string; // "Tepat Waktu", "Terlambat 1 jam", etc.
-  actualDamagesNotes?: string;
-}
 
 const formatDateTimeLocal = (date: Date) => {
     const year = date.getFullYear();
@@ -73,6 +58,10 @@ export default function WorkOrderPage() {
   
   const [isTargetDialogVisible, setTargetDialogVisible] = useState(false);
   const [workOrderToProcess, setWorkOrderToProcess] = useState<WorkOrder | null>(null);
+  
+  const [isPostponeDialogVisible, setPostponeDialogVisible] = useState(false);
+  const [workOrderToPostpone, setWorkOrderToPostpone] = useState<WorkOrder | null>(null);
+  const [postponeReason, setPostponeReason] = useState('');
   
   // Set default target to 2 hours from now
   const defaultTargetDate = new Date();
@@ -256,14 +245,48 @@ export default function WorkOrderPage() {
     setWorkOrderToProcess(null);
     loadData();
   };
+  
+  const handleConfirmPostpone = () => {
+    if (!workOrderToPostpone || !postponeReason.trim()) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Alasan penundaan harus diisi.' });
+        return;
+    }
+
+    const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
+    const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
+
+    const updatedWorkOrders = allWorkOrders.map(wo => {
+        if (wo.id === workOrderToPostpone.id) {
+            return {
+                ...wo,
+                status: 'Tunda' as const,
+                notes: `DITUNDA: ${postponeReason.toUpperCase()}`
+            };
+        }
+        return wo;
+    });
+
+    localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedWorkOrders));
+    toast({ title: 'Status Diperbarui', description: 'Work Order telah ditunda.' });
+
+    setPostponeDialogVisible(false);
+    setWorkOrderToPostpone(null);
+    setPostponeReason('');
+    loadData();
+  };
 
 
   const handleUpdateWorkOrderStatus = (workOrder: WorkOrder, status: WorkOrderStatus) => {
     if (status === 'Proses') {
-      // Special handling for "Proses" to trigger the dialog
       setWorkOrderToProcess(workOrder);
       setTargetDialogVisible(true);
       return;
+    }
+    
+    if (status === 'Tunda') {
+        setWorkOrderToPostpone(workOrder);
+        setPostponeDialogVisible(true);
+        return;
     }
 
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
@@ -271,7 +294,7 @@ export default function WorkOrderPage() {
 
     const updatedWorkOrders = allWorkOrders.map(wo => {
         if (wo.id === workOrder.id) {
-            const updatedWo: WorkOrder = { ...wo, status };
+            const updatedWo: WorkOrder = { ...wo, status, notes: '' }; // Clear previous notes
             
             if (status === 'Selesai') {
                 const now = new Date();
@@ -303,8 +326,7 @@ export default function WorkOrderPage() {
 
                 updatedWo.completionTime = now.toISOString();
             } else {
-                delete updatedWo.completionTime; // Remove completion time if status is not 'Selesai'
-                delete updatedWo.notes;
+                delete updatedWo.completionTime;
             }
             return updatedWo;
         }
@@ -387,6 +409,31 @@ export default function WorkOrderPage() {
         </DialogContent>
       </Dialog>
       
+      <Dialog open={isPostponeDialogVisible} onOpenChange={setPostponeDialogVisible}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Alasan Penundaan</DialogTitle>
+                <DialogDescription>
+                    Apa alasan penundaan perbaikan ini? Catatan Anda akan disimpan.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Label htmlFor="postpone-reason">Alasan Penundaan</Label>
+                <Textarea
+                    id="postpone-reason"
+                    value={postponeReason}
+                    onChange={e => setPostponeReason(e.target.value)}
+                    placeholder="Contoh: Menunggu spare part, perlu alat khusus, dll."
+                    rows={4}
+                />
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => { setPostponeDialogVisible(false); setWorkOrderToPostpone(null); setPostponeReason(''); }}>Batal</Button>
+                <Button onClick={handleConfirmPostpone}>Simpan Alasan & Tunda</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <Card>
         <CardHeader>
           <CardTitle>List WO Saya</CardTitle>
@@ -453,6 +500,7 @@ export default function WorkOrderPage() {
                            <TableCell className={cn("text-xs font-semibold", {
                                 'text-green-600': wo.notes?.startsWith('Lebih Cepat'),
                                 'text-destructive': wo.notes?.startsWith('Terlambat'),
+                                'text-amber-600': wo.status === 'Tunda',
                             })}>
                                 {wo.notes || '-'}
                             </TableCell>
