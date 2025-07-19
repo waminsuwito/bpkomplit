@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth-provider';
 import { Header } from '@/components/dashboard/header';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 
-const ALLOWED_ROLES = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3'];
+const ALLOWED_ROLES = ['SUPER ADMIN', 'ADMIN LOGISTIK', 'LOGISTIK MATERIAL', 'HSE/K3', 'OWNER'];
 
 export default function AdminLayout({
   children,

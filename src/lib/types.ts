@@ -23,6 +23,7 @@ export interface Formula {
 }
 
 export const jabatanOptions = [
+  "OWNER",
   "SUPER ADMIN",
   "ADMIN BP",
   "ADMIN LOGISTIK",

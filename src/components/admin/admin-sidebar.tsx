@@ -82,7 +82,7 @@ export function AdminSidebar() {
     const checkUnread = () => {
       if (!user) return;
       try {
-        const isSuperAdmin = user.jabatan === 'SUPER ADMIN';
+        const isSuperAdmin = user.jabatan === 'SUPER ADMIN' || user.jabatan === 'OWNER';
 
         const anonData = localStorage.getItem(ANONYMOUS_REPORTS_KEY);
         const anonReports: AnonymousReport[] = anonData ? JSON.parse(anonData) : [];
@@ -129,7 +129,7 @@ export function AdminSidebar() {
   }, [user]);
 
   let navItems = [];
-  if (user?.jabatan === 'SUPER ADMIN') {
+  if (user?.jabatan === 'SUPER ADMIN' || user?.jabatan === 'OWNER') {
     navItems = superAdminNav;
   } else if (user?.jabatan === 'ADMIN LOGISTIK') {
     navItems = adminLogistikNav;

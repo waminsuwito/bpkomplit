@@ -8,6 +8,7 @@ const USERS_STORAGE_KEY = 'app-users';
 
 // The initial set of users to seed the application with if none are found.
 const initialUsers: User[] = [
+  { id: 'owner-main', username: 'owner', password: '123', jabatan: 'OWNER', location: 'BP PEKANBARU', nik: 'OWNER-001' },
   { id: 'superadmin-main', username: 'admin', password: '123', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-001' },
   { id: 'superadmin-new', username: 'superadmin', password: 'superadmin', jabatan: 'SUPER ADMIN', location: 'BP PEKANBARU', nik: 'SUPER-999' },
   { id: 'op-1', username: 'mirul', password: '123', jabatan: 'OPRATOR BP', location: 'BP PEKANBARU', nik: 'OP-001' },
