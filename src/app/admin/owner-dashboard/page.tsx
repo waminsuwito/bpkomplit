@@ -105,7 +105,7 @@ export default function OwnerDashboardPage() {
             </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SectionCard title="Pengecoran" icon={BarChart}>
                 <DataRow label="Schedule Cor" value={10} />
                 <DataRow label="Penambahan" value={2} />
