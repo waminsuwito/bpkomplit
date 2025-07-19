@@ -91,17 +91,15 @@ export default function WorkOrderPage() {
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
     const myCurrentWOs = allWorkOrders.filter(wo => {
-        // Fix: Add a defensive check to ensure wo.assignedMechanics exists and is an array.
         const isAssigned = Array.isArray(wo.assignedMechanics) && wo.assignedMechanics.some(m => m.id === user.id);
         if (!isAssigned) return false;
         
         if (wo.status !== 'Selesai') return true;
 
         if (wo.status === 'Selesai' && wo.completionTime) {
-            const twentyFourHoursAgo = new Date();
-            twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-            const completionDate = new Date(wo.completionTime);
-            return completionDate > twentyFourHoursAgo;
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
+            const completionDateStr = format(new Date(wo.completionTime), 'yyyy-MM-dd');
+            return completionDateStr === todayStr;
         }
 
         return false;
