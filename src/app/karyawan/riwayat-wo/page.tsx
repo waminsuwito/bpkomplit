@@ -33,7 +33,7 @@ interface WorkOrder {
   };
   startTime: string; // ISO String
   targetCompletionTime: string; // ISO String
-  status: 'Menunggu' | 'Dikerjakan' | 'Tunda' | 'Selesai';
+  status: 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | 'Selesai';
   completionTime?: string; // ISO String, set when status becomes 'Selesai'
   notes?: string;
   actualDamagesNotes?: string;

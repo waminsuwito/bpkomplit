@@ -38,7 +38,7 @@ interface DamagedVehicle {
   damagedItems: TruckChecklistItem[];
 }
 
-type WorkOrderStatus = 'Menunggu' | 'Dikerjakan' | 'Tunda' | 'Selesai';
+type WorkOrderStatus = 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | 'Selesai';
 
 interface WorkOrder {
   id: string; // Combination of reportId and mechanicId and timestamp
@@ -170,7 +170,7 @@ export default function WorkOrderPage() {
       vehicle: vehicleToRepair,
       startTime: new Date().toISOString(),
       targetCompletionTime: new Date(targetTime).toISOString(),
-      status: 'Dikerjakan',
+      status: 'Menunggu',
       actualDamagesNotes: '',
     };
 
@@ -220,7 +220,7 @@ export default function WorkOrderPage() {
 
   const handleActualDamagesChange = (workOrderId: string, text: string) => {
     const updatedOrders = myWorkOrders.map(wo => 
-      wo.id === workOrderId ? { ...wo, actualDamagesNotes: text } : wo
+      wo.id === workOrderId ? { ...wo, actualDamagesNotes: text.toUpperCase() } : wo
     );
     setMyWorkOrders(updatedOrders);
   };
@@ -229,7 +229,7 @@ export default function WorkOrderPage() {
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
     const updatedAllWorkOrders = allWorkOrders.map(wo => 
-      wo.id === workOrderId ? { ...wo, actualDamagesNotes: text } : wo
+      wo.id === workOrderId ? { ...wo, actualDamagesNotes: text.toUpperCase() } : wo
     );
     localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedAllWorkOrders));
     toast({ title: 'Catatan disimpan', description: 'Catatan kerusakan aktual telah diperbarui.' });
@@ -387,6 +387,7 @@ export default function WorkOrderPage() {
                                 rows={3}
                                 className="min-w-[200px]"
                                 disabled={wo.status === 'Selesai'}
+                                style={{ textTransform: 'uppercase' }}
                             />
                            </TableCell>
                            <TableCell className="text-xs">{isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}</TableCell>
@@ -410,6 +411,9 @@ export default function WorkOrderPage() {
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Menunggu')}>
                                         Menunggu
+                                    </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Proses')}>
+                                        Proses
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')}>
                                         Dikerjakan
