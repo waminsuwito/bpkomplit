@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye, ShieldAlert, FileWarning } from 'lucide-react';
+import { Printer, CheckSquare, XSquare, CheckCircle2, AlertTriangle, Wrench, Package, Building, Eye, ShieldAlert, FileWarning, UserX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { type TruckChecklistReport, type TruckChecklistItem, type UserLocation, type Vehicle } from '@/lib/types';
 import { printElement } from '@/lib/utils';
@@ -106,15 +106,13 @@ export default function ManajemenAlatPage() {
 
   const filteredData = useMemo(() => {
     if (!user?.location) {
-      return { totalAlat: [], alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: [], belumChecklist: [] };
+      return { totalAlat: [], alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: [], belumChecklist: [], alatBaikNoOperator: [] };
     }
     
     const alatBaik = allVehicles.filter(v => v.status === 'BAIK');
     const perluPerhatian = allVehicles.filter(v => v.status === 'PERLU PERHATIAN');
     const alatRusak = allVehicles.filter(v => v.status === 'RUSAK');
     const alatRusakBerat = allVehicles.filter(v => v.status === 'RUSAK BERAT');
-
-    const checklistSubmittedNiks = new Set(checklistReports.map(report => report.userNik));
     
     // Get all operators for the current location
     const operators = allUsers.filter(u => 
@@ -122,21 +120,21 @@ export default function ManajemenAlatPage() {
         u.location === user.location
     );
 
-    // Get NIKs of operators whose vehicles are marked as "RUSAK BERAT"
-    const rusakBeratVehicleNopol = new Set(alatRusakBerat.map(v => v.nomorPolisi));
+    const checklistSubmittedNiks = new Set(checklistReports.map(report => report.userNik));
     
-    // This part is tricky as there's no direct vehicle-to-operator link.
-    // For now, we will filter operators who have NOT submitted a checklist.
-    // We can't directly filter out vehicles with "RUSAK BERAT" from the "Belum Checklist"
-    // because the checklist is tied to the operator, not the vehicle.
-    // The most logical approach is to filter out OPERATORS who we assume operate these vehicles.
-    // This is an imperfect assumption. The "Belum Checklist" count reflects operators, not vehicles.
-    // We'll proceed with filtering operators, which is the current logic.
-    // The user's request is to not require checklists for "RUSAK BERAT" vehicles.
-    // We will assume that an operator is tied to a vehicle for this purpose.
-    
+    // Vehicles that are not "RUSAK BERAT" are considered operational and need a checklist
+    const operationalVehicles = allVehicles.filter(v => v.status !== 'RUSAK BERAT');
+
     const operatorsBelumChecklist = operators.filter(op => !checklistSubmittedNiks.has(op.nik || ''));
 
+    // "Alat Baik, Belum Ada Operator" logic:
+    // It's the intersection of vehicles with "BAIK" status and operators who haven't done a checklist.
+    // Since we cannot link a vehicle to an operator, we show operators who are available for "BAIK" vehicles.
+    const alatBaikNoOperator = operators.filter(op => 
+        !checklistSubmittedNiks.has(op.nik || '') && // Operator hasn't submitted a checklist
+        alatBaik.length > 0 // And there are "BAIK" vehicles available
+    );
+    
     return {
       totalAlat: allVehicles,
       alatBaik,
@@ -144,6 +142,7 @@ export default function ManajemenAlatPage() {
       alatRusak,
       alatRusakBerat,
       belumChecklist: operatorsBelumChecklist,
+      alatBaikNoOperator,
     };
   }, [user, allVehicles, checklistReports, allUsers]);
   
@@ -228,9 +227,10 @@ export default function ManajemenAlatPage() {
         </Button>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard title="Total Alat" value={filteredData.totalAlat.length} description="Klik untuk melihat semua" icon={Package} clickable onClick={() => handleShowDialog('Daftar Semua Alat', filteredData.totalAlat)} />
         <StatCard title="Alat Baik" value={filteredData.alatBaik.length} description="Klik untuk melihat daftar" icon={CheckCircle2} colorClass="text-green-600" clickable onClick={() => handleShowDialog('Daftar Alat Baik', filteredData.alatBaik)} />
+        <StatCard title="Alat Baik, Belum Ada Oprator/Driver" value={filteredData.alatBaikNoOperator.length} description="Klik untuk melihat operator" icon={UserX} colorClass="text-blue-600" clickable onClick={() => handleShowDialog('Operator Tersedia (Belum Checklist)', [], filteredData.alatBaikNoOperator)} />
         <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat daftar" icon={AlertTriangle} colorClass="text-amber-500" clickable onClick={() => handleShowDialog('Daftar Alat Perlu Perhatian', filteredData.perluPerhatian)} />
         <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat daftar" icon={Wrench} colorClass="text-destructive" clickable onClick={() => handleShowDialog('Daftar Alat Rusak', filteredData.alatRusak)} />
         <StatCard title="Belum Checklist" value={filteredData.belumChecklist.length} description="Klik untuk melihat operator" icon={FileWarning} colorClass="text-sky-600" clickable onClick={() => handleShowDialog('Operator Belum Checklist', [], filteredData.belumChecklist)} />
