@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
-import { addDays, format, startOfDay, isValid } from 'date-fns';
+import { addDays, format, startOfDay, isValid, formatDistanceStrict } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { CalendarIcon, Search, Printer, Inbox, ScrollText } from 'lucide-react';
 import { printElement, cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ interface WorkOrder {
     damagedItems: TruckChecklistItem[];
   };
   startTime: string; // ISO String
+  processStartTime?: string; // ISO String
   targetCompletionTime: string; // ISO String
   status: 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | 'Selesai';
   completionTime?: string; // ISO String, set when status becomes 'Selesai'
@@ -88,6 +89,11 @@ export default function RiwayatWoPage() {
     return filtered;
   }, [allWorkOrders, searchTerm, date]);
   
+  const calculateDuration = (start?: string, end?: string): string => {
+    if (!start || !end) return '-';
+    return formatDistanceStrict(new Date(end), new Date(start), { locale: localeID, unit: 'minute' });
+  };
+
   return (
     <Card id="print-content">
       <CardHeader className="no-print">
@@ -175,7 +181,9 @@ export default function RiwayatWoPage() {
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
                     <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
+                    <TableHead>Mulai Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
+                    <TableHead>Lama Pengerjaan</TableHead>
                     <TableHead>Keterangan</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -197,9 +205,13 @@ export default function RiwayatWoPage() {
                               </ul>
                             </TableCell>
                             <TableCell className="text-xs whitespace-pre-wrap">{item.actualDamagesNotes || '-'}</TableCell>
+                             <TableCell className="text-xs">
+                                {item.processStartTime ? format(new Date(item.processStartTime), 'd MMM, HH:mm') : '-'}
+                            </TableCell>
                             <TableCell className="text-xs">
                               {isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}
                             </TableCell>
+                            <TableCell className="text-xs">{calculateDuration(item.processStartTime, item.completionTime)}</TableCell>
                             <TableCell className={cn("text-xs font-semibold", {
                                 'text-green-600': item.notes?.startsWith('Lebih Cepat'),
                                 'text-destructive': item.notes?.startsWith('Terlambat'),

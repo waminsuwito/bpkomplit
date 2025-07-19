@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import { ClipboardEdit, Wrench, Inbox, MoreHorizontal } from 'lucide-react';
 import type { TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
-import { format, differenceInMinutes, isValid } from 'date-fns';
+import { format, differenceInMinutes, isValid, formatDistanceStrict } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,8 @@ interface WorkOrder {
   mechanicId: string;
   mechanicName: string;
   vehicle: DamagedVehicle;
-  startTime: string; // ISO String
+  startTime: string; // ISO String for WO creation
+  processStartTime?: string; // ISO String, set when status becomes 'Proses'
   targetCompletionTime: string; // ISO String
   status: WorkOrderStatus;
   completionTime?: string; // ISO String, set when status becomes 'Selesai'
@@ -243,6 +244,11 @@ export default function WorkOrderPage() {
     const updatedWorkOrders = allWorkOrders.map(wo => {
         if (wo.id === workOrder.id) {
             const updatedWo: WorkOrder = { ...wo, status };
+            
+            if (status === 'Proses' && !updatedWo.processStartTime) {
+                updatedWo.processStartTime = new Date().toISOString();
+            }
+
             if (status === 'Selesai') {
                 const now = new Date();
                 const targetTime = new Date(workOrder.targetCompletionTime);
@@ -255,7 +261,7 @@ export default function WorkOrderPage() {
                     let result = '';
                     if (hours > 0) result += `${hours} jam `;
                     if (mins > 0) result += `${mins} menit`;
-                    return result.trim();
+                    return result.trim() || 'kurang dari 1 menit';
                 };
 
                 if (diffMins <= 5 && diffMins >= -5) {
@@ -287,6 +293,11 @@ export default function WorkOrderPage() {
 
     loadData();
   };
+  
+    const calculateDuration = (start?: string, end?: string): string => {
+        if (!start || !end) return '-';
+        return formatDistanceStrict(new Date(end), new Date(start), { locale: localeID, unit: 'minute' });
+    };
 
   return (
     <div className="space-y-6">
@@ -364,7 +375,9 @@ export default function WorkOrderPage() {
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
                     <TableHead>Aktual Kerusakan yang Dikerjakan</TableHead>
+                    <TableHead>Mulai Dikerjakan</TableHead>
                     <TableHead>Target Selesai</TableHead>
+                    <TableHead>Lama Pengerjaan</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Keterangan</TableHead>
                     <TableHead className="text-center">Aksi</TableHead>
@@ -400,7 +413,11 @@ export default function WorkOrderPage() {
                                 style={{ textTransform: 'uppercase' }}
                             />
                            </TableCell>
+                           <TableCell className="text-xs">
+                             {wo.processStartTime ? format(new Date(wo.processStartTime), 'd MMM, HH:mm') : '-'}
+                           </TableCell>
                            <TableCell className="text-xs">{isTargetDateValid ? format(targetDate, 'd MMM, HH:mm') : '-'}</TableCell>
+                           <TableCell className="text-xs">{calculateDuration(wo.processStartTime, wo.completionTime)}</TableCell>
                            <TableCell className="font-semibold">
                               {wo.status}
                           </TableCell>
