@@ -269,8 +269,7 @@ export type WorkOrderStatus = 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | '
 
 export interface WorkOrder {
   id: string;
-  mechanicId: string;
-  mechanicName: string;
+  assignedMechanics: { id: string; name: string }[];
   vehicle: {
     reportId: string;
     userId: string;

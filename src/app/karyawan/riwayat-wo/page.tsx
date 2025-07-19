@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,32 +14,10 @@ import { addDays, format, startOfDay, isValid, formatDistanceStrict } from 'date
 import { id as localeID } from 'date-fns/locale';
 import { CalendarIcon, Search, Printer, Inbox, ScrollText } from 'lucide-react';
 import { printElement, cn } from '@/lib/utils';
-import type { User, TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
+import type { User, TruckChecklistReport, TruckChecklistItem, UserLocation, WorkOrder } from '@/lib/types';
 import { useAuth } from '@/context/auth-provider';
 
 const WORK_ORDER_STORAGE_KEY = 'app-work-orders';
-
-interface WorkOrder {
-  id: string;
-  mechanicId: string;
-  mechanicName: string;
-  vehicle: {
-    reportId: string;
-    userId: string;
-    userNik: string;
-    username: string;
-    location: UserLocation;
-    timestamp: string;
-    damagedItems: TruckChecklistItem[];
-  };
-  startTime: string; // ISO String
-  processStartTime?: string; // ISO String
-  targetCompletionTime: string; // ISO String
-  status: 'Menunggu' | 'Proses' | 'Dikerjakan' | 'Tunda' | 'Selesai';
-  completionTime?: string; // ISO String, set when status becomes 'Selesai'
-  notes?: string;
-  actualDamagesNotes?: string;
-}
 
 export default function RiwayatWoPage() {
   const { user } = useAuth();
@@ -80,7 +59,7 @@ export default function RiwayatWoPage() {
       const lowercasedFilter = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (r) =>
-          r.mechanicName.toLowerCase().includes(lowercasedFilter) ||
+          r.assignedMechanics.some(m => m.name.toLowerCase().includes(lowercasedFilter)) ||
           r.vehicle.username.toLowerCase().includes(lowercasedFilter) ||
           r.vehicle.userNik.toLowerCase().includes(lowercasedFilter)
       );
@@ -176,7 +155,7 @@ export default function RiwayatWoPage() {
                 <TableHeader>
                     <TableRow>
                     <TableHead>Tgl. Selesai</TableHead>
-                    <TableHead>Mekanik</TableHead>
+                    <TableHead>Nama Mekanik</TableHead>
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
@@ -189,12 +168,12 @@ export default function RiwayatWoPage() {
                 </TableHeader>
                 <TableBody>
                     {filteredRecords.map((item) => {
-                      const targetDate = new Date(item.targetCompletionTime);
-                      const isTargetDateValid = isValid(targetDate);
+                      const targetDate = item.targetCompletionTime ? new Date(item.targetCompletionTime) : null;
+                      const isTargetDateValid = targetDate && isValid(targetDate);
                       return (
                         <TableRow key={item.id}>
                             <TableCell className="font-medium whitespace-nowrap">{format(new Date(item.completionTime!), 'd MMM yyyy, HH:mm')}</TableCell>
-                            <TableCell>{item.mechanicName}</TableCell>
+                            <TableCell>{item.assignedMechanics.map(m => m.name).join(', ')}</TableCell>
                             <TableCell>{item.vehicle.username}</TableCell>
                             <TableCell>{item.vehicle.userNik}</TableCell>
                             <TableCell>

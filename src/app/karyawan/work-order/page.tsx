@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
-import { ClipboardEdit, Wrench, Inbox, MoreHorizontal, Pause, Play, Timer } from 'lucide-react';
-import type { TruckChecklistReport, TruckChecklistItem, UserLocation, WorkOrder, WorkOrderStatus } from '@/lib/types';
+import { ClipboardEdit, Wrench, Inbox, MoreHorizontal, Pause, Play, Timer, Users } from 'lucide-react';
+import type { User, TruckChecklistReport, TruckChecklistItem, UserLocation, WorkOrder, WorkOrderStatus } from '@/lib/types';
 import { format, differenceInMinutes, isValid, formatDistanceStrict, addMilliseconds } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -24,6 +24,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { getUsers } from '@/lib/auth';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+
 
 const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
 const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
@@ -64,6 +68,10 @@ export default function WorkOrderPage() {
   const [workOrderToPostpone, setWorkOrderToPostpone] = useState<WorkOrder | null>(null);
   const [postponeReason, setPostponeReason] = useState('');
   
+  const [isAssignDialogVisible, setAssignDialogVisible] = useState(false);
+  const [mechanicsToAssign, setMechanicsToAssign] = useState<User[]>([]);
+  const [selectedMechanics, setSelectedMechanics] = useState<Record<string, boolean>>({});
+
   const defaultTargetDate = new Date();
   defaultTargetDate.setHours(defaultTargetDate.getHours() + 2);
   const [targetTime, setTargetTime] = useState(formatDateTimeLocal(defaultTargetDate));
@@ -83,11 +91,10 @@ export default function WorkOrderPage() {
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
     const myCurrentWOs = allWorkOrders.filter(wo => {
-        if (wo.mechanicId !== user.id) return false;
+        const isAssigned = wo.assignedMechanics.some(m => m.id === user.id);
+        if (!isAssigned) return false;
         
-        if (wo.status !== 'Selesai') {
-            return true;
-        }
+        if (wo.status !== 'Selesai') return true;
 
         if (wo.status === 'Selesai' && wo.completionTime) {
             const twentyFourHoursAgo = new Date();
@@ -132,22 +139,42 @@ export default function WorkOrderPage() {
     loadData();
   }, [user]);
 
-  const handleCreateWorkOrder = () => {
+  const handleStartWorkOrderCreation = () => {
     if (!selectedVehicleId || !user) {
         toast({ variant: 'destructive', title: 'Pilih Kendaraan', description: 'Anda harus memilih kendaraan yang rusak terlebih dahulu.' });
         return;
     }
+    const allUsers = getUsers();
+    const availableMechanics = allUsers.filter(
+        u => u.jabatan === 'KEPALA MEKANIK' || u.jabatan === 'KEPALA WORKSHOP' || u.jabatan === 'HELPER'
+    );
+    setMechanicsToAssign(availableMechanics);
+    setSelectedMechanics({ [user.id]: true }); // Auto-select current user
+    setAssignDialogVisible(true);
+  };
+
+  const handleConfirmAssignment = () => {
+    if (!selectedVehicleId || !user) return;
+    
+    const assignedIds = Object.keys(selectedMechanics).filter(id => selectedMechanics[id]);
+    if (assignedIds.length === 0) {
+        toast({ variant: 'destructive', title: 'Pilih Mekanik', description: 'Anda harus menugaskan setidaknya satu mekanik.' });
+        return;
+    }
+
+    const assignedMechanics = mechanicsToAssign
+        .filter(m => assignedIds.includes(m.id))
+        .map(m => ({ id: m.id, name: m.username }));
 
     const vehicleToRepair = damagedVehicles.find(v => v.reportId === selectedVehicleId);
     if (!vehicleToRepair) {
-      toast({ variant: 'destructive', title: 'Kendaraan tidak ditemukan', description: 'Kendaraan yang dipilih tidak lagi tersedia.' });
+      toast({ variant: 'destructive', title: 'Kendaraan tidak ditemukan' });
       return;
     }
 
     const newWorkOrder: WorkOrder = {
       id: `${vehicleToRepair.reportId}-${user.id}-${Date.now()}`,
-      mechanicId: user.id,
-      mechanicName: user.username,
+      assignedMechanics,
       vehicle: vehicleToRepair,
       startTime: new Date().toISOString(),
       status: 'Menunggu',
@@ -159,8 +186,9 @@ export default function WorkOrderPage() {
     allWorkOrders.push(newWorkOrder);
     localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(allWorkOrders));
 
-    toast({ title: 'Work Order Dibuat', description: `Anda sekarang mengerjakan kendaraan NIK ${vehicleToRepair.userNik}` });
+    toast({ title: 'Work Order Dibuat', description: `Telah dibuat WO untuk kendaraan NIK ${vehicleToRepair.userNik}` });
     
+    setAssignDialogVisible(false);
     setSelectedVehicleId(null);
     loadData();
   };
@@ -272,7 +300,6 @@ export default function WorkOrderPage() {
 
   const handleUpdateWorkOrderStatus = (workOrder: WorkOrder, status: WorkOrderStatus | 'Lanjutkan') => {
     if (status === 'Proses') {
-      // Only show dialog if starting from 'Menunggu'
       if (workOrder.status === 'Menunggu') {
         setWorkOrderToProcess(workOrder);
         setTargetDialogVisible(true);
@@ -311,10 +338,14 @@ export default function WorkOrderPage() {
                         totalWaktuTundaMs: totalJedaBaru,
                         targetCompletionTime: targetBaru.toISOString(),
                     };
+                } else {
+                  updatedWo.status = 'Proses';
                 }
             } else {
                 updatedWo.status = status;
-                updatedWo.notes = ''; // Clear previous notes on other status changes
+                if(status !== 'Tunda') {
+                  updatedWo.notes = '';
+                }
             }
             
             if (status === 'Selesai') {
@@ -346,7 +377,7 @@ export default function WorkOrderPage() {
                 }
 
                 updatedWo.completionTime = now.toISOString();
-            } else if (status !== 'Lanjutkan') { // Ensure completion time is cleared if not 'Selesai'
+            } else if (status !== 'Lanjutkan') { 
                 delete updatedWo.completionTime;
             }
             return updatedWo;
@@ -408,12 +439,41 @@ export default function WorkOrderPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleCreateWorkOrder} disabled={!selectedVehicleId}>
+            <Button onClick={handleStartWorkOrderCreation} disabled={!selectedVehicleId}>
               <Wrench className="mr-2 h-4 w-4" /> Perbaiki
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isAssignDialogVisible} onOpenChange={setAssignDialogVisible}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Tugaskan Mekanik</DialogTitle>
+            <DialogDescription>Pilih satu atau lebih mekanik untuk mengerjakan Work Order ini.</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-72 my-4">
+            <div className="space-y-2 pr-6">
+              {mechanicsToAssign.map(m => (
+                <div key={m.id} className="flex items-center space-x-2 rounded-md border p-3">
+                  <Checkbox 
+                    id={`mech-${m.id}`} 
+                    checked={selectedMechanics[m.id] || false}
+                    onCheckedChange={(checked) => setSelectedMechanics(prev => ({...prev, [m.id]: !!checked}))}
+                  />
+                  <label htmlFor={`mech-${m.id}`} className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    {m.username} <span className="text-muted-foreground">({m.jabatan})</span>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogVisible(false)}>Batal</Button>
+            <Button onClick={handleConfirmAssignment}><Users className="mr-2 h-4 w-4" /> Tugaskan Mekanik</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isTargetDialogVisible} onOpenChange={setTargetDialogVisible}>
         <DialogContent>
@@ -477,6 +537,7 @@ export default function WorkOrderPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Nama Mekanik</TableHead>
                     <TableHead>Operator</TableHead>
                     <TableHead>NIK Kendaraan</TableHead>
                     <TableHead>Detail Dari Oprator</TableHead>
@@ -496,6 +557,9 @@ export default function WorkOrderPage() {
                     const isTargetDateValid = targetDate && isValid(targetDate);
                     return (
                         <TableRow key={wo.id}>
+                          <TableCell className="text-xs">
+                              {wo.assignedMechanics.map(m => m.name).join(', ')}
+                          </TableCell>
                           <TableCell className="font-medium">{wo.vehicle.username}</TableCell>
                           <TableCell>{wo.vehicle.userNik}</TableCell>
                           <TableCell>
