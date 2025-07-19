@@ -79,6 +79,23 @@ export default function SopirBatanganPage() {
       toast({ variant: 'destructive', title: 'Data Tidak Lengkap', description: 'Silakan pilih sopir dan kendaraan.' });
       return;
     }
+    
+    const selectedUser = allUsers.find(u => u.id === selectedUserId);
+    const selectedVehicle = allVehicles.find(v => v.id === selectedVehicleId);
+
+    if (!selectedUser || !selectedVehicle) {
+      toast({ variant: 'destructive', title: 'Data tidak ditemukan' });
+      return;
+    }
+
+    if (selectedVehicle.status === 'RUSAK BERAT') {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Penugasan Ditolak', 
+        description: `Kendaraan ${selectedVehicle.nomorPolisi} kondisi rusak berat. Tidak bisa melakukan penugasan.` 
+      });
+      return;
+    }
 
     const existingUserAssignment = assignments.find(a => a.userId === selectedUserId);
     if (existingUserAssignment) {
@@ -89,14 +106,6 @@ export default function SopirBatanganPage() {
     const existingVehicleAssignment = assignments.find(a => a.vehicleId === selectedVehicleId);
     if (existingVehicleAssignment) {
       toast({ variant: 'destructive', title: 'Gagal', description: `Kendaraan ini sudah ditugaskan ke sopir lain (${existingVehicleAssignment.username}).` });
-      return;
-    }
-    
-    const selectedUser = allUsers.find(u => u.id === selectedUserId);
-    const selectedVehicle = allVehicles.find(v => v.id === selectedVehicleId);
-
-    if (!selectedUser || !selectedVehicle) {
-      toast({ variant: 'destructive', title: 'Data tidak ditemukan' });
       return;
     }
 
@@ -160,8 +169,8 @@ export default function SopirBatanganPage() {
                 <SelectTrigger id="vehicle-select"><SelectValue placeholder="Pilih..." /></SelectTrigger>
                 <SelectContent>
                   {allVehicles.map(v => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.nomorPolisi} ({v.nomorLambung})
+                    <SelectItem key={v.id} value={v.id} disabled={v.status === 'RUSAK BERAT'}>
+                      {v.nomorPolisi} ({v.nomorLambung}) {v.status === 'RUSAK BERAT' && ' - RUSAK BERAT'}
                     </SelectItem>
                   ))}
                 </SelectContent>
