@@ -146,9 +146,25 @@ export function EditableVehicleList() {
 
   const handleSaveData = () => {
     if (!user?.location) return;
+
+    const activeRows = tableData.filter(
+      row => (row.nomorPolisi && row.nomorPolisi.trim() !== '') || (row.nomorLambung && row.nomorLambung.trim() !== '')
+    );
+  
+    // Validation check
+    for (const row of activeRows) {
+      if (!row.nomorLambung?.trim() || !row.nomorPolisi?.trim() || !row.jenisKendaraan?.trim()) {
+        toast({
+          variant: 'destructive',
+          title: 'Data Tidak Lengkap',
+          description: 'DATA KENDARAAN BELUM LENGKAP, SILAKAN LENGKAPI UNTUK MENYIMPAN',
+        });
+        return; // Stop the save process
+      }
+    }
+
     try {
-      const vehiclesToSave = tableData
-        .filter(row => (row.nomorPolisi && row.nomorPolisi.trim() !== '') || (row.nomorLambung && row.nomorLambung.trim() !== ''))
+      const vehiclesToSave = activeRows
         .map((vehicleData) => ({
           nomorLambung: vehicleData.nomorLambung || '',
           nomorPolisi: vehicleData.nomorPolisi || '',
