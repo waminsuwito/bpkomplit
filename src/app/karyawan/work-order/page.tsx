@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import { ClipboardEdit, Wrench, Inbox, MoreHorizontal } from 'lucide-react';
 import type { TruckChecklistReport, TruckChecklistItem, UserLocation } from '@/lib/types';
-import { format, formatDistanceToNow, differenceInMinutes, isValid } from 'date-fns';
+import { format, differenceInMinutes, isValid } from 'date-fns';
 import { id as localeID } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -247,13 +247,23 @@ export default function WorkOrderPage() {
                 const now = new Date();
                 const targetTime = new Date(workOrder.targetCompletionTime);
                 const diffMins = differenceInMinutes(now, targetTime);
+                
+                const formatDetailedDifference = (minutes: number) => {
+                    const absMinutes = Math.abs(minutes);
+                    const hours = Math.floor(absMinutes / 60);
+                    const mins = absMinutes % 60;
+                    let result = '';
+                    if (hours > 0) result += `${hours} jam `;
+                    if (mins > 0) result += `${mins} menit`;
+                    return result.trim();
+                };
 
                 if (diffMins <= 5 && diffMins >= -5) {
                     updatedWo.notes = 'Tepat Waktu';
                 } else if (diffMins < -5) {
-                    updatedWo.notes = `Lebih Cepat ${formatDistanceToNow(now, { addSuffix: false, locale: localeID })} dari target`;
+                    updatedWo.notes = `Lebih Cepat ${formatDetailedDifference(diffMins)} dari target`;
                 } else {
-                    updatedWo.notes = `Terlambat ${formatDistanceToNow(targetTime, { addSuffix: false, locale: localeID })}`;
+                    updatedWo.notes = `Terlambat ${formatDetailedDifference(diffMins)}`;
                 }
 
                 updatedWo.completionTime = now.toISOString();
