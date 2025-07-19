@@ -100,6 +100,55 @@ export function EditableVehicleList() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
+    const { key } = e;
+    let nextRowIndex = rowIndex;
+    let nextColIndex = colIndex;
+
+    const moveFocus = () => {
+        const nextField = fields[nextColIndex];
+        const nextInputId = `${nextField}-${nextRowIndex}`;
+        const nextInput = document.getElementById(nextInputId);
+        if (nextInput) {
+            nextInput.focus();
+        }
+    };
+    
+    switch (key) {
+        case 'Enter':
+        case 'ArrowDown':
+            e.preventDefault();
+            nextRowIndex = (rowIndex + 1) % TOTAL_ROWS;
+            moveFocus();
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            nextRowIndex = (rowIndex - 1 + TOTAL_ROWS) % TOTAL_ROWS;
+            moveFocus();
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            nextColIndex = colIndex + 1;
+            if (nextColIndex >= fields.length) {
+                nextColIndex = 0;
+                nextRowIndex = (rowIndex + 1) % TOTAL_ROWS;
+            }
+            moveFocus();
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            nextColIndex = colIndex - 1;
+            if (nextColIndex < 0) {
+                nextColIndex = fields.length - 1;
+                nextRowIndex = (rowIndex - 1 + TOTAL_ROWS) % TOTAL_ROWS;
+            }
+            moveFocus();
+            break;
+        default:
+            return;
+    }
+  };
+
   if (isLoading) {
     return (
         <div className="p-4 space-y-2">
@@ -144,7 +193,8 @@ export function EditableVehicleList() {
                                 <Input
                                     id={`${field}-${index}`}
                                     value={row[field] || ''}
-                                    onChange={(e) => handleInputChange(index, field, e.target.value)}
+                                    onChange={(e) => handleInputChange(index, field as keyof Vehicle, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(e, index, colIndex)}
                                     className="w-full h-full border-none rounded-none text-center bg-transparent text-black"
                                     style={{ textTransform: 'uppercase' }}
                                 />
