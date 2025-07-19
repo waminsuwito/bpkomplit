@@ -12,6 +12,18 @@ import { getUsers } from '@/lib/auth';
 import { Users, Trash2, PlusCircle, Inbox } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 
 const VEHICLES_STORAGE_KEY_PREFIX = 'app-vehicles-';
 const ASSIGNMENTS_STORAGE_KEY_PREFIX = 'app-assignments-';
@@ -206,10 +218,31 @@ export default function SopirBatanganPage() {
                                     <TableCell className="font-medium">{a.username}</TableCell>
                                     <TableCell>{a.vehicleNomorPolisi}</TableCell>
                                     <TableCell className="text-center">
-                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteAssignment(a.id)}>
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Hapus
-                                        </Button>
+                                       <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="sm">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Hapus
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Apakah Anda yakin ingin menghapus penugasan untuk sopir 
+                                                <span className="font-bold"> {a.username} </span>
+                                                 dari kendaraan 
+                                                 <span className="font-bold"> {a.vehicleNomorPolisi}</span>?
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Tidak</AlertDialogCancel>
+                                              <AlertDialogAction onClick={() => handleDeleteAssignment(a.id)}>
+                                                Yakin
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
