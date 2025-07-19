@@ -3,6 +3,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,6 +26,8 @@ import { useAuth } from '@/context/auth-provider';
 
 const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
 const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
+const HEAVY_DAMAGE_STORAGE_KEY = 'app-heavy-damage-vehicles';
+
 
 interface Report {
   id: string | number;
@@ -34,21 +37,30 @@ interface Report {
   status: 'Baik' | 'Perlu Perhatian' | 'Rusak' | 'Belum Checklist';
   waktu: string;
   items?: TruckChecklistItem[];
+  isHeavilyDamaged?: boolean;
 }
 
 
-const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, colorClass }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean, colorClass?: string }) => (
-  <Card onClick={onClick} className={cn(clickable && 'cursor-pointer transition-colors hover:bg-muted/50')}>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      <div className={cn("text-2xl font-bold", colorClass)}>{value}</div>
-      <p className="text-xs text-muted-foreground">{description}</p>
-    </CardContent>
-  </Card>
-);
+const StatCard = ({ title, value, description, icon: Icon, onClick, clickable, colorClass, asLink, href }: { title: string; value: string | number; description: string; icon: React.ElementType, onClick?: () => void, clickable?: boolean, colorClass?: string, asLink?: boolean, href?: string }) => {
+    const cardContent = (
+      <Card onClick={onClick} className={cn(clickable && 'cursor-pointer transition-colors hover:bg-muted/50')}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className={cn("text-2xl font-bold", colorClass)}>{value}</div>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </CardContent>
+      </Card>
+    );
+
+    if (asLink && href) {
+        return <Link href={href}>{cardContent}</Link>;
+    }
+    
+    return cardContent;
+};
 
 export default function ManajemenAlatPage() {
   const { user } = useAuth();
@@ -57,6 +69,7 @@ export default function ManajemenAlatPage() {
   
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
   const [notSubmittedReports, setNotSubmittedReports] = useState<Report[]>([]);
+  const [heavyDamageIds, setHeavyDamageIds] = useState<Set<string | number>>(new Set());
 
   useEffect(() => {
     // 1. Get today's date string
@@ -77,6 +90,10 @@ export default function ManajemenAlatPage() {
     
     const allChecklists = [...allTmChecklists, ...allLoaderChecklists];
 
+    const storedHeavyDamage = localStorage.getItem(HEAVY_DAMAGE_STORAGE_KEY);
+    const currentHeavyDamageIds: Set<string|number> = storedHeavyDamage ? new Set(JSON.parse(storedHeavyDamage)) : new Set();
+    setHeavyDamageIds(currentHeavyDamageIds);
+
     // 4. Filter for today's reports only
     // Note: The loader checklist ID is now `userId-date`, not composite key
     const todaysChecklists = allChecklists.filter(report => report.id.includes(todayStr));
@@ -92,16 +109,19 @@ export default function ManajemenAlatPage() {
             return 'Baik';
         };
 
+        const status = getOverallStatus(report.items);
+
         return {
             id: report.id,
             operator: report.username,
             kendaraan: `Kendaraan NIK: ${report.userNik}`, // Using NIK as vehicle identifier
             lokasi: report.location,
-            status: getOverallStatus(report.items),
+            status: status,
             waktu: format(new Date(report.timestamp), 'HH:mm'),
             items: report.items.filter(item => item.status === 'rusak' || item.status === 'perlu_perhatian'),
+            isHeavilyDamaged: status === 'Rusak' && currentHeavyDamageIds.has(report.id),
         };
-    });
+    }).filter(report => !currentHeavyDamageIds.has(report.id)); // Exclude heavily damaged from this list
     setSubmittedReports(processedSubmittedReports);
 
     // 7. Identify users who have NOT submitted a report today
@@ -122,21 +142,22 @@ export default function ManajemenAlatPage() {
 
   const filteredData = useMemo(() => {
     if (!user?.location) {
-      return { totalAlat: 0, sudahChecklistReports: [], belumChecklistReports: [], alatBaik: [], perluPerhatian: [], alatRusak: [] };
+      return { totalAlat: 0, sudahChecklistReports: [], belumChecklistReports: [], alatBaik: [], perluPerhatian: [], alatRusak: [], alatRusakBerat: 0 };
     }
 
     const sudah = submittedReports.filter(r => r.lokasi === user.location);
     const belum = notSubmittedReports.filter(r => r.lokasi === user.location);
 
     return {
-      totalAlat: sudah.length + belum.length,
+      totalAlat: sudah.length + belum.length + heavyDamageIds.size,
       sudahChecklistReports: sudah,
       belumChecklistReports: belum,
       alatBaik: sudah.filter(r => r.status === 'Baik'),
       perluPerhatian: sudah.filter(r => r.status === 'Perlu Perhatian'),
       alatRusak: sudah.filter(r => r.status === 'Rusak'),
+      alatRusakBerat: heavyDamageIds.size,
     };
-  }, [user, submittedReports, notSubmittedReports]);
+  }, [user, submittedReports, notSubmittedReports, heavyDamageIds]);
   
   const getBadgeVariant = (status: string) => {
     switch (status) {
@@ -204,7 +225,15 @@ export default function ManajemenAlatPage() {
         <StatCard title="Perlu Perhatian" value={filteredData.perluPerhatian.length} description="Klik untuk melihat rincian" icon={AlertTriangle} clickable onClick={() => handleCardClick('Perlu Perhatian')} colorClass="text-amber-500" />
         <StatCard title="Alat Rusak" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={Wrench} clickable onClick={() => handleCardClick('Rusak')} colorClass="text-destructive" />
         {user?.jabatan === 'KEPALA WORKSHOP' && (
-             <StatCard title="Alat Rusak Berat" value={filteredData.alatRusak.length} description="Klik untuk melihat rincian" icon={ShieldAlert} clickable onClick={() => handleCardClick('Rusak')} colorClass="text-destructive font-black" />
+             <StatCard 
+                title="Alat Rusak Berat" 
+                value={filteredData.alatRusakBerat} 
+                description="Klik untuk mengelola" 
+                icon={ShieldAlert} 
+                clickable 
+                asLink
+                href="/karyawan/alat-rusak-berat"
+                colorClass="text-destructive font-black" />
         )}
       </div>
 
