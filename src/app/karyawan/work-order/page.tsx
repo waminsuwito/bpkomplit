@@ -47,7 +47,7 @@ interface WorkOrder {
   vehicle: DamagedVehicle;
   startTime: string; // ISO String for WO creation
   processStartTime?: string; // ISO String, set when status becomes 'Proses'
-  targetCompletionTime: string; // ISO String
+  targetCompletionTime?: string; // ISO String
   status: WorkOrderStatus;
   completionTime?: string; // ISO String, set when status becomes 'Selesai'
   notes?: string; // "Tepat Waktu", "Terlambat 1 jam", etc.
@@ -70,7 +70,9 @@ export default function WorkOrderPage() {
   const [damagedVehicles, setDamagedVehicles] = useState<DamagedVehicle[]>([]);
   const [myWorkOrders, setMyWorkOrders] = useState<WorkOrder[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  
   const [isTargetDialogVisible, setTargetDialogVisible] = useState(false);
+  const [workOrderToProcess, setWorkOrderToProcess] = useState<WorkOrder | null>(null);
   
   // Set default target to 2 hours from now
   const defaultTargetDate = new Date();
@@ -110,7 +112,7 @@ export default function WorkOrderPage() {
         }
 
         return false; // By default, don't show completed orders without a completion time
-    });
+    }).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
     setMyWorkOrders(myCurrentWOs);
 
     // Create a set of report IDs that are already part of an active work order
@@ -147,16 +149,11 @@ export default function WorkOrderPage() {
     loadData();
   }, [user]);
 
-  const handleStartRepair = () => {
-    if (!selectedVehicleId) {
-      toast({ variant: 'destructive', title: 'Pilih Kendaraan', description: 'Anda harus memilih kendaraan yang rusak terlebih dahulu.' });
-      return;
-    }
-    setTargetDialogVisible(true);
-  };
-
   const handleCreateWorkOrder = () => {
-    if (!selectedVehicleId || !user) return;
+    if (!selectedVehicleId || !user) {
+        toast({ variant: 'destructive', title: 'Pilih Kendaraan', description: 'Anda harus memilih kendaraan yang rusak terlebih dahulu.' });
+        return;
+    }
 
     const vehicleToRepair = damagedVehicles.find(v => v.reportId === selectedVehicleId);
     if (!vehicleToRepair) {
@@ -170,7 +167,6 @@ export default function WorkOrderPage() {
       mechanicName: user.username,
       vehicle: vehicleToRepair,
       startTime: new Date().toISOString(),
-      targetCompletionTime: new Date(targetTime).toISOString(),
       status: 'Menunggu',
       actualDamagesNotes: '',
     };
@@ -183,7 +179,6 @@ export default function WorkOrderPage() {
     toast({ title: 'Work Order Dibuat', description: `Anda sekarang mengerjakan kendaraan NIK ${vehicleToRepair.userNik}` });
     
     // Refresh lists and close dialog
-    setTargetDialogVisible(false);
     setSelectedVehicleId(null);
     loadData();
   };
@@ -235,9 +230,42 @@ export default function WorkOrderPage() {
     localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedAllWorkOrders));
     toast({ title: 'Catatan disimpan', description: 'Catatan kerusakan aktual telah diperbarui.' });
   };
+  
+  const handleConfirmTargetTime = () => {
+    if (!workOrderToProcess) return;
+
+    const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
+    const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
+
+    const updatedWorkOrders = allWorkOrders.map(wo => {
+        if (wo.id === workOrderToProcess.id) {
+            return {
+                ...wo,
+                status: 'Proses' as const,
+                processStartTime: new Date().toISOString(),
+                targetCompletionTime: new Date(targetTime).toISOString()
+            };
+        }
+        return wo;
+    });
+    
+    localStorage.setItem(WORK_ORDER_STORAGE_KEY, JSON.stringify(updatedWorkOrders));
+    toast({ title: 'Status Diperbarui', description: `Work Order telah diperbarui menjadi "Proses".` });
+    
+    setTargetDialogVisible(false);
+    setWorkOrderToProcess(null);
+    loadData();
+  };
 
 
   const handleUpdateWorkOrderStatus = (workOrder: WorkOrder, status: WorkOrderStatus) => {
+    if (status === 'Proses') {
+      // Special handling for "Proses" to trigger the dialog
+      setWorkOrderToProcess(workOrder);
+      setTargetDialogVisible(true);
+      return;
+    }
+
     const storedWorkOrders = localStorage.getItem(WORK_ORDER_STORAGE_KEY);
     const allWorkOrders: WorkOrder[] = storedWorkOrders ? JSON.parse(storedWorkOrders) : [];
 
@@ -245,31 +273,32 @@ export default function WorkOrderPage() {
         if (wo.id === workOrder.id) {
             const updatedWo: WorkOrder = { ...wo, status };
             
-            if (status === 'Proses' && !updatedWo.processStartTime) {
-                updatedWo.processStartTime = new Date().toISOString();
-            }
-
             if (status === 'Selesai') {
                 const now = new Date();
-                const targetTime = new Date(workOrder.targetCompletionTime);
-                const diffMins = differenceInMinutes(now, targetTime);
                 
-                const formatDetailedDifference = (minutes: number) => {
-                    const absMinutes = Math.abs(minutes);
-                    const hours = Math.floor(absMinutes / 60);
-                    const mins = absMinutes % 60;
-                    let result = '';
-                    if (hours > 0) result += `${hours} jam `;
-                    if (mins > 0) result += `${mins} menit`;
-                    return result.trim() || 'kurang dari 1 menit';
-                };
+                if (workOrder.targetCompletionTime) {
+                    const targetDate = new Date(workOrder.targetCompletionTime);
+                    const diffMins = differenceInMinutes(now, targetDate);
+                    
+                    const formatDetailedDifference = (minutes: number) => {
+                        const absMinutes = Math.abs(minutes);
+                        const hours = Math.floor(absMinutes / 60);
+                        const mins = absMinutes % 60;
+                        let result = '';
+                        if (hours > 0) result += `${hours} jam `;
+                        if (mins > 0) result += `${mins} menit`;
+                        return result.trim() || 'kurang dari 1 menit';
+                    };
 
-                if (diffMins <= 5 && diffMins >= -5) {
-                    updatedWo.notes = 'Tepat Waktu';
-                } else if (diffMins < -5) {
-                    updatedWo.notes = `Lebih Cepat ${formatDetailedDifference(diffMins)} dari target`;
+                    if (diffMins <= 5 && diffMins >= -5) {
+                        updatedWo.notes = 'Tepat Waktu';
+                    } else if (diffMins < -5) {
+                        updatedWo.notes = `Lebih Cepat ${formatDetailedDifference(diffMins)} dari target`;
+                    } else {
+                        updatedWo.notes = `Terlambat ${formatDetailedDifference(diffMins)}`;
+                    }
                 } else {
-                    updatedWo.notes = `Terlambat ${formatDetailedDifference(diffMins)}`;
+                    updatedWo.notes = "Target waktu tidak diatur.";
                 }
 
                 updatedWo.completionTime = now.toISOString();
@@ -327,7 +356,7 @@ export default function WorkOrderPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleStartRepair} disabled={!selectedVehicleId}>
+            <Button onClick={handleCreateWorkOrder} disabled={!selectedVehicleId}>
               <Wrench className="mr-2 h-4 w-4" /> Perbaiki
             </Button>
           </div>
@@ -339,7 +368,7 @@ export default function WorkOrderPage() {
             <DialogHeader>
                 <DialogTitle>Set Target Waktu Selesai</DialogTitle>
                 <DialogDescription>
-                    Tentukan target tanggal dan jam penyelesaian untuk perbaikan ini.
+                    Pekerjaan akan dimulai. Tentukan target tanggal dan jam penyelesaian untuk perbaikan ini.
                 </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -352,8 +381,8 @@ export default function WorkOrderPage() {
                 />
             </div>
             <DialogFooter>
-                <Button variant="outline" onClick={() => setTargetDialogVisible(false)}>Batal</Button>
-                <Button onClick={handleCreateWorkOrder}>Buat Work Order</Button>
+                <Button variant="outline" onClick={() => { setTargetDialogVisible(false); setWorkOrderToProcess(null); }}>Batal</Button>
+                <Button onClick={handleConfirmTargetTime}>Mulai & Simpan Target</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -385,8 +414,8 @@ export default function WorkOrderPage() {
                 </TableHeader>
                 <TableBody>
                   {myWorkOrders.map(wo => {
-                    const targetDate = new Date(wo.targetCompletionTime);
-                    const isTargetDateValid = isValid(targetDate);
+                    const targetDate = wo.targetCompletionTime ? new Date(wo.targetCompletionTime) : null;
+                    const isTargetDateValid = targetDate && isValid(targetDate);
                     return (
                         <TableRow key={wo.id}>
                           <TableCell className="font-medium">{wo.vehicle.username}</TableCell>
@@ -436,16 +465,16 @@ export default function WorkOrderPage() {
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Menunggu')}>
+                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Menunggu')} disabled={wo.status === 'Menunggu'}>
                                         Menunggu
                                     </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Proses')}>
+                                     <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Proses')} disabled={wo.status === 'Proses'}>
                                         Proses
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')}>
+                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Dikerjakan')} disabled={wo.status === 'Dikerjakan'}>
                                         Dikerjakan
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Tunda')}>
+                                    <DropdownMenuItem onClick={() => handleUpdateWorkOrderStatus(wo, 'Tunda')} disabled={wo.status === 'Tunda'}>
                                         Tunda
                                     </DropdownMenuItem>
                                     <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => handleUpdateWorkOrderStatus(wo, 'Selesai')}>
