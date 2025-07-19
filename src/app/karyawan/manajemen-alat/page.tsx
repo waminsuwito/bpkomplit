@@ -28,6 +28,34 @@ import type { User } from '@/lib/types';
 const VEHICLES_STORAGE_KEY_PREFIX = 'app-vehicles-';
 const TM_CHECKLIST_STORAGE_KEY = 'app-tm-checklists';
 const LOADER_CHECKLIST_STORAGE_KEY = 'app-loader-checklists';
+const ASSIGNMENTS_STORAGE_KEY_PREFIX = 'app-assignments-';
+
+
+interface Assignment {
+  id: string;
+  userId: string;
+  username: string;
+  vehicleId: string;
+  vehicleNomorPolisi: string;
+}
+
+interface ProcessedVehicle extends Vehicle {
+    operator?: {
+        name: string;
+        nik: string;
+    };
+}
+
+const getAssignments = (location: UserLocation): Assignment[] => {
+  try {
+    const key = `${ASSIGNMENTS_STORAGE_KEY_PREFIX}${location}`;
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
 
 const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
     try {
@@ -42,7 +70,7 @@ const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
 
 interface DialogInfo {
   title: string;
-  vehicles?: Vehicle[];
+  vehicles?: ProcessedVehicle[];
   users?: User[];
 }
 
@@ -75,6 +103,7 @@ export default function ManajemenAlatPage() {
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
   const [allUsers, setAllUsers] = useState<Omit<User, 'password'>[]>([]);
   const [checklistReports, setChecklistReports] = useState<TruckChecklistReport[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   useEffect(() => {
     if (!user?.location) return;
@@ -85,6 +114,9 @@ export default function ManajemenAlatPage() {
 
         const users = getUsers().map(({ password, ...rest }) => rest);
         setAllUsers(users);
+
+        const assignments = getAssignments(user.location as UserLocation);
+        setAssignments(assignments);
 
         const tmChecklistsStr = localStorage.getItem(TM_CHECKLIST_STORAGE_KEY) || '[]';
         const loaderChecklistsStr = localStorage.getItem(LOADER_CHECKLIST_STORAGE_KEY) || '[]';
@@ -106,7 +138,7 @@ export default function ManajemenAlatPage() {
   
   const processedVehicles = useMemo(() => {
     if (!user?.location) return [];
-
+  
     const checklistReportsByUserNik: { [nik: string]: TruckChecklistReport } = {};
     checklistReports.forEach(report => {
         if (!checklistReportsByUserNik[report.userNik] || new Date(report.timestamp) > new Date(checklistReportsByUserNik[report.userNik].timestamp)) {
@@ -114,31 +146,42 @@ export default function ManajemenAlatPage() {
         }
     });
 
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+
     return allVehicles.map(vehicle => {
-      let finalStatus = vehicle.status;
+        let finalStatus = vehicle.status;
+        let operator: ProcessedVehicle['operator'] | undefined = undefined;
 
-      const operator = allUsers.find(u => u.username === vehicle.nomorPolisi);
-      const checklist = operator ? checklistReportsByUserNik[operator.nik || ''] : undefined;
+        const assignment = assignments.find(a => a.vehicleId === vehicle.id);
+        const assignedUser = assignment ? userMap.get(assignment.userId) : undefined;
+        
+        if (assignedUser) {
+            operator = { name: assignedUser.username, nik: assignedUser.nik || '' };
 
-      // Only auto-update status if it's not a manually set special status
-      if (!['RUSAK BERAT', 'BELUM ADA SOPIR'].includes(finalStatus)) {
-        if (checklist) {
-          const hasDamage = checklist.items.some(item => item.status === 'rusak');
-          const needsAttention = checklist.items.some(item => item.status === 'perlu_perhatian');
-          if (hasDamage) {
-            finalStatus = 'RUSAK';
-          } else if (needsAttention) {
-            finalStatus = 'PERLU PERHATIAN';
-          } else {
-            finalStatus = 'BAIK';
-          }
+            const checklist = checklistReportsByUserNik[assignedUser.nik || ''];
+            
+            // Auto-update status only if not manually set to a special status
+            if (!['RUSAK BERAT', 'BELUM ADA SOPIR'].includes(finalStatus)) {
+                if (checklist) {
+                    const hasDamage = checklist.items.some(item => item.status === 'rusak');
+                    const needsAttention = checklist.items.some(item => item.status === 'perlu_perhatian');
+                    if (hasDamage) finalStatus = 'RUSAK';
+                    else if (needsAttention) finalStatus = 'PERLU PERHATIAN';
+                    else finalStatus = 'BAIK';
+                } else {
+                    finalStatus = finalStatus || 'BAIK';
+                }
+            }
         } else {
-            finalStatus = finalStatus || 'BAIK'; // Default to 'BAIK' if no checklist and no manual status
+            // If no assignment, status should be 'BELUM ADA SOPIR' unless manually set to RUSAK BERAT
+            if (finalStatus !== 'RUSAK BERAT') {
+                finalStatus = 'BELUM ADA SOPIR';
+            }
         }
-      }
-      return { ...vehicle, status: finalStatus };
+        
+        return { ...vehicle, status: finalStatus, operator };
     });
-  }, [allVehicles, allUsers, checklistReports, user]);
+  }, [allVehicles, allUsers, checklistReports, user, assignments]);
 
   const filteredData = useMemo(() => {
     if (!user?.location) {
@@ -153,7 +196,7 @@ export default function ManajemenAlatPage() {
     
     const operatorsBelumChecklist = operators.filter(op => {
       // Find the vehicle associated with this operator
-      const associatedVehicle = allVehicles.find(v => v.nomorPolisi === op.username);
+      const associatedVehicle = processedVehicles.find(v => v.operator?.nik === op.nik);
       // Exclude operator if their vehicle is marked as RUSAK BERAT
       return associatedVehicle?.status !== 'RUSAK BERAT' && !checklistSubmittedNiks.has(op.nik || '');
     });
@@ -173,7 +216,7 @@ export default function ManajemenAlatPage() {
       belumChecklist: operatorsBelumChecklist,
       alatBaikNoOperator,
     };
-  }, [user, processedVehicles, checklistReports, allUsers, allVehicles]);
+  }, [user, processedVehicles, checklistReports, allUsers]);
   
   const getBadgeVariant = (status: string) => {
     switch (status) {
@@ -186,7 +229,7 @@ export default function ManajemenAlatPage() {
     }
   };
 
-  const handleShowDialog = (title: string, vehicles: Vehicle[] = [], users: User[] = []) => {
+  const handleShowDialog = (title: string, vehicles: ProcessedVehicle[] = [], users: User[] = []) => {
     setDialogContent({ title, vehicles, users });
   }
 
@@ -209,6 +252,8 @@ export default function ManajemenAlatPage() {
                                 <TableHead>No. Lambung</TableHead>
                                 <TableHead>No. Polisi</TableHead>
                                 <TableHead>Jenis Kendaraan</TableHead>
+                                <TableHead>Operator/Sopir</TableHead>
+                                <TableHead>NIK Operator</TableHead>
                                 <TableHead>Status</TableHead>
                             </>
                         )}
@@ -227,6 +272,8 @@ export default function ManajemenAlatPage() {
                             <TableCell>{vehicle.nomorLambung}</TableCell>
                             <TableCell>{vehicle.nomorPolisi}</TableCell>
                             <TableCell>{vehicle.jenisKendaraan}</TableCell>
+                            <TableCell>{vehicle.operator?.name || '-'}</TableCell>
+                            <TableCell>{vehicle.operator?.nik || '-'}</TableCell>
                             <TableCell>
                                 <Badge variant={getBadgeVariant(vehicle.status)} className={cn({'bg-green-600 hover:bg-green-700 text-white': vehicle.status === 'BAIK', 'bg-amber-500 hover:bg-amber-600 text-white': vehicle.status === 'PERLU PERHATIAN' })}>
                                     {vehicle.status}
