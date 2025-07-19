@@ -106,22 +106,24 @@ export default function OwnerDashboardPage() {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-            <SectionCard title="Pengecoran" icon={BarChart}>
-                <DataRow label="Schedule Cor" value={10} />
-                <DataRow label="Penambahan" value={2} />
-                <DataRow label="Terkirim" value={8} unit="M³"/>
-                <DataRow label="Sisa" value={4} unit="M³"/>
-            </SectionCard>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:col-span-2 xl:col-span-4">
+                 <SectionCard title="Pengecoran" icon={BarChart}>
+                    <DataRow label="Schedule Cor" value={10} />
+                    <DataRow label="Penambahan" value={2} />
+                    <DataRow label="Terkirim" value={8} unit="M³"/>
+                    <DataRow label="Sisa" value={4} unit="M³"/>
+                </SectionCard>
+                
+                <SectionCard title="Stok Material Saat Ini" icon={Package}>
+                    <DataRow label="Semen" value={50000} unit="Kg" />
+                    <DataRow label="Pasir" value={1200} unit="Ton" />
+                    <DataRow label="Batu" value={1500} unit="Ton" />
+                    <DataRow label="VZ" value={100} unit="L" />
+                    <DataRow label="NN" value={80} unit="L" />
+                    <DataRow label="Visco" value={120} unit="L" />
+                </SectionCard>
+            </div>
             
-            <SectionCard title="Stok Material Saat Ini" icon={Package}>
-                <DataRow label="Semen" value={50000} unit="Kg" />
-                <DataRow label="Pasir" value={1200} unit="Ton" />
-                <DataRow label="Batu" value={1500} unit="Ton" />
-                <DataRow label="VZ" value={100} unit="L" />
-                <DataRow label="NN" value={80} unit="L" />
-                <DataRow label="Visco" value={120} unit="L" />
-            </SectionCard>
-
             <SectionCard title="Man Power Hari Ini" icon={Users}>
                 <DataRow label="Masuk" value={45} />
                 <DataRow label="Ijin" value={2} />
