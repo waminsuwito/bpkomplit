@@ -342,7 +342,7 @@ export default function WorkOrderPage() {
                 }
             } else {
                 updatedWo.status = status;
-                if(status !== 'Tunda') {
+                if(status !== 'Tunda' && wo.status !== 'Tunda') {
                   updatedWo.notes = '';
                 }
             }
@@ -389,7 +389,7 @@ export default function WorkOrderPage() {
     if (status === 'Selesai') {
         clearVehicleDamageStatus(workOrder.vehicle.reportId);
         toast({ title: 'Perbaikan Selesai', description: `Kendaraan ${workOrder.vehicle.userNik} telah selesai diperbaiki.` });
-    } else {
+    } else if (status !== 'Proses' && status !== 'Tunda') { // Avoid toast for actions that trigger dialogs
         toast({ title: 'Status Diperbarui', description: `Work Order telah diperbarui menjadi "${status}".` });
     }
 
