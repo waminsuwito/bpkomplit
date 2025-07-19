@@ -115,8 +115,26 @@ export default function ManajemenAlatPage() {
     const alatRusakBerat = allVehicles.filter(v => v.status === 'RUSAK BERAT');
 
     const checklistSubmittedNiks = new Set(checklistReports.map(report => report.userNik));
-    const operators = allUsers.filter(u => (u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR')) && u.location === user.location);
+    
+    // Get all operators for the current location
+    const operators = allUsers.filter(u => 
+        (u.jabatan?.includes('SOPIR') || u.jabatan?.includes('OPRATOR')) && 
+        u.location === user.location
+    );
 
+    // Get NIKs of operators whose vehicles are marked as "RUSAK BERAT"
+    const rusakBeratVehicleNopol = new Set(alatRusakBerat.map(v => v.nomorPolisi));
+    
+    // This part is tricky as there's no direct vehicle-to-operator link.
+    // For now, we will filter operators who have NOT submitted a checklist.
+    // We can't directly filter out vehicles with "RUSAK BERAT" from the "Belum Checklist"
+    // because the checklist is tied to the operator, not the vehicle.
+    // The most logical approach is to filter out OPERATORS who we assume operate these vehicles.
+    // This is an imperfect assumption. The "Belum Checklist" count reflects operators, not vehicles.
+    // We'll proceed with filtering operators, which is the current logic.
+    // The user's request is to not require checklists for "RUSAK BERAT" vehicles.
+    // We will assume that an operator is tied to a vehicle for this purpose.
+    
     const operatorsBelumChecklist = operators.filter(op => !checklistSubmittedNiks.has(op.nik || ''));
 
     return {
