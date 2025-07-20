@@ -25,6 +25,7 @@ const defaultMaterialLabels = {
   pasir2: 'Pasir 2',
   batu1: 'Batu 1',
   batu2: 'Batu 2',
+  batu3: 'Batu 3',
   semen: 'Semen',
   air: 'Air',
 };
@@ -51,6 +52,7 @@ const formulaSchema = z.object({
   pasir2: z.coerce.number().min(0, 'Value must be positive.'),
   batu1: z.coerce.number().min(0, 'Value must be positive.'),
   batu2: z.coerce.number().min(0, 'Value must be positive.'),
+  batu3: z.coerce.number().min(0, 'Value must be positive.'),
   semen: z.coerce.number().min(0, 'Value must be positive.'),
   air: z.coerce.number().min(0, 'Value must be positive.'),
 });
@@ -71,6 +73,7 @@ function FormulaManagerPage() {
       pasir2: 0,
       batu1: 0,
       batu2: 0,
+      batu3: 0,
       semen: 0,
       air: 0,
     },
@@ -103,7 +106,7 @@ function FormulaManagerPage() {
     if (editingFormula) {
       form.reset(editingFormula);
     } else {
-      form.reset({ mutuBeton: '', pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, semen: 0, air: 0 });
+      form.reset({ mutuBeton: '', pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, batu3: 0, semen: 0, air: 0 });
     }
   }, [editingFormula, form]);
 
@@ -208,7 +211,7 @@ function FormulaManagerPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 items-end">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4 items-end">
                 <FormField name="mutuBeton" control={form.control} render={({ field }) => (
                 <FormItem className="col-span-2">
                     <FormLabel>Mutu Beton</FormLabel>
@@ -240,6 +243,13 @@ function FormulaManagerPage() {
                 <FormField name="batu2" control={form.control} render={({ field }) => (
                 <FormItem>
                     <FormLabel><EditableLabel labelKey="batu2" value={materialLabels.batu2} onChange={handleLabelChange} /></FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
+                <FormField name="batu3" control={form.control} render={({ field }) => (
+                <FormItem>
+                    <FormLabel><EditableLabel labelKey="batu3" value={materialLabels.batu3} onChange={handleLabelChange} /></FormLabel>
                     <FormControl><Input type="number" {...field} /></FormControl>
                     <FormMessage />
                 </FormItem>
@@ -279,6 +289,7 @@ function FormulaManagerPage() {
                 <TableHead>{materialLabels.pasir2} (Kg)</TableHead>
                 <TableHead>{materialLabels.batu1} (Kg)</TableHead>
                 <TableHead>{materialLabels.batu2} (Kg)</TableHead>
+                <TableHead>{materialLabels.batu3} (Kg)</TableHead>
                 <TableHead>{materialLabels.semen} (Kg)</TableHead>
                 <TableHead>{materialLabels.air} (Kg)</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
@@ -292,6 +303,7 @@ function FormulaManagerPage() {
                   <TableCell>{formula.pasir2}</TableCell>
                   <TableCell>{formula.batu1}</TableCell>
                   <TableCell>{formula.batu2}</TableCell>
+                  <TableCell>{formula.batu3}</TableCell>
                   <TableCell>{formula.semen}</TableCell>
                   <TableCell>{formula.air}</TableCell>
                   <TableCell className="text-center space-x-2">
@@ -329,3 +341,5 @@ function FormulaManagerPage() {
 }
 
 export default FormulaManagerPage;
+
+    

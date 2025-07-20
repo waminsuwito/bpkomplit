@@ -6,9 +6,9 @@ import type { JobMixFormula } from '@/lib/types';
 const FORMULAS_STORAGE_KEY = 'app-job-mix-formulas';
 
 const initialFormulas: JobMixFormula[] = [
-  { id: '1', mutuBeton: 'K225', pasir1: 400, pasir2: 365, batu1: 500, batu2: 529, air: 215, semen: 371 },
-  { id: '2', mutuBeton: 'K300', pasir1: 350, pasir2: 348, batu1: 520, batu2: 527, air: 215, semen: 413 },
-  { id: '3', mutuBeton: 'K350', pasir1: 340, pasir2: 341, batu1: 510, batu2: 511, air: 215, semen: 439 },
+  { id: '1', mutuBeton: 'K225', pasir1: 400, pasir2: 365, batu1: 500, batu2: 529, batu3: 0, air: 215, semen: 371 },
+  { id: '2', mutuBeton: 'K300', pasir1: 350, pasir2: 348, batu1: 520, batu2: 527, batu3: 0, air: 215, semen: 413 },
+  { id: '3', mutuBeton: 'K350', pasir1: 340, pasir2: 341, batu1: 510, batu2: 511, batu3: 0, air: 215, semen: 439 },
 ];
 
 export function getFormulas(): JobMixFormula[] {
@@ -58,3 +58,5 @@ export function deleteFormula(formulaId: string): void {
   const updatedFormulas = formulas.filter((f) => f.id !== formulaId);
   saveFormulas(updatedFormulas);
 }
+
+    
