@@ -15,75 +15,69 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-provider';
 import type { ProductionHistoryEntry } from '@/lib/types';
 
-interface MaterialStock {
-  awal: number;
-  pemakaian: number;
-  pengiriman: number;
-}
 
-interface DailyStock {
-  pasir: MaterialStock;
-  batu: MaterialStock;
-  semen: MaterialStock;
-  vz: MaterialStock;
-  nn: MaterialStock;
-  visco: MaterialStock;
-}
-
-const initialStock: DailyStock = {
-  pasir: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  batu: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  semen: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  vz: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  nn: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  visco: { awal: 0, pemakaian: 0, pengiriman: 0 },
-};
-
-const getStockKey = (date: Date) => `app-stok-material-${format(date, 'yyyy-MM-dd')}`;
+const MATERIAL_LABELS_KEY = 'app-material-labels';
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
 const SPECIFIC_GRAVITY_KEY = 'app-material-specific-gravity';
+const STOCK_KEY_PREFIX = 'app-stok-material-v2-';
 
-const defaultSpecificGravities = {
-  pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, semen: 0, air: 0
+const defaultMaterialLabels = {
+  pasir1: 'Pasir 1', pasir2: 'Pasir 2',
+  batu1: 'Batu 1', batu2: 'Batu 2', batu3: 'Batu 3', batu4: 'Batu 4',
+  semen: 'Semen', air: 'Air',
+  additive1: 'Additive 1', additive2: 'Additive 2', additive3: 'Additive 3',
 };
 
-type SpecificGravityData = typeof defaultSpecificGravities;
+const getStockKey = (date: Date) => `${STOCK_KEY_PREFIX}${format(date, 'yyyy-MM-dd')}`;
+
+type MaterialKey = keyof typeof defaultMaterialLabels;
+type DailyStock = Record<MaterialKey, { awal: number; pengiriman: number; pemakaian: number }>;
+type SpecificGravityData = Record<keyof ProductionHistoryEntry['actualWeights'], number>;
+
+const initialStock: DailyStock = {
+  pasir1: { awal: 0, pemakaian: 0, pengiriman: 0 }, pasir2: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  batu1: { awal: 0, pemakaian: 0, pengiriman: 0 }, batu2: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  batu3: { awal: 0, pemakaian: 0, pengiriman: 0 }, batu4: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  semen: { awal: 0, pemakaian: 0, pengiriman: 0 }, air: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  additive1: { awal: 0, pemakaian: 0, pengiriman: 0 }, additive2: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  additive3: { awal: 0, pemakaian: 0, pengiriman: 0 },
+};
+
+const getMaterialConfig = (): typeof defaultMaterialLabels => {
+  if (typeof window === 'undefined') return defaultMaterialLabels;
+  try {
+    const stored = localStorage.getItem(MATERIAL_LABELS_KEY);
+    return stored ? { ...defaultMaterialLabels, ...JSON.parse(stored) } : defaultMaterialLabels;
+  } catch (e) {
+    return defaultMaterialLabels;
+  }
+}
 
 const getSpecificGravities = (): SpecificGravityData => {
     try {
         const storedData = localStorage.getItem(SPECIFIC_GRAVITY_KEY);
-        if (storedData) {
-            const parsed = JSON.parse(storedData);
-            return {
-                pasir1: parsed.pasir1 || 0,
-                pasir2: parsed.pasir2 || 0,
-                batu1: parsed.batu1 || 0,
-                batu2: parsed.batu2 || 0,
-                semen: parsed.semen || 0,
-                air: parsed.air || 0,
-            };
-        }
-    } catch (e) {
-        console.error("Failed to load specific gravity data", e);
-    }
-    return defaultSpecificGravities;
+        if (storedData) return JSON.parse(storedData);
+    } catch (e) { console.error("Failed to load specific gravity data", e); }
+    return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, batu3: 0, batu4: 0, semen: 0, air: 0, additive1: 0, additive2: 0, additive3: 0 };
 };
 
 export default function StokMaterialPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [stock, setStock] = useState<DailyStock>(initialStock);
   const [productionHistory, setProductionHistory] = useState<ProductionHistoryEntry[]>([]);
+  const [materialLabels, setMaterialLabels] = useState(defaultMaterialLabels);
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   useEffect(() => {
     try {
+      setMaterialLabels(getMaterialConfig());
       const storedHistory = localStorage.getItem(PRODUCTION_HISTORY_KEY);
       if (storedHistory) {
         setProductionHistory(JSON.parse(storedHistory));
       }
     } catch (error) {
-      console.error("Failed to load production history:", error);
+      console.error("Failed to load initial data:", error);
     }
   }, []);
 
@@ -92,16 +86,7 @@ export default function StokMaterialPage() {
       const key = getStockKey(date);
       const storedData = localStorage.getItem(key);
       if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        const sanitizedData: DailyStock = {
-          pasir: parsedData.pasir || { awal: 0, pemakaian: 0, pengiriman: 0 },
-          batu: parsedData.batu || { awal: 0, pemakaian: 0, pengiriman: 0 },
-          semen: parsedData.semen || { awal: 0, pemakaian: 0, pengiriman: 0 },
-          vz: parsedData.vz || { awal: 0, pemakaian: 0, pengiriman: 0 },
-          nn: parsedData.nn || { awal: 0, pemakaian: 0, pengiriman: 0 },
-          visco: parsedData.visco || { awal: 0, pemakaian: 0, pengiriman: 0 },
-        };
-        setStock(sanitizedData);
+        setStock({ ...initialStock, ...JSON.parse(storedData) });
       } else {
         setStock(initialStock);
       }
@@ -110,56 +95,54 @@ export default function StokMaterialPage() {
       setStock(initialStock);
     }
   }, [date]);
-  
+
   const calculatedUsage = useMemo(() => {
     const selectedDateStr = format(date, 'yyyy-MM-dd');
     const todaysProduction = productionHistory.filter(
       item => format(new Date(item.startTime), 'yyyy-MM-dd') === selectedDateStr
     );
-    const specificGravities = getSpecificGravities();
+    const gravities = getSpecificGravities();
 
-    const totalsKg = {
-      pasir: 0,
-      batu: 0,
-      semen: 0,
-    };
+    const usage: Record<MaterialKey, number> = { ...initialStock.pasir1 };
+    for (const key in initialStock) {
+        usage[key as MaterialKey] = 0;
+    }
 
     todaysProduction.forEach(item => {
-      totalsKg.pasir += (item.actualWeights?.pasir1 || 0) + (item.actualWeights?.pasir2 || 0);
-      totalsKg.batu += (item.actualWeights?.batu1 || 0) + (item.actualWeights?.batu2 || 0);
-      totalsKg.semen += item.actualWeights?.semen || 0;
+      for (const key in item.actualWeights) {
+        usage[key as MaterialKey] += item.actualWeights[key as keyof typeof item.actualWeights] || 0;
+      }
     });
 
-    const pasirDivider = specificGravities.pasir1 || 0;
-    const batuDivider = specificGravities.batu1 || 0;
+    const isSandOrGravel = (key: string) => key.startsWith('pasir') || key.startsWith('batu');
+
+    for (const key in usage) {
+      const matKey = key as MaterialKey;
+      if (isSandOrGravel(matKey)) {
+          const gravityKey = matKey.slice(0, -1); // 'pasir1' -> 'pasir'
+          const gravity = gravities[gravityKey + '1' as keyof SpecificGravityData] || 0;
+          if (gravity > 0) {
+              usage[matKey] /= gravity;
+          }
+      }
+    }
     
-    const pasirUsageM3 = pasirDivider > 0 ? totalsKg.pasir / pasirDivider : totalsKg.pasir;
-    const batuUsageM3 = batuDivider > 0 ? totalsKg.batu / batuDivider : totalsKg.batu;
-    
-    return {
-      pasir: pasirUsageM3,
-      batu: batuUsageM3,
-      semen: totalsKg.semen, // Semen remains in Kg
-      vz: 0, 
-      nn: 0,
-      visco: 0,
-    };
+    return usage;
   }, [date, productionHistory]);
   
   useEffect(() => {
-    setStock(prev => ({
-      ...prev,
-      pasir: { ...prev.pasir, pemakaian: calculatedUsage.pasir },
-      batu: { ...prev.batu, pemakaian: calculatedUsage.batu },
-      semen: { ...prev.semen, pemakaian: calculatedUsage.semen },
-      vz: { ...prev.vz, pemakaian: calculatedUsage.vz },
-      nn: { ...prev.nn, pemakaian: calculatedUsage.nn },
-      visco: { ...prev.visco, pemakaian: calculatedUsage.visco },
-    }));
+    setStock(prev => {
+        const newStock = { ...prev };
+        for (const key in calculatedUsage) {
+            const matKey = key as MaterialKey;
+            newStock[matKey] = { ...newStock[matKey], pemakaian: calculatedUsage[matKey] };
+        }
+        return newStock;
+    });
   }, [calculatedUsage]);
 
 
-  const handleStockChange = (material: keyof DailyStock, field: 'awal' | 'pengiriman', value: string) => {
+  const handleStockChange = (material: MaterialKey, field: 'awal' | 'pengiriman', value: string) => {
     const numericValue = parseFloat(value) || 0;
     setStock(prev => ({
       ...prev,
@@ -188,22 +171,25 @@ export default function StokMaterialPage() {
     }
   };
 
-  const calculateStockAkhir = (material: MaterialStock) => {
-    const awal = Number(material.awal) || 0;
-    const pemakaian = Number(material.pemakaian) || 0;
-    const pengiriman = Number(material.pengiriman) || 0;
+  const calculateStockAkhir = (materialData: { awal: number; pemakaian: number; pengiriman: number }) => {
+    const { awal = 0, pemakaian = 0, pengiriman = 0 } = materialData;
     return awal - pemakaian - pengiriman;
   };
   
   const formatStockValue = (value: number): string => {
     const numValue = Number(value);
     if (isNaN(numValue)) return '0';
-    // If it's a whole number, format without decimals. Otherwise, use 2 decimal places.
     return numValue % 1 === 0
       ? numValue.toLocaleString('id-ID')
       : numValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
-
+  
+  const materialOrder: MaterialKey[] = [
+    'pasir1', 'pasir2',
+    'batu1', 'batu2', 'batu3', 'batu4',
+    'semen', 'air',
+    'additive1', 'additive2', 'additive3'
+  ];
 
   return (
     <Card>
@@ -223,10 +209,7 @@ export default function StokMaterialPage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant={'outline'}
-                    className={cn(
-                      'w-[280px] justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
+                    className={cn('w-[280px] justify-start text-left font-normal', !date && 'text-muted-foreground')}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {date ? format(date, 'PPP') : <span>Pilih tanggal</span>}
@@ -250,87 +233,49 @@ export default function StokMaterialPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[15%] font-bold text-white">KETERANGAN</TableHead>
-                <TableHead className="text-center font-bold text-white">PASIR (M³)</TableHead>
-                <TableHead className="text-center font-bold text-white">BATU (M³)</TableHead>
-                <TableHead className="text-center font-bold text-white">SEMEN (Kg)</TableHead>
-                <TableHead className="text-center font-bold text-white">VZ (L)</TableHead>
-                <TableHead className="text-center font-bold text-white">NN (L)</TableHead>
-                <TableHead className="text-center font-bold text-white">VISCO (L)</TableHead>
+                <TableHead className="w-[15%] font-bold text-white bg-gray-700">KETERANGAN</TableHead>
+                {materialOrder.map(key => {
+                    const unit = key.startsWith('pasir') || key.startsWith('batu') ? 'M³' : 'Kg';
+                    return (
+                        <TableHead key={key} className="text-center font-bold text-white bg-gray-600 min-w-[150px]">
+                            {materialLabels[key]} ({unit})
+                        </TableHead>
+                    );
+                })}
               </TableRow>
             </TableHeader>
             <TableBody>
               <TableRow>
                 <TableCell className="font-semibold">STOK AWAL</TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.awal} onChange={e => handleStockChange('pasir', 'awal', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.awal} onChange={e => handleStockChange('batu', 'awal', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.awal} onChange={e => handleStockChange('semen', 'awal', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.awal} onChange={e => handleStockChange('vz', 'awal', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.awal} onChange={e => handleStockChange('nn', 'awal', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.awal} onChange={e => handleStockChange('visco', 'awal', e.target.value)} />
-                </TableCell>
+                {materialOrder.map(key => (
+                    <TableCell key={key}>
+                        <Input type="number" className="text-center" value={stock[key]?.awal || 0} onChange={e => handleStockChange(key, 'awal', e.target.value)} />
+                    </TableCell>
+                ))}
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PEMAKAIAN</TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.pemakaian.toFixed(2)} readOnly disabled />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.pemakaian.toFixed(2)} readOnly disabled />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.pemakaian.toFixed(2)} readOnly disabled />
-                </TableCell>
-                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.pemakaian.toFixed(2)} readOnly disabled />
-                </TableCell>
-                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.pemakaian.toFixed(2)} readOnly disabled />
-                </TableCell>
-                 <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.pemakaian.toFixed(2)} readOnly disabled />
-                </TableCell>
+                 {materialOrder.map(key => (
+                    <TableCell key={key}>
+                        <Input type="number" className="text-center" value={stock[key]?.pemakaian.toFixed(2) || '0.00'} readOnly disabled />
+                    </TableCell>
+                ))}
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PENGIRIMAN</TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.pasir.pengiriman || 0} onChange={e => handleStockChange('pasir', 'pengiriman', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.batu.pengiriman || 0} onChange={e => handleStockChange('batu', 'pengiriman', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.semen.pengiriman || 0} onChange={e => handleStockChange('semen', 'pengiriman', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.vz.pengiriman || 0} onChange={e => handleStockChange('vz', 'pengiriman', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.nn.pengiriman || 0} onChange={e => handleStockChange('nn', 'pengiriman', e.target.value)} />
-                </TableCell>
-                <TableCell>
-                  <Input type="number" className="text-center min-w-[120px]" value={stock.visco.pengiriman || 0} onChange={e => handleStockChange('visco', 'pengiriman', e.target.value)} />
-                </TableCell>
+                 {materialOrder.map(key => (
+                    <TableCell key={key}>
+                        <Input type="number" className="text-center" value={stock[key]?.pengiriman || 0} onChange={e => handleStockChange(key, 'pengiriman', e.target.value)} />
+                    </TableCell>
+                ))}
               </TableRow>
               <TableRow className="bg-muted font-bold">
                 <TableCell>STOK AKHIR</TableCell>
-                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.pasir))}</TableCell>
-                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.batu))}</TableCell>
-                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.semen))}</TableCell>
-                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.vz))}</TableCell>
-                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.nn))}</TableCell>
-                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.visco))}</TableCell>
+                 {materialOrder.map(key => (
+                    <TableCell key={key} className="text-center text-lg">
+                        {formatStockValue(calculateStockAkhir(stock[key]))}
+                    </TableCell>
+                ))}
               </TableRow>
             </TableBody>
           </Table>
@@ -345,3 +290,4 @@ export default function StokMaterialPage() {
     </Card>
   );
 }
+
