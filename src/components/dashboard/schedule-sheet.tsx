@@ -174,6 +174,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
   };
 
   const renderCellContent = (row: ScheduleSheetRow, key: keyof ScheduleSheetRow, rowIndex: number, colIndex: number) => {
+    const isRowLocked = row.status === 'Selesai' || row.status === 'Batal';
     const isReadOnlyForAdmin = !isOperatorView && ['terkirim', 'sisa', 'totalVol', 'status'].includes(key);
     
     let displayValue;
@@ -183,7 +184,6 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
        if (!isRowActive) return null;
        
        const currentStatus = row.status || 'Menunggu';
-       const isFinalStatus = currentStatus === 'Selesai' || currentStatus === 'Batal';
        
        if (isOperatorView) {
          return (
@@ -200,7 +200,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
             <Select 
                 value={currentStatus} 
                 onValueChange={(value: ScheduleStatus) => handleStatusChange(rowIndex, value)}
-                disabled={isFinalStatus}
+                disabled={isRowLocked}
             >
                 <SelectTrigger className={cn(
                     "w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0",
@@ -221,6 +221,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         <Select
           value={row.mutuBeton || ''}
           onValueChange={(value) => handleInputChange(rowIndex, 'mutuBeton', value)}
+          disabled={isRowLocked}
         >
           <SelectTrigger className="w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0 uppercase">
             <SelectValue placeholder="Pilih Mutu" />
@@ -242,7 +243,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         displayValue = row[key] ?? '';
     }
 
-    if (isOperatorView || isReadOnlyForAdmin) {
+    if (isOperatorView || isReadOnlyForAdmin || isRowLocked) {
       return (
         <div className="w-full min-h-[40px] text-center bg-transparent flex items-center justify-center p-2">
           <p className="whitespace-pre-wrap break-words">{displayValue}</p>
