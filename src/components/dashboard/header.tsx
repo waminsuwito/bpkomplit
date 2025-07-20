@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database, ChevronDown, Building } from 'lucide-react';
+import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database, ChevronDown, Building, Scale } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +81,12 @@ export function Header() {
                       <Link href="/dashboard/moisture-control">
                         <Droplets className="mr-2 h-4 w-4" />
                         Moisture Control
+                      </Link>
+                    </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                      <Link href="/dashboard/berat-jenis-material">
+                        <Scale className="mr-2 h-4 w-4" />
+                        Berat Jenis Material
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
