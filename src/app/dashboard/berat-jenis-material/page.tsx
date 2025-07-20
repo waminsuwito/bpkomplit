@@ -80,7 +80,7 @@ export default function BeratJenisMaterialPage() {
               Berat Jenis Material
             </CardTitle>
             <CardDescription>
-              Atur nilai berat jenis (specific gravity) untuk setiap material.
+              Atur nilai berat jenis (specific gravity) untuk setiap material. Unit dalam gr/cm³.
             </CardDescription>
           </div>
           <Button asChild variant="outline">
@@ -107,7 +107,7 @@ export default function BeratJenisMaterialPage() {
                   <TableCell>
                     <Input
                       type="number"
-                      value={data[key] || ''}
+                      value={data[key as MaterialKey] || ''}
                       onChange={(e) => handleValueChange(key as MaterialKey, e.target.value)}
                       className="w-48 text-center mx-auto"
                       step="0.01"
