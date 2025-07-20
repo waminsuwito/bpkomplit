@@ -142,7 +142,14 @@ export default function PetaKendaraanPage() {
     return (
         <Card>
             <CardHeader><CardTitle>Error Peta</CardTitle></CardHeader>
-            <CardContent><p>Gagal memuat Google Maps. Pastikan API Key valid dan koneksi internet stabil.</p></CardContent>
+            <CardContent>
+              <p>Gagal memuat Google Maps. Ini bisa disebabkan oleh:</p>
+              <ul className="list-disc pl-5 mt-2 text-sm text-muted-foreground">
+                <li>Kunci API Google Maps tidak valid atau tidak ada.</li>
+                <li>API "Maps JavaScript API" belum diaktifkan di Google Cloud Console.</li>
+                <li>Masalah penagihan (billing) pada akun Google Cloud Anda.</li>
+              </ul>
+            </CardContent>
         </Card>
     );
   }
