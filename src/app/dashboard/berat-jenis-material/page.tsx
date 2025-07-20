@@ -97,7 +97,7 @@ export default function BeratJenisMaterialPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-1/2">Material</TableHead>
-                <TableHead className="text-center">Berat Jenis (gr/cm³)</TableHead>
+                <TableHead className="text-center">PEMBAGIAN MATERIAL KG KE M3</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
