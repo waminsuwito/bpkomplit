@@ -146,7 +146,7 @@ export default function SopirBatanganPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
-            Penugasan Sopir/Operator ke Kendaraan (Batangan)
+            Penugasan Sopir dan Batangan
           </CardTitle>
           <CardDescription>
             Pasangkan sopir/operator dengan kendaraan yang akan mereka operasikan.

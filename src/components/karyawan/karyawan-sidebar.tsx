@@ -78,7 +78,7 @@ export function KaryawanSidebar() {
         },
         {
             href: '/karyawan/sopir-batangan',
-            label: 'Sopir Batangan',
+            label: 'Sopir dan Batangan',
             icon: Users,
         }
       );
