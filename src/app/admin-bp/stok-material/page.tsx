@@ -13,13 +13,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-provider';
-import type { ProductionHistoryEntry } from '@/lib/types';
+import type { ProductionHistoryEntry, JobMixFormula } from '@/lib/types';
 
 
 const MATERIAL_LABELS_KEY = 'app-material-labels';
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
-const SPECIFIC_GRAVITY_KEY = 'app-material-specific-gravity';
-const STOCK_KEY_PREFIX = 'app-stok-material-v2-';
+const STOCK_KEY_PREFIX = 'app-stok-material-';
 
 const defaultMaterialLabels = {
   pasir1: 'Pasir 1', pasir2: 'Pasir 2',
@@ -32,7 +31,6 @@ const getStockKey = (date: Date) => `${STOCK_KEY_PREFIX}${format(date, 'yyyy-MM-
 
 type MaterialKey = keyof typeof defaultMaterialLabels;
 type DailyStock = Record<MaterialKey, { awal: number; pengiriman: number; pemakaian: number }>;
-type SpecificGravityData = Record<keyof ProductionHistoryEntry['actualWeights'], number>;
 
 const initialStock: DailyStock = {
   pasir1: { awal: 0, pemakaian: 0, pengiriman: 0 }, pasir2: { awal: 0, pemakaian: 0, pengiriman: 0 },
@@ -52,14 +50,6 @@ const getMaterialConfig = (): typeof defaultMaterialLabels => {
     return defaultMaterialLabels;
   }
 }
-
-const getSpecificGravities = (): SpecificGravityData => {
-    try {
-        const storedData = localStorage.getItem(SPECIFIC_GRAVITY_KEY);
-        if (storedData) return JSON.parse(storedData);
-    } catch (e) { console.error("Failed to load specific gravity data", e); }
-    return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, batu3: 0, batu4: 0, semen: 0, air: 0, additive1: 0, additive2: 0, additive3: 0 };
-};
 
 export default function StokMaterialPage() {
   const [date, setDate] = useState<Date>(new Date());
@@ -101,31 +91,20 @@ export default function StokMaterialPage() {
     const todaysProduction = productionHistory.filter(
       item => format(new Date(item.startTime), 'yyyy-MM-dd') === selectedDateStr
     );
-    const gravities = getSpecificGravities();
 
-    const usage: Record<MaterialKey, number> = { ...initialStock.pasir1 };
+    const usage: Record<MaterialKey, number> = { ...initialStock.pasir1 } as any;
     for (const key in initialStock) {
         usage[key as MaterialKey] = 0;
     }
 
     todaysProduction.forEach(item => {
       for (const key in item.actualWeights) {
-        usage[key as MaterialKey] += item.actualWeights[key as keyof typeof item.actualWeights] || 0;
+        const matKey = key as keyof ProductionHistoryEntry['actualWeights'];
+        if (usage.hasOwnProperty(matKey)) {
+          usage[matKey as MaterialKey] += item.actualWeights[matKey] || 0;
+        }
       }
     });
-
-    const isSandOrGravel = (key: string) => key.startsWith('pasir') || key.startsWith('batu');
-
-    for (const key in usage) {
-      const matKey = key as MaterialKey;
-      if (isSandOrGravel(matKey)) {
-          const gravityKey = matKey.slice(0, -1); // 'pasir1' -> 'pasir'
-          const gravity = gravities[gravityKey + '1' as keyof SpecificGravityData] || 0;
-          if (gravity > 0) {
-              usage[matKey] /= gravity;
-          }
-      }
-    }
     
     return usage;
   }, [date, productionHistory]);
@@ -179,17 +158,13 @@ export default function StokMaterialPage() {
   const formatStockValue = (value: number): string => {
     const numValue = Number(value);
     if (isNaN(numValue)) return '0';
+    // If it's a whole number, display without decimals. Otherwise, show 2 decimal places.
     return numValue % 1 === 0
       ? numValue.toLocaleString('id-ID')
       : numValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
   
-  const materialOrder: MaterialKey[] = [
-    'pasir1', 'pasir2',
-    'batu1', 'batu2', 'batu3', 'batu4',
-    'semen', 'air',
-    'additive1', 'additive2', 'additive3'
-  ];
+  const materialOrder: MaterialKey[] = Object.keys(defaultMaterialLabels) as MaterialKey[];
 
   return (
     <Card>
@@ -235,7 +210,13 @@ export default function StokMaterialPage() {
               <TableRow>
                 <TableHead className="w-[15%] font-bold text-white bg-gray-700">KETERANGAN</TableHead>
                 {materialOrder.map(key => {
-                    const unit = key.startsWith('pasir') || key.startsWith('batu') ? 'M³' : 'Kg';
+                    let unit = 'Kg';
+                    if (key.startsWith('pasir') || key.startsWith('batu')) {
+                      unit = 'M³';
+                    } else if (key.startsWith('additive')) {
+                      unit = 'L';
+                    }
+                    
                     return (
                         <TableHead key={key} className="text-center font-bold text-white bg-gray-600 min-w-[150px]">
                             {materialLabels[key]} ({unit})
@@ -290,4 +271,3 @@ export default function StokMaterialPage() {
     </Card>
   );
 }
-
