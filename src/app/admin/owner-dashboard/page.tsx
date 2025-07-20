@@ -92,12 +92,13 @@ export default function OwnerDashboardPage() {
     const pengecoranStats = useMemo(() => {
         const activeSchedules = scheduleData.filter(row => row.no && row.no.trim() !== '');
         
+        const totalVolume = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.volume) || 0), 0);
         const totalPenambahan = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.penambahanVol) || 0), 0);
         const totalTerkirim = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.terkirim) || 0), 0);
         const totalSisa = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.sisa) || 0), 0);
 
         return {
-            scheduleCount: activeSchedules.length,
+            totalVolume: totalVolume.toFixed(2),
             penambahan: totalPenambahan.toFixed(2),
             terkirim: totalTerkirim.toFixed(2),
             sisa: totalSisa.toFixed(2),
@@ -139,9 +140,9 @@ export default function OwnerDashboardPage() {
             </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SectionCard title="Pengecoran" icon={BarChart}>
-                <DataRow label="Schedule Cor" value={pengecoranStats.scheduleCount} />
+                <DataRow label="Schedule Cor" value={pengecoranStats.totalVolume} unit="M³" />
                 <DataRow label="Penambahan" value={pengecoranStats.penambahan} unit="M³"/>
                 <DataRow label="Terkirim" value={pengecoranStats.terkirim} unit="M³"/>
                 <DataRow label="Sisa" value={pengecoranStats.sisa} unit="M³"/>
@@ -156,7 +157,7 @@ export default function OwnerDashboardPage() {
                 <DataRow label="Visco" value={120} unit="L" />
             </SectionCard>
             
-            <SectionCard title="Man Power Hari Ini" icon={Users}>
+             <SectionCard title="Man Power Hari Ini" icon={Users}>
                 <DataRow label="Masuk" value={45} />
                 <DataRow label="Ijin" value={2} />
                 <DataRow label="Sakit" value={1} />
@@ -172,7 +173,7 @@ export default function OwnerDashboardPage() {
                 <DataRow label="NN" value={0} unit="L" />
                 <DataRow label="Visco" value={0} unit="L" />
             </SectionCard>
-            
+
             <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
                  <DataRow label="Menunggu" value={2} />
                  <DataRow label="Dikerjakan" value={3} />
