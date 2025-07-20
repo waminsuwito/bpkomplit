@@ -102,8 +102,14 @@ export default function OwnerDashboardPage() {
         const totalTerkirim = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.terkirim) || 0), 0);
         const totalSisa = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.sisa) || 0), 0);
 
+        const uniqueLocations = new Set(
+            activeSchedules.map(row => row.lokasi?.trim()).filter(Boolean)
+        );
+        const jumlahLokasiCor = uniqueLocations.size;
+
         return {
             totalVolume: formatNumber(totalVolume),
+            jumlahLokasiCor,
             penambahan: formatNumber(totalPenambahan),
             terkirim: formatNumber(totalTerkirim),
             sisa: formatNumber(totalSisa),
@@ -146,8 +152,9 @@ export default function OwnerDashboardPage() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SectionCard title="Pengecoran" icon={BarChart}>
+             <SectionCard title="Pengecoran" icon={BarChart}>
                 <DataRow label="Schedule Cor" value={pengecoranStats.totalVolume} unit="M³" />
+                <DataRow label="Jumlah Lokasi Cor" value={pengecoranStats.jumlahLokasiCor} unit="Lokasi" />
                 <DataRow label="Penambahan" value={pengecoranStats.penambahan} unit="M³"/>
                 <DataRow label="Terkirim" value={pengecoranStats.terkirim} unit="M³"/>
                 <DataRow label="Sisa" value={pengecoranStats.sisa} unit="M³"/>
