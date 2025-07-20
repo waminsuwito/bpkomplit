@@ -26,14 +26,13 @@ const defaultCenter = {
   lng: 101.447779,
 };
 
-// A more realistic 2D truck icon as an inline SVG
+// A more realistic 2D mixer truck icon as an inline SVG (green color)
 const truckIconSvg = `
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234682B4" width="48px" height="48px">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2322C55E" width="48px" height="48px">
     <path d="M0 0h24v24H0z" fill="none"/>
-    <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 9.84V11h-4V4h3v5.84z"/>
+    <path d="M21.58 7.43L15.9 2.61C15.44 2.22 14.85 2 14.22 2H7.5c-1.1 0-2 .9-2 2v2.58c0 .24.08.47.21.66l4.22 6.34-3.64 3.64c-.38.38-.59.88-.59 1.41V20h2c0 1.1.9 2 2 2s2-.9 2-2h8c0 1.1.9 2 2 2s2-.9 2-2h2v-3.34c0-.53-.21-1.03-.59-1.41l-3.64-3.64 2.21-3.31c.14-.19.22-.43.22-.67V8.41c0-.53-.21-1.04-.58-1.42zM6 18c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm12 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zM7.5 4h6.72l4.63 3.86H7.5V4z"/>
   </svg>
 `;
-
 
 const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
   try {
