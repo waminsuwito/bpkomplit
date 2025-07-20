@@ -197,7 +197,9 @@ export default function DatabaseProduksiPage() {
                                         <TableCell>{new Date(item.endTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</TableCell>
                                         <TableCell className="whitespace-pre-wrap break-words">{item.namaPelanggan}</TableCell>
                                         <TableCell className="whitespace-pre-wrap break-words">{item.lokasiProyek}</TableCell>
-                                        <TableCell>{item.mutuBeton}</TableCell>
+                                        <TableCell>
+                                            {item.mutuCode ? `${item.mutuBeton} ${item.mutuCode}` : item.mutuBeton}
+                                        </TableCell>
                                         <TableCell>{item.slump}</TableCell>
                                         <TableCell>{Number(item.targetVolume).toFixed(2)}</TableCell>
                                         <TableCell>{item.noPolisi}</TableCell>

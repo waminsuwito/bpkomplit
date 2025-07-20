@@ -351,7 +351,6 @@ function FormulaManagerPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Mutu Beton</TableHead>
-                <TableHead>Kode</TableHead>
                 <TableHead>{materialLabels.pasir1} (Kg)</TableHead>
                 <TableHead>{materialLabels.pasir2} (Kg)</TableHead>
                 <TableHead>{materialLabels.batu1} (Kg)</TableHead>
@@ -369,8 +368,9 @@ function FormulaManagerPage() {
             <TableBody>
               {formulas.map((formula) => (
                 <TableRow key={formula.id}>
-                  <TableCell className="font-medium">{formula.mutuBeton}</TableCell>
-                  <TableCell className="font-semibold">{formula.mutuCode || '-'}</TableCell>
+                  <TableCell className="font-medium">
+                    {formula.mutuCode ? `${formula.mutuBeton} ${formula.mutuCode}` : formula.mutuBeton}
+                  </TableCell>
                   <TableCell>{formula.pasir1}</TableCell>
                   <TableCell>{formula.pasir2}</TableCell>
                   <TableCell>{formula.batu1}</TableCell>

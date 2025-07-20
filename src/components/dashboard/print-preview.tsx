@@ -27,6 +27,7 @@ export function PrintPreview({ data, onClose, operatorName }: PrintPreviewProps)
     namaPelanggan,
     lokasiProyek,
     mutuBeton,
+    mutuCode,
     targetVolume,
     slump,
     targetWeights,
@@ -53,6 +54,8 @@ export function PrintPreview({ data, onClose, operatorName }: PrintPreviewProps)
   const deviasiSemen = actualSemen - targetWeights.semen;
   const deviasiAir = actualAir - targetWeights.air;
   const totalDeviasi = totalActual - totalTarget;
+
+  const fullMutuBeton = mutuCode ? `${mutuBeton} ${mutuCode}` : mutuBeton;
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
@@ -85,7 +88,7 @@ export function PrintPreview({ data, onClose, operatorName }: PrintPreviewProps)
                 </div>
                 <div className="space-y-1 border border-black/50 p-3 rounded">
                     <h3 className="text-sm font-bold border-b border-black/20 pb-1 mb-2">DATA PRODUKSI</h3>
-                    <p><span className="font-semibold inline-block w-28">Mutu Beton</span>: {mutuBeton}</p>
+                    <p><span className="font-semibold inline-block w-28">Mutu Beton</span>: {fullMutuBeton}</p>
                     <p><span className="font-semibold inline-block w-28">Volume</span>: {targetVolume} M³</p>
                     <p><span className="font-semibold inline-block w-28">Slump</span>: {slump} cm</p>
                 </div>

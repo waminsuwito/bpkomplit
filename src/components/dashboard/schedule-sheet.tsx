@@ -149,7 +149,7 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
         nextRowIndex = rowIndex + 1;
     }
     if (nextColIndex < 0) {
-        nextColIndex = fieldKeys.length - 1;
+        nextColIndex = fields.length - 1;
         nextRowIndex = rowIndex - 1;
     }
 
@@ -215,29 +215,40 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
                 </SelectContent>
             </Select>
        );
-    } else if (key === 'mutuBeton' && !isOperatorView) {
-      if (!isRowActive) return null;
-      return (
-        <Select
-          value={row.mutuBeton || ''}
-          onValueChange={(value) => handleInputChange(rowIndex, 'mutuBeton', value)}
-          disabled={isRowLocked}
-        >
-          <SelectTrigger className="w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0 uppercase">
-            <SelectValue placeholder="Pilih Mutu" />
-          </SelectTrigger>
-          <SelectContent>
-            {formulas.map((formula) => {
-              const displayLabel = formula.mutuCode ? `${formula.mutuBeton} ${formula.mutuCode}` : formula.mutuBeton;
-              return (
-                <SelectItem key={formula.id} value={formula.mutuBeton}>
-                  {displayLabel}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-      );
+    } else if (key === 'mutuBeton') {
+        const matchingFormula = formulas.find(f => f.mutuBeton === row.mutuBeton);
+        const displayMutu = matchingFormula?.mutuCode ? `${row.mutuBeton} ${matchingFormula.mutuCode}` : row.mutuBeton;
+        
+        if (isOperatorView || isRowLocked || isReadOnlyForAdmin) {
+            return (
+                <div className="w-full min-h-[40px] text-center bg-transparent flex items-center justify-center p-2">
+                    <p className="whitespace-pre-wrap break-words">{displayMutu || ''}</p>
+                </div>
+            );
+        }
+      
+        if (!isRowActive) return null;
+        return (
+          <Select
+            value={row.mutuBeton || ''}
+            onValueChange={(value) => handleInputChange(rowIndex, 'mutuBeton', value)}
+            disabled={isRowLocked}
+          >
+            <SelectTrigger className="w-full h-full border-none rounded-none text-center bg-transparent focus:ring-0 uppercase">
+              <SelectValue placeholder="Pilih Mutu" />
+            </SelectTrigger>
+            <SelectContent>
+              {formulas.map((formula) => {
+                const displayLabel = formula.mutuCode ? `${formula.mutuBeton} ${formula.mutuCode}` : formula.mutuBeton;
+                return (
+                  <SelectItem key={formula.id} value={formula.mutuBeton}>
+                    {displayLabel}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        );
     }
     else {
         displayValue = row[key] ?? '';
