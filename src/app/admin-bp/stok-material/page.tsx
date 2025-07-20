@@ -13,10 +13,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-provider';
-import type { ProductionHistoryEntry, JobMixFormula } from '@/lib/types';
+import type { ProductionHistoryEntry } from '@/lib/types';
 
 
 const MATERIAL_LABELS_KEY = 'app-material-labels';
+const SPECIFIC_GRAVITY_KEY = 'app-material-specific-gravity';
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
 const STOCK_KEY_PREFIX = 'app-stok-material-';
 
@@ -27,19 +28,25 @@ const defaultMaterialLabels = {
   additive1: 'Additive 1', additive2: 'Additive 2', additive3: 'Additive 3',
 };
 
-const getStockKey = (date: Date) => `${STOCK_KEY_PREFIX}${format(date, 'yyyy-MM-dd')}`;
-
 type MaterialKey = keyof typeof defaultMaterialLabels;
-type DailyStock = Record<MaterialKey, { awal: number; pengiriman: number; pemakaian: number }>;
+type DailyStock = Record<MaterialKey, { awal: number; pemasukan: number; pengiriman: number; pemakaian: number }>;
 
 const initialStock: DailyStock = {
-  pasir1: { awal: 0, pemakaian: 0, pengiriman: 0 }, pasir2: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  batu1: { awal: 0, pemakaian: 0, pengiriman: 0 }, batu2: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  batu3: { awal: 0, pemakaian: 0, pengiriman: 0 }, batu4: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  semen: { awal: 0, pemakaian: 0, pengiriman: 0 }, air: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  additive1: { awal: 0, pemakaian: 0, pengiriman: 0 }, additive2: { awal: 0, pemakaian: 0, pengiriman: 0 },
-  additive3: { awal: 0, pemakaian: 0, pengiriman: 0 },
+  pasir1: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, pasir2: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
+  batu1: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, batu2: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
+  batu3: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, batu4: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
+  semen: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, air: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
+  additive1: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, additive2: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
+  additive3: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
 };
+
+const getSpecificGravities = (): Record<string, number> => {
+    if (typeof window === 'undefined') return {};
+    try {
+        const stored = localStorage.getItem(SPECIFIC_GRAVITY_KEY);
+        return stored ? JSON.parse(stored) : {};
+    } catch(e) { return {}; }
+}
 
 const getMaterialConfig = (): typeof defaultMaterialLabels => {
   if (typeof window === 'undefined') return defaultMaterialLabels;
@@ -56,12 +63,16 @@ export default function StokMaterialPage() {
   const [stock, setStock] = useState<DailyStock>(initialStock);
   const [productionHistory, setProductionHistory] = useState<ProductionHistoryEntry[]>([]);
   const [materialLabels, setMaterialLabels] = useState(defaultMaterialLabels);
+  const [specificGravities, setSpecificGravities] = useState<Record<string,number>>({});
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const getStockKey = (date: Date) => `${STOCK_KEY_PREFIX}${user?.location}-${format(date, 'yyyy-MM-dd')}`;
 
   useEffect(() => {
     try {
       setMaterialLabels(getMaterialConfig());
+      setSpecificGravities(getSpecificGravities());
       const storedHistory = localStorage.getItem(PRODUCTION_HISTORY_KEY);
       if (storedHistory) {
         setProductionHistory(JSON.parse(storedHistory));
@@ -72,6 +83,7 @@ export default function StokMaterialPage() {
   }, []);
 
   useEffect(() => {
+    if(!user?.location) return;
     try {
       const key = getStockKey(date);
       const storedData = localStorage.getItem(key);
@@ -84,7 +96,7 @@ export default function StokMaterialPage() {
       console.error("Failed to load stock data:", error);
       setStock(initialStock);
     }
-  }, [date]);
+  }, [date, user]);
 
   const calculatedUsage = useMemo(() => {
     const selectedDateStr = format(date, 'yyyy-MM-dd');
@@ -92,7 +104,7 @@ export default function StokMaterialPage() {
       item => format(new Date(item.startTime), 'yyyy-MM-dd') === selectedDateStr
     );
 
-    const usage: Record<MaterialKey, number> = { ...initialStock.pasir1 } as any;
+    const usage: Record<MaterialKey, number> = {} as any;
     for (const key in initialStock) {
         usage[key as MaterialKey] = 0;
     }
@@ -106,8 +118,19 @@ export default function StokMaterialPage() {
       }
     });
     
+    // Convert to M3 for aggregates
+    const pasirDivider = specificGravities['pasir1'] || 1;
+    const batuDivider = specificGravities['batu1'] || 1;
+
+    usage.pasir1 = pasirDivider > 0 ? usage.pasir1 / pasirDivider : usage.pasir1;
+    usage.pasir2 = pasirDivider > 0 ? usage.pasir2 / pasirDivider : usage.pasir2;
+    usage.batu1 = batuDivider > 0 ? usage.batu1 / batuDivider : usage.batu1;
+    usage.batu2 = batuDivider > 0 ? usage.batu2 / batuDivider : usage.batu2;
+    usage.batu3 = batuDivider > 0 ? usage.batu3 / batuDivider : usage.batu3;
+    usage.batu4 = batuDivider > 0 ? usage.batu4 / batuDivider : usage.batu4;
+    
     return usage;
-  }, [date, productionHistory]);
+  }, [date, productionHistory, specificGravities]);
   
   useEffect(() => {
     setStock(prev => {
@@ -121,7 +144,7 @@ export default function StokMaterialPage() {
   }, [calculatedUsage]);
 
 
-  const handleStockChange = (material: MaterialKey, field: 'awal' | 'pengiriman', value: string) => {
+  const handleStockChange = (material: MaterialKey, field: 'awal' | 'pemasukan' | 'pengiriman', value: string) => {
     const numericValue = parseFloat(value) || 0;
     setStock(prev => ({
       ...prev,
@@ -133,6 +156,10 @@ export default function StokMaterialPage() {
   };
 
   const handleSave = () => {
+    if(!user?.location) {
+        toast({ variant: 'destructive', title: 'Error', description: 'User location not found.' });
+        return;
+    }
     try {
       const key = getStockKey(date);
       localStorage.setItem(key, JSON.stringify(stock));
@@ -150,15 +177,14 @@ export default function StokMaterialPage() {
     }
   };
 
-  const calculateStockAkhir = (materialData: { awal: number; pemakaian: number; pengiriman: number }) => {
-    const { awal = 0, pemakaian = 0, pengiriman = 0 } = materialData;
-    return awal - pemakaian - pengiriman;
+  const calculateStockAkhir = (materialData: { awal: number; pemasukan: number; pemakaian: number; pengiriman: number }) => {
+    const { awal = 0, pemasukan = 0, pemakaian = 0, pengiriman = 0 } = materialData;
+    return (awal + pemasukan) - pemakaian - pengiriman;
   };
   
   const formatStockValue = (value: number): string => {
     const numValue = Number(value);
     if (isNaN(numValue)) return '0';
-    // If it's a whole number, display without decimals. Otherwise, show 2 decimal places.
     return numValue % 1 === 0
       ? numValue.toLocaleString('id-ID')
       : numValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -208,7 +234,7 @@ export default function StokMaterialPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[15%] font-bold text-white bg-gray-700">KETERANGAN</TableHead>
+                <TableHead className="w-[15%] font-bold text-white bg-gray-700 min-w-[150px]">KETERANGAN</TableHead>
                 {materialOrder.map(key => {
                     let unit = 'Kg';
                     if (key.startsWith('pasir') || key.startsWith('batu')) {
@@ -231,6 +257,14 @@ export default function StokMaterialPage() {
                 {materialOrder.map(key => (
                     <TableCell key={key}>
                         <Input type="number" className="text-center" value={stock[key]?.awal || 0} onChange={e => handleStockChange(key, 'awal', e.target.value)} />
+                    </TableCell>
+                ))}
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">PEMASUKAN</TableCell>
+                {materialOrder.map(key => (
+                    <TableCell key={key}>
+                        <Input type="number" className="text-center" value={stock[key]?.pemasukan || 0} onChange={e => handleStockChange(key, 'pemasukan', e.target.value)} />
                     </TableCell>
                 ))}
               </TableRow>
@@ -271,3 +305,4 @@ export default function StokMaterialPage() {
     </Card>
   );
 }
+
