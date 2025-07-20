@@ -97,8 +97,12 @@ export interface JobMixFormula {
   batu1: number;
   batu2: number;
   batu3: number;
+  batu4: number;
   air: number;
   semen: number;
+  additive1: number;
+  additive2: number;
+  additive3: number;
 }
 
 export interface Schedule {
@@ -308,5 +312,3 @@ export interface WorkOrder {
   totalWaktuTundaMs?: number;
   usedSpareParts?: SparePartUsage[];
 }
-
-    

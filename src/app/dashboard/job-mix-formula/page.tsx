@@ -26,8 +26,12 @@ const defaultMaterialLabels = {
   batu1: 'Batu 1',
   batu2: 'Batu 2',
   batu3: 'Batu 3',
+  batu4: 'Batu 4',
   semen: 'Semen',
   air: 'Air',
+  additive1: 'Additive 1',
+  additive2: 'Additive 2',
+  additive3: 'Additive 3',
 };
 
 type MaterialKey = keyof typeof defaultMaterialLabels;
@@ -53,11 +57,30 @@ const formulaSchema = z.object({
   batu1: z.coerce.number().min(0, 'Value must be positive.'),
   batu2: z.coerce.number().min(0, 'Value must be positive.'),
   batu3: z.coerce.number().min(0, 'Value must be positive.'),
+  batu4: z.coerce.number().min(0, 'Value must be positive.'),
   semen: z.coerce.number().min(0, 'Value must be positive.'),
   air: z.coerce.number().min(0, 'Value must be positive.'),
+  additive1: z.coerce.number().min(0, 'Value must be positive.'),
+  additive2: z.coerce.number().min(0, 'Value must be positive.'),
+  additive3: z.coerce.number().min(0, 'Value must be positive.'),
 });
 
 type FormulaFormValues = z.infer<typeof formulaSchema>;
+
+const formDefaultValues: FormulaFormValues = {
+  mutuBeton: '',
+  pasir1: 0,
+  pasir2: 0,
+  batu1: 0,
+  batu2: 0,
+  batu3: 0,
+  batu4: 0,
+  semen: 0,
+  air: 0,
+  additive1: 0,
+  additive2: 0,
+  additive3: 0,
+};
 
 function FormulaManagerPage() {
   const [formulas, setFormulas] = useState<JobMixFormula[]>([]);
@@ -67,16 +90,7 @@ function FormulaManagerPage() {
 
   const form = useForm<FormulaFormValues>({
     resolver: zodResolver(formulaSchema),
-    defaultValues: {
-      mutuBeton: '',
-      pasir1: 0,
-      pasir2: 0,
-      batu1: 0,
-      batu2: 0,
-      batu3: 0,
-      semen: 0,
-      air: 0,
-    },
+    defaultValues: formDefaultValues,
   });
 
   useEffect(() => {
@@ -106,7 +120,7 @@ function FormulaManagerPage() {
     if (editingFormula) {
       form.reset(editingFormula);
     } else {
-      form.reset({ mutuBeton: '', pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, batu3: 0, semen: 0, air: 0 });
+      form.reset(formDefaultValues);
     }
   }, [editingFormula, form]);
 
@@ -211,9 +225,9 @@ function FormulaManagerPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4 items-end">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-4 items-end">
                 <FormField name="mutuBeton" control={form.control} render={({ field }) => (
-                <FormItem className="col-span-2">
+                <FormItem className="col-span-2 lg:col-span-1">
                     <FormLabel>Mutu Beton</FormLabel>
                     <FormControl><Input {...field} placeholder="e.g., K225" style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
                     <FormMessage />
@@ -254,6 +268,13 @@ function FormulaManagerPage() {
                     <FormMessage />
                 </FormItem>
                 )} />
+                <FormField name="batu4" control={form.control} render={({ field }) => (
+                <FormItem>
+                    <FormLabel><EditableLabel labelKey="batu4" value={materialLabels.batu4} onChange={handleLabelChange} /></FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
                 <FormField name="semen" control={form.control} render={({ field }) => (
                 <FormItem>
                     <FormLabel><EditableLabel labelKey="semen" value={materialLabels.semen} onChange={handleLabelChange} /></FormLabel>
@@ -264,6 +285,27 @@ function FormulaManagerPage() {
                  <FormField name="air" control={form.control} render={({ field }) => (
                 <FormItem>
                     <FormLabel><EditableLabel labelKey="air" value={materialLabels.air} onChange={handleLabelChange} /></FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
+                <FormField name="additive1" control={form.control} render={({ field }) => (
+                <FormItem>
+                    <FormLabel><EditableLabel labelKey="additive1" value={materialLabels.additive1} onChange={handleLabelChange} /></FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
+                <FormField name="additive2" control={form.control} render={({ field }) => (
+                <FormItem>
+                    <FormLabel><EditableLabel labelKey="additive2" value={materialLabels.additive2} onChange={handleLabelChange} /></FormLabel>
+                    <FormControl><Input type="number" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+                )} />
+                <FormField name="additive3" control={form.control} render={({ field }) => (
+                <FormItem>
+                    <FormLabel><EditableLabel labelKey="additive3" value={materialLabels.additive3} onChange={handleLabelChange} /></FormLabel>
                     <FormControl><Input type="number" {...field} /></FormControl>
                     <FormMessage />
                 </FormItem>
@@ -290,8 +332,12 @@ function FormulaManagerPage() {
                 <TableHead>{materialLabels.batu1} (Kg)</TableHead>
                 <TableHead>{materialLabels.batu2} (Kg)</TableHead>
                 <TableHead>{materialLabels.batu3} (Kg)</TableHead>
+                <TableHead>{materialLabels.batu4} (Kg)</TableHead>
                 <TableHead>{materialLabels.semen} (Kg)</TableHead>
                 <TableHead>{materialLabels.air} (Kg)</TableHead>
+                <TableHead>{materialLabels.additive1} (Kg)</TableHead>
+                <TableHead>{materialLabels.additive2} (Kg)</TableHead>
+                <TableHead>{materialLabels.additive3} (Kg)</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -304,8 +350,12 @@ function FormulaManagerPage() {
                   <TableCell>{formula.batu1}</TableCell>
                   <TableCell>{formula.batu2}</TableCell>
                   <TableCell>{formula.batu3}</TableCell>
+                  <TableCell>{formula.batu4 || 0}</TableCell>
                   <TableCell>{formula.semen}</TableCell>
                   <TableCell>{formula.air}</TableCell>
+                  <TableCell>{formula.additive1 || 0}</TableCell>
+                  <TableCell>{formula.additive2 || 0}</TableCell>
+                  <TableCell>{formula.additive3 || 0}</TableCell>
                   <TableCell className="text-center space-x-2">
                     <Button variant="outline" size="icon" onClick={() => handleEdit(formula)}>
                       <Edit className="h-4 w-4" />
@@ -341,5 +391,3 @@ function FormulaManagerPage() {
 }
 
 export default FormulaManagerPage;
-
-    
