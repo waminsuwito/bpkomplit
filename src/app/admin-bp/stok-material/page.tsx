@@ -41,6 +41,40 @@ const initialStock: DailyStock = {
 
 const getStockKey = (date: Date) => `app-stok-material-${format(date, 'yyyy-MM-dd')}`;
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
+const SPECIFIC_GRAVITY_KEY = 'app-material-specific-gravity';
+
+// Default specific gravities if not found in localStorage
+const defaultSpecificGravities = {
+  pasir1: 2.65 * 1000,
+  pasir2: 2.65 * 1000,
+  batu1: 2.70 * 1000,
+  batu2: 2.70 * 1000,
+  semen: 3.15 * 1000,
+  air: 1.00 * 1000,
+};
+
+type SpecificGravityData = typeof defaultSpecificGravities;
+
+const getSpecificGravities = (): SpecificGravityData => {
+    try {
+        const storedData = localStorage.getItem(SPECIFIC_GRAVITY_KEY);
+        if (storedData) {
+            const parsed = JSON.parse(storedData);
+            // Convert to Kg/M³
+            return {
+                pasir1: (parsed.pasir1 || 2.65) * 1000,
+                pasir2: (parsed.pasir2 || 2.65) * 1000,
+                batu1: (parsed.batu1 || 2.70) * 1000,
+                batu2: (parsed.batu2 || 2.70) * 1000,
+                semen: (parsed.semen || 3.15) * 1000,
+                air: (parsed.air || 1.0) * 1000,
+            };
+        }
+    } catch (e) {
+        console.error("Failed to load specific gravity data", e);
+    }
+    return defaultSpecificGravities;
+};
 
 export default function StokMaterialPage() {
   const [date, setDate] = useState<Date>(new Date());
@@ -48,7 +82,7 @@ export default function StokMaterialPage() {
   const [productionHistory, setProductionHistory] = useState<ProductionHistoryEntry[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
-
+  
   useEffect(() => {
     try {
       const storedHistory = localStorage.getItem(PRODUCTION_HISTORY_KEY);
@@ -90,23 +124,27 @@ export default function StokMaterialPage() {
     const todaysProduction = productionHistory.filter(
       item => format(new Date(item.startTime), 'yyyy-MM-dd') === selectedDateStr
     );
+    const specificGravities = getSpecificGravities();
 
-    const totals = {
+    const totalsKg = {
       pasir: 0,
       batu: 0,
       semen: 0,
     };
 
     todaysProduction.forEach(item => {
-      totals.pasir += (item.actualWeights?.pasir1 || 0) + (item.actualWeights?.pasir2 || 0);
-      totals.batu += (item.actualWeights?.batu1 || 0) + (item.actualWeights?.batu2 || 0);
-      totals.semen += item.actualWeights?.semen || 0;
+      totalsKg.pasir += (item.actualWeights?.pasir1 || 0) + (item.actualWeights?.pasir2 || 0);
+      totalsKg.batu += (item.actualWeights?.batu1 || 0) + (item.actualWeights?.batu2 || 0);
+      totalsKg.semen += item.actualWeights?.semen || 0;
     });
 
+    const averagePasirGravity = (specificGravities.pasir1 + specificGravities.pasir2) / 2;
+    const averageBatuGravity = (specificGravities.batu1 + specificGravities.batu2) / 2;
+
     return {
-      pasir: totals.pasir,
-      batu: totals.batu,
-      semen: totals.semen, // Already in Kg
+      pasir: totalsKg.pasir > 0 ? totalsKg.pasir / averagePasirGravity : 0,
+      batu: totalsKg.batu > 0 ? totalsKg.batu / averageBatuGravity : 0,
+      semen: totalsKg.semen > 0 ? totalsKg.semen / specificGravities.semen : 0,
       vz: 0, // Not tracked in production history
       nn: 0, // Not tracked in production history
       visco: 0, // Not tracked in production history
@@ -208,9 +246,9 @@ export default function StokMaterialPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[15%] font-bold text-white">KETERANGAN</TableHead>
-                <TableHead className="text-center font-bold text-white">PASIR (Kg)</TableHead>
-                <TableHead className="text-center font-bold text-white">BATU (Kg)</TableHead>
-                <TableHead className="text-center font-bold text-white">SEMEN (Kg)</TableHead>
+                <TableHead className="text-center font-bold text-white">PASIR (M³)</TableHead>
+                <TableHead className="text-center font-bold text-white">BATU (M³)</TableHead>
+                <TableHead className="text-center font-bold text-white">SEMEN (M³)</TableHead>
                 <TableHead className="text-center font-bold text-white">VZ (L)</TableHead>
                 <TableHead className="text-center font-bold text-white">NN (L)</TableHead>
                 <TableHead className="text-center font-bold text-white">VISCO (L)</TableHead>
