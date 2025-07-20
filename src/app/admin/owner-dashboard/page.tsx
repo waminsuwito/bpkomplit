@@ -89,6 +89,11 @@ export default function OwnerDashboardPage() {
         };
     }, []);
     
+    const formatNumber = (num: number) => {
+        // If number is an integer, show no decimal places. Otherwise, show 2.
+        return num % 1 === 0 ? num.toString() : num.toFixed(2);
+    };
+
     const pengecoranStats = useMemo(() => {
         const activeSchedules = scheduleData.filter(row => row.no && row.no.trim() !== '');
         
@@ -98,10 +103,10 @@ export default function OwnerDashboardPage() {
         const totalSisa = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.sisa) || 0), 0);
 
         return {
-            totalVolume: totalVolume.toFixed(2),
-            penambahan: totalPenambahan.toFixed(2),
-            terkirim: totalTerkirim.toFixed(2),
-            sisa: totalSisa.toFixed(2),
+            totalVolume: formatNumber(totalVolume),
+            penambahan: formatNumber(totalPenambahan),
+            terkirim: formatNumber(totalTerkirim),
+            sisa: formatNumber(totalSisa),
         };
     }, [scheduleData]);
 
@@ -157,7 +162,7 @@ export default function OwnerDashboardPage() {
                 <DataRow label="Visco" value={120} unit="L" />
             </SectionCard>
             
-             <SectionCard title="Man Power Hari Ini" icon={Users}>
+            <SectionCard title="Man Power Hari Ini" icon={Users}>
                 <DataRow label="Masuk" value={45} />
                 <DataRow label="Ijin" value={2} />
                 <DataRow label="Sakit" value={1} />
@@ -173,7 +178,7 @@ export default function OwnerDashboardPage() {
                 <DataRow label="NN" value={0} unit="L" />
                 <DataRow label="Visco" value={0} unit="L" />
             </SectionCard>
-
+            
             <SectionCard title="List Pekerjaan Mekanik" icon={HardHat}>
                  <DataRow label="Menunggu" value={2} />
                  <DataRow label="Dikerjakan" value={3} />
