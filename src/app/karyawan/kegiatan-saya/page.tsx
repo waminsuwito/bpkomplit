@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
 import { format } from 'date-fns';
-import { ClipboardList, Camera, Loader2, Video, VideoOff, CheckCircle, Save, Info, Moon } from 'lucide-react';
+import { ClipboardList, Camera, Loader2, Video, VideoOff, CheckCircle, Save, Info, Moon, Sun } from 'lucide-react';
 import type { DailyActivityReport, DailyActivity } from '@/lib/types';
 import Image from 'next/image';
 
@@ -51,8 +51,7 @@ export default function KegiatanSayaPage() {
   const { toast } = useToast();
   
   const [report, setReport] = useState<Partial<DailyActivityReport>>({});
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
-  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [activeCameraSession, setActiveCameraSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [pagiText, setPagiText] = useState('');
@@ -84,29 +83,7 @@ export default function KegiatanSayaPage() {
         console.error("Failed to load today's activity report", error);
       }
     }
-
-    const checkTime = () => {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const currentTime = hours * 100 + minutes;
-
-      if (currentTime >= 730 && currentTime < 1200) {
-        setCurrentSession('pagi');
-      } else if (currentTime >= 1300 && currentTime < 2200) {
-        setCurrentSession('siang');
-      } else if (currentTime >= 2200 || currentTime < 400) {
-        setCurrentSession('lembur');
-      } else {
-        setCurrentSession(null);
-        if (isCameraActive) stopCamera();
-      }
-    };
-
-    checkTime();
-    const interval = setInterval(checkTime, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [user, isCameraActive]);
+  }, [user]);
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
@@ -114,20 +91,21 @@ export default function KegiatanSayaPage() {
       stream.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
     }
-    setIsCameraActive(false);
+    setActiveCameraSession(null);
   };
 
-  const handleActivateCamera = async () => {
-    if (isCameraActive) {
+  const handleActivateCamera = async (session: Session) => {
+    if (activeCameraSession === session) {
       stopCamera();
       return;
     }
+    stopCamera();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setIsCameraActive(true);
+        setActiveCameraSession(session);
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Kamera Gagal', description: 'Gagal mengakses kamera. Mohon berikan izin.' });
@@ -137,7 +115,7 @@ export default function KegiatanSayaPage() {
   const capturePhoto = (): string | null => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (video && canvas && isCameraActive) {
+    if (video && canvas && activeCameraSession) {
       const context = canvas.getContext('2d');
       if (context) {
         canvas.width = video.videoWidth;
@@ -154,12 +132,12 @@ export default function KegiatanSayaPage() {
 
   const handleCaptureAndSetPhoto = () => {
     const photoDataUri = capturePhoto();
-    if (photoDataUri && currentSession) {
-      if (currentSession === 'pagi') {
+    if (photoDataUri && activeCameraSession) {
+      if (activeCameraSession === 'pagi') {
         setPagiPhoto(photoDataUri);
-      } else if (currentSession === 'siang') {
+      } else if (activeCameraSession === 'siang') {
         setSiangPhoto(photoDataUri);
-      } else if (currentSession === 'lembur') {
+      } else if (activeCameraSession === 'lembur') {
         setLemburPhoto(photoDataUri);
       }
     }
@@ -255,21 +233,20 @@ export default function KegiatanSayaPage() {
   };
 
   const renderSessionCard = (session: Session, title: string, text: string, setText: (val: string) => void, photo: string | null, setPhoto: (val: string | null) => void) => {
-    const isSessionActive = currentSession === session;
+    const isSessionActive = true; // Always active for testing
     const isSaved = (session === 'pagi' && report.pagi?.timestamp) 
                  || (session === 'siang' && report.siang?.timestamp)
                  || (session === 'lembur' && report.lembur?.timestamp);
 
     return (
-      <Card className={!isSessionActive && !isSaved ? 'bg-muted/50' : ''}>
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {session === 'pagi' && <Info className="h-5 w-5" />}
-            {session === 'siang' && <Info className="h-5 w-5" />}
-            {session === 'lembur' && <Moon className="h-5 w-5" />}
+            {session === 'pagi' && <Sun className="h-5 w-5 text-amber-500" />}
+            {session === 'siang' && <Info className="h-5 w-5 text-blue-500" />}
+            {session === 'lembur' && <Moon className="h-5 w-5 text-indigo-500" />}
             {title}
           </CardTitle>
-          {!isSessionActive && !isSaved && <CardDescription>Belum memasuki waktu laporan sesi ini.</CardDescription>}
           {isSaved && <CardDescription className="text-primary flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Laporan sesi ini sudah disimpan.</CardDescription>}
         </CardHeader>
         <CardContent className="space-y-4">
@@ -282,7 +259,7 @@ export default function KegiatanSayaPage() {
               style={{ textTransform: 'uppercase' }}
               placeholder={`Tuliskan kegiatan Anda di sesi ${session.toLowerCase()} di sini...`}
               rows={5}
-              disabled={!isSessionActive || isLoading || isSaved}
+              disabled={isLoading || isSaved}
             />
           </div>
           <div>
@@ -290,22 +267,22 @@ export default function KegiatanSayaPage() {
             {photo ? (
               <div className="mt-2 space-y-2">
                 <Image src={photo} alt={`Foto ${session}`} width={300} height={225} className="rounded-md border" />
-                <Button variant="outline" size="sm" onClick={() => setPhoto(null)} disabled={!isSessionActive || isLoading || isSaved}>
+                <Button variant="outline" size="sm" onClick={() => setPhoto(null)} disabled={isLoading || isSaved}>
                   Ulangi Foto
                 </Button>
               </div>
             ) : (
-                isCameraActive && currentSession === session ? (
+                activeCameraSession === session ? (
                     <div className="mt-2 space-y-2">
                         <div className="relative aspect-video w-full max-w-sm bg-muted rounded-md overflow-hidden border">
                             <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline style={{ transform: "scaleX(-1)" }} />
                         </div>
-                        <Button onClick={handleCaptureAndSetPhoto} disabled={!isSessionActive || isLoading}>
+                        <Button onClick={handleCaptureAndSetPhoto} disabled={isLoading}>
                             <Camera className="mr-2"/> Ambil Foto
                         </Button>
                     </div>
                 ) : (
-                     <Button variant="secondary" onClick={handleActivateCamera} disabled={!isSessionActive || isLoading || isSaved}>
+                     <Button variant="secondary" onClick={() => handleActivateCamera(session)} disabled={isLoading || isSaved}>
                         <Video className="mr-2"/> Buka Kamera
                     </Button>
                 )
@@ -313,7 +290,7 @@ export default function KegiatanSayaPage() {
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={() => handleSave(session)} disabled={!isSessionActive || isLoading || isSaved}>
+          <Button onClick={() => handleSave(session)} disabled={isLoading || isSaved}>
             {isLoading ? <Loader2 className="animate-spin" /> : <Save className="mr-2" />}
             Simpan Laporan {title}
           </Button>
@@ -332,9 +309,9 @@ export default function KegiatanSayaPage() {
           </CardTitle>
           <Alert variant="default">
             <Info className="h-4 w-4" />
-            <AlertTitle>Petunjuk</AlertTitle>
+            <AlertTitle>Mode Pengetesan Aktif</AlertTitle>
             <AlertDescription>
-              Isi laporan kegiatan pagi antara pukul 07:30 - 12:00, kegiatan siang antara pukul 13:00 - 21:59, dan kegiatan lembur antara pukul 22:00 - 04:00.
+              Batasan waktu dinonaktifkan. Anda bisa mengisi laporan untuk semua sesi kapan saja.
             </AlertDescription>
           </Alert>
         </CardHeader>
