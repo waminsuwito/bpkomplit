@@ -19,6 +19,34 @@ import { useAuth } from '@/context/auth-provider';
 
 
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
+const MATERIAL_LABELS_KEY = 'app-material-labels';
+
+const defaultMaterialLabels = {
+  pasir1: 'Pasir 1',
+  pasir2: 'Pasir 2',
+  batu1: 'Batu 1',
+  batu2: 'Batu 2',
+  batu3: 'Batu 3',
+  batu4: 'Batu 4',
+  semen: 'Semen',
+  air: 'Air',
+  additive1: 'Additive 1',
+  additive2: 'Additive 2',
+  additive3: 'Additive 3',
+};
+
+const getMaterialLabels = (): typeof defaultMaterialLabels => {
+  if (typeof window === 'undefined') return defaultMaterialLabels;
+  try {
+    const stored = localStorage.getItem(MATERIAL_LABELS_KEY);
+    if (stored) {
+      return { ...defaultMaterialLabels, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.error("Failed to load material labels", e);
+  }
+  return defaultMaterialLabels;
+}
 
 export default function PemakaianMaterialPage() {
     const { user } = useAuth();
@@ -27,6 +55,7 @@ export default function PemakaianMaterialPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [filterType, setFilterType] = useState<'today' | 'all'>('today');
+    const [materialLabels, setMaterialLabels] = useState(defaultMaterialLabels);
     const { toast } = useToast();
 
     const backUrl = useMemo(() => {
@@ -38,6 +67,7 @@ export default function PemakaianMaterialPage() {
 
     useEffect(() => {
         try {
+            setMaterialLabels(getMaterialLabels());
             const storedHistory = localStorage.getItem(PRODUCTION_HISTORY_KEY);
             if (storedHistory) {
                 const parsedHistory: ProductionHistoryEntry[] = JSON.parse(storedHistory);
@@ -99,16 +129,23 @@ export default function PemakaianMaterialPage() {
 
     const materialTotals = useMemo(() => {
         const totals = {
-            pasir: 0,
-            batu: 0,
-            semen: 0,
-            air: 0
+            pasir1: 0, pasir2: 0,
+            batu1: 0, batu2: 0, batu3: 0, batu4: 0,
+            semen: 0, air: 0,
+            additive1: 0, additive2: 0, additive3: 0
         };
         filteredHistory.forEach(item => {
-            totals.pasir += (item.actualWeights?.pasir1 || 0) + (item.actualWeights?.pasir2 || 0);
-            totals.batu += (item.actualWeights?.batu1 || 0) + (item.actualWeights?.batu2 || 0);
+            totals.pasir1 += item.actualWeights?.pasir1 || 0;
+            totals.pasir2 += item.actualWeights?.pasir2 || 0;
+            totals.batu1 += item.actualWeights?.batu1 || 0;
+            totals.batu2 += item.actualWeights?.batu2 || 0;
+            totals.batu3 += item.actualWeights?.batu3 || 0;
+            totals.batu4 += item.actualWeights?.batu4 || 0;
             totals.semen += item.actualWeights?.semen || 0;
             totals.air += item.actualWeights?.air || 0;
+            totals.additive1 += item.actualWeights?.additive1 || 0;
+            totals.additive2 += item.actualWeights?.additive2 || 0;
+            totals.additive3 += item.actualWeights?.additive3 || 0;
         });
         return totals;
     }, [filteredHistory]);
@@ -199,12 +236,18 @@ export default function PemakaianMaterialPage() {
                                 <TableHead>Nama Pelanggan</TableHead>
                                 <TableHead>Lokasi Cor</TableHead>
                                 <TableHead>Mutu Beton</TableHead>
-                                <TableHead>Slump</TableHead>
                                 <TableHead>Volume (M³)</TableHead>
-                                <TableHead>Pasir (Kg)</TableHead>
-                                <TableHead>Batu (Kg)</TableHead>
-                                <TableHead>Semen (Kg)</TableHead>
-                                <TableHead>Air (Kg)</TableHead>
+                                <TableHead>{materialLabels.pasir1} (Kg)</TableHead>
+                                <TableHead>{materialLabels.pasir2} (Kg)</TableHead>
+                                <TableHead>{materialLabels.batu1} (Kg)</TableHead>
+                                <TableHead>{materialLabels.batu2} (Kg)</TableHead>
+                                <TableHead>{materialLabels.batu3} (Kg)</TableHead>
+                                <TableHead>{materialLabels.batu4} (Kg)</TableHead>
+                                <TableHead>{materialLabels.semen} (Kg)</TableHead>
+                                <TableHead>{materialLabels.air} (Kg)</TableHead>
+                                <TableHead>{materialLabels.additive1} (Kg)</TableHead>
+                                <TableHead>{materialLabels.additive2} (Kg)</TableHead>
+                                <TableHead>{materialLabels.additive3} (Kg)</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -216,17 +259,23 @@ export default function PemakaianMaterialPage() {
                                         <TableCell className="whitespace-pre-wrap break-words">{item.namaPelanggan}</TableCell>
                                         <TableCell className="whitespace-pre-wrap break-words">{item.lokasiProyek}</TableCell>
                                         <TableCell>{item.mutuBeton}</TableCell>
-                                        <TableCell>{item.slump}</TableCell>
                                         <TableCell>{Number(item.targetVolume).toFixed(2)}</TableCell>
-                                        <TableCell>{Math.round((item.actualWeights?.pasir1 || 0) + (item.actualWeights?.pasir2 || 0))}</TableCell>
-                                        <TableCell>{Math.round((item.actualWeights?.batu1 || 0) + (item.actualWeights?.batu2 || 0))}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.pasir1 || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.pasir2 || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.batu1 || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.batu2 || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.batu3 || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.batu4 || 0)}</TableCell>
                                         <TableCell>{Math.round(item.actualWeights?.semen || 0)}</TableCell>
                                         <TableCell>{Math.round(item.actualWeights?.air || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.additive1 || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.additive2 || 0)}</TableCell>
+                                        <TableCell>{Math.round(item.actualWeights?.additive3 || 0)}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={17} className="h-24 text-center text-muted-foreground">
                                         <div className="flex flex-col items-center gap-2">
                                             <Inbox className="h-8 w-8"/>
                                             <span>
@@ -241,24 +290,14 @@ export default function PemakaianMaterialPage() {
                 </div>
                 {filteredHistory.length > 0 && (
                     <div className="print-only mt-8 border-t-2 border-black pt-4 break-inside-avoid">
-                        <h3 className="text-base font-bold mb-2">Total Pemakaian Material</h3>
+                        <h3 className="text-base font-bold mb-2">Total Pemakaian Material (Kg)</h3>
                         <div className="text-sm space-y-1 max-w-sm">
-                            <div className="flex justify-between">
-                                <span className="font-semibold">Total Pasir:</span>
-                                <span className="font-mono">{Math.round(materialTotals.pasir).toLocaleString('id-ID')} Kg</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="font-semibold">Total Batu:</span>
-                                <span className="font-mono">{Math.round(materialTotals.batu).toLocaleString('id-ID')} Kg</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="font-semibold">Total Semen:</span>
-                                <span className="font-mono">{Math.round(materialTotals.semen).toLocaleString('id-ID')} Kg</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="font-semibold">Total Air:</span>
-                                <span className="font-mono">{Math.round(materialTotals.air).toLocaleString('id-ID')} Kg</span>
-                            </div>
+                            {Object.entries(materialTotals).map(([key, value]) => (
+                               <div key={key} className="flex justify-between">
+                                  <span className="font-semibold">{materialLabels[key as keyof typeof materialLabels]}:</span>
+                                  <span className="font-mono">{Math.round(value).toLocaleString('id-ID')} Kg</span>
+                               </div>
+                            ))}
                         </div>
                     </div>
                 )}
