@@ -85,7 +85,7 @@ export default function SetLokasiAbsensiPage() {
     if (!user) return;
 
     const allLocations = getAllLocations();
-    if (user.role === 'hse_hrd_lokasi') {
+    if (user.jabatan === 'HSE/K3') {
       setLocations(allLocations.filter(loc => loc.name === user.location));
     } else {
       setLocations(allLocations);
@@ -124,7 +124,7 @@ export default function SetLokasiAbsensiPage() {
       );
       toast({ title: 'Location Updated', description: `Location "${formState.name}" has been updated.` });
     } else {
-      if (user?.role !== 'super_admin') return;
+      if (user?.jabatan !== 'SUPER ADMIN') return;
       const newLocation: AttendanceLocation = {
         id: new Date().toISOString(),
         name: formState.name, latitude: lat, longitude: lon,
@@ -136,7 +136,7 @@ export default function SetLokasiAbsensiPage() {
     saveAllLocations(updatedAllLocations);
 
     // Refresh the view
-    if (user?.role === 'hse_hrd_lokasi') {
+    if (user?.jabatan === 'HSE/K3') {
       setLocations(updatedAllLocations.filter(loc => loc.name === user.location));
     } else {
       setLocations(updatedAllLocations);
@@ -162,7 +162,7 @@ export default function SetLokasiAbsensiPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (user?.role !== 'super_admin') {
+    if (user?.jabatan !== 'SUPER ADMIN') {
       toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Anda tidak memiliki izin untuk menghapus lokasi.' });
       return;
     }
@@ -175,7 +175,7 @@ export default function SetLokasiAbsensiPage() {
 
   return (
     <div className="space-y-6">
-      {(user?.role === 'super_admin' || editingId) && (
+      {(user?.jabatan === 'SUPER ADMIN' || editingId) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export default function SetLokasiAbsensiPage() {
             </CardTitle>
             <CardDescription>
               {editingId 
-                ? `Ubah detail untuk lokasi "${formState.name}". ${user?.role === 'hse_hrd_lokasi' ? 'Anda hanya bisa mengubah koordinat.' : ''}` 
+                ? `Ubah detail untuk lokasi "${formState.name}". ${user?.jabatan === 'HSE/K3' ? 'Anda hanya bisa mengubah koordinat.' : ''}` 
                 : 'Tambahkan lokasi baru untuk absensi karyawan.'}
             </CardDescription>
           </CardHeader>
@@ -197,7 +197,7 @@ export default function SetLokasiAbsensiPage() {
                     id="name" name="name" value={formState.name} onChange={handleInputChange} 
                     placeholder="Contoh: BP PEKANBARU" 
                     style={{ textTransform: 'uppercase' }}
-                    disabled={editingId && user?.role === 'hse_hrd_lokasi'} 
+                    disabled={editingId && user?.jabatan === 'HSE/K3'} 
                   />
                 </div>
                 <div className="space-y-2">
@@ -225,7 +225,7 @@ export default function SetLokasiAbsensiPage() {
         <CardHeader>
           <CardTitle>Daftar Lokasi Absensi</CardTitle>
           <CardDescription>
-            {user?.role === 'hse_hrd_lokasi' 
+            {user?.jabatan === 'HSE/K3' 
               ? `Menampilkan lokasi yang dikonfigurasi untuk ${user.location}.`
               : 'Daftar semua lokasi yang telah dikonfigurasi untuk absensi.'}
           </CardDescription>
@@ -253,7 +253,7 @@ export default function SetLokasiAbsensiPage() {
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        {user?.role === 'super_admin' && (
+                        {user?.jabatan === 'SUPER ADMIN' && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="destructive" size="icon">
@@ -286,7 +286,7 @@ export default function SetLokasiAbsensiPage() {
           ) : (
             <div className="text-center text-muted-foreground py-12">
               <p>
-                {user?.role === 'hse_hrd_lokasi' 
+                {user?.jabatan === 'HSE/K3' 
                   ? 'Tidak ada lokasi yang terkonfigurasi untuk Anda.'
                   : 'Belum ada lokasi yang ditambahkan.'}
               </p>
