@@ -90,7 +90,6 @@ export default function OwnerDashboardPage() {
     }, []);
     
     const formatNumber = (num: number) => {
-        // If number is an integer, show no decimal places. Otherwise, show 2.
         return num % 1 === 0 ? num.toString() : num.toFixed(2);
     };
 
@@ -102,10 +101,7 @@ export default function OwnerDashboardPage() {
         const totalTerkirim = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.terkirim) || 0), 0);
         const totalSisa = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.sisa) || 0), 0);
 
-        const uniqueLocations = new Set(
-            activeSchedules.map(row => row.lokasi?.trim()).filter(Boolean)
-        );
-        const jumlahLokasiCor = uniqueLocations.size;
+        const jumlahLokasiCor = activeSchedules.length;
 
         return {
             totalVolume: formatNumber(totalVolume),
