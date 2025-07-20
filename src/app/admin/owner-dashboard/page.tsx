@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/context/auth-provider';
@@ -9,8 +9,9 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { BarChart, Package, Users, Truck, Beaker, HardHat } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { userLocations } from '@/lib/types';
+import { userLocations, type ScheduleSheetRow } from '@/lib/types';
 import { Label } from '@/components/ui/label';
+import { getScheduleSheetData } from '@/lib/schedule';
 
 
 const SectionCard = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType, children: React.ReactNode }) => (
@@ -64,11 +65,44 @@ export default function OwnerDashboardPage() {
     const { user } = useAuth();
     const [currentDateTime, setCurrentDateTime] = useState(new Date());
     const [selectedLocation, setSelectedLocation] = useState(user?.location || userLocations[0]);
+    const [scheduleData, setScheduleData] = useState<ScheduleSheetRow[]>([]);
     
     useEffect(() => {
         const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
-        return () => clearInterval(timer);
+        
+        const loadSchedule = () => {
+            const data = getScheduleSheetData();
+            setScheduleData(data);
+        };
+        loadSchedule();
+
+        // Listen for changes from other tabs/windows
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'app-schedule-sheet-data') {
+                loadSchedule();
+            }
+        });
+
+        return () => {
+            clearInterval(timer);
+            window.removeEventListener('storage', () => {});
+        };
     }, []);
+    
+    const pengecoranStats = useMemo(() => {
+        const activeSchedules = scheduleData.filter(row => row.no && row.no.trim() !== '');
+        
+        const totalPenambahan = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.penambahanVol) || 0), 0);
+        const totalTerkirim = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.terkirim) || 0), 0);
+        const totalSisa = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.sisa) || 0), 0);
+
+        return {
+            scheduleCount: activeSchedules.length,
+            penambahan: totalPenambahan.toFixed(2),
+            terkirim: totalTerkirim.toFixed(2),
+            sisa: totalSisa.toFixed(2),
+        };
+    }, [scheduleData]);
 
     const dummyArmadaData = [
         { name: 'TM', baik: 10, rusak: 2, tanpaSopir: 1 },
@@ -105,12 +139,12 @@ export default function OwnerDashboardPage() {
             </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <SectionCard title="Pengecoran" icon={BarChart}>
-                <DataRow label="Schedule Cor" value={10} />
-                <DataRow label="Penambahan" value={2} />
-                <DataRow label="Terkirim" value={8} unit="M³"/>
-                <DataRow label="Sisa" value={4} unit="M³"/>
+                <DataRow label="Schedule Cor" value={pengecoranStats.scheduleCount} />
+                <DataRow label="Penambahan" value={pengecoranStats.penambahan} unit="M³"/>
+                <DataRow label="Terkirim" value={pengecoranStats.terkirim} unit="M³"/>
+                <DataRow label="Sisa" value={pengecoranStats.sisa} unit="M³"/>
             </SectionCard>
             
             <SectionCard title="Stok Material Saat Ini" icon={Package}>
@@ -121,7 +155,7 @@ export default function OwnerDashboardPage() {
                 <DataRow label="NN" value={80} unit="L" />
                 <DataRow label="Visco" value={120} unit="L" />
             </SectionCard>
-
+            
             <SectionCard title="Man Power Hari Ini" icon={Users}>
                 <DataRow label="Masuk" value={45} />
                 <DataRow label="Ijin" value={2} />
