@@ -34,12 +34,6 @@ const truckIconSvg = `
   </svg>
 `;
 
-const truckIcon = {
-    url: `data:image/svg+xml;charset=UTF-8,${truckIconSvg}`,
-    scaledSize: new window.google.maps.Size(30, 30),
-    anchor: new window.google.maps.Point(15, 15),
-};
-
 
 const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
   try {
@@ -87,6 +81,15 @@ export default function PetaKendaraanPage() {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   });
+
+  const truckIcon = useMemo(() => {
+    if (!isLoaded) return undefined;
+    return {
+        url: `data:image/svg+xml;charset=UTF-8,${truckIconSvg}`,
+        scaledSize: new window.google.maps.Size(30, 30),
+        anchor: new window.google.maps.Point(15, 15),
+    };
+  }, [isLoaded]);
 
   const generateAndStorePositions = useCallback(() => {
     if (!user?.location) return;
