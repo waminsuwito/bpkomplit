@@ -43,14 +43,8 @@ const getStockKey = (date: Date) => `app-stok-material-${format(date, 'yyyy-MM-d
 const PRODUCTION_HISTORY_KEY = 'app-production-history';
 const SPECIFIC_GRAVITY_KEY = 'app-material-specific-gravity';
 
-// Default specific gravities if not found in localStorage
 const defaultSpecificGravities = {
-  pasir1: 2.65 * 1000,
-  pasir2: 2.65 * 1000,
-  batu1: 2.70 * 1000,
-  batu2: 2.70 * 1000,
-  semen: 3.15 * 1000,
-  air: 1.00 * 1000,
+  pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, semen: 0, air: 0
 };
 
 type SpecificGravityData = typeof defaultSpecificGravities;
@@ -60,14 +54,14 @@ const getSpecificGravities = (): SpecificGravityData => {
         const storedData = localStorage.getItem(SPECIFIC_GRAVITY_KEY);
         if (storedData) {
             const parsed = JSON.parse(storedData);
-            // Convert to Kg/M³
+            // Directly return the stored values, defaulting to 0 if a key is missing.
             return {
-                pasir1: (parsed.pasir1 || 2.65) * 1000,
-                pasir2: (parsed.pasir2 || 2.65) * 1000,
-                batu1: (parsed.batu1 || 2.70) * 1000,
-                batu2: (parsed.batu2 || 2.70) * 1000,
-                semen: (parsed.semen || 3.15) * 1000,
-                air: (parsed.air || 1.0) * 1000,
+                pasir1: parsed.pasir1 || 0,
+                pasir2: parsed.pasir2 || 0,
+                batu1: parsed.batu1 || 0,
+                batu2: parsed.batu2 || 0,
+                semen: parsed.semen || 0,
+                air: parsed.air || 0,
             };
         }
     } catch (e) {
@@ -100,7 +94,6 @@ export default function StokMaterialPage() {
       const storedData = localStorage.getItem(key);
       if (storedData) {
         const parsedData = JSON.parse(storedData);
-        // Ensure new fields exist to avoid errors with old data, providing default values.
         const sanitizedData: DailyStock = {
           pasir: parsedData.pasir || { awal: 0, pemakaian: 0, pengiriman: 0 },
           batu: parsedData.batu || { awal: 0, pemakaian: 0, pengiriman: 0 },
@@ -138,16 +131,21 @@ export default function StokMaterialPage() {
       totalsKg.semen += item.actualWeights?.semen || 0;
     });
 
-    const averagePasirGravity = (specificGravities.pasir1 + specificGravities.pasir2) / 2;
-    const averageBatuGravity = (specificGravities.batu1 + specificGravities.batu2) / 2;
-
+    // Use the specific gravity value as a divisor. If it's 0 or not set, division won't happen.
+    const pasirGravityDivider = specificGravities.pasir1 || 0;
+    const batuGravityDivider = specificGravities.batu1 || 0;
+    
+    // Convert to M³ only if the divider is set. Otherwise, it remains 0 (or you could choose to show Kg).
+    const pasirUsageM3 = pasirGravityDivider > 0 ? totalsKg.pasir / pasirGravityDivider : 0;
+    const batuUsageM3 = batuGravityDivider > 0 ? totalsKg.batu / batuGravityDivider : 0;
+    
     return {
-      pasir: totalsKg.pasir > 0 ? totalsKg.pasir / averagePasirGravity : 0,
-      batu: totalsKg.batu > 0 ? totalsKg.batu / averageBatuGravity : 0,
-      semen: totalsKg.semen > 0 ? totalsKg.semen / specificGravities.semen : 0,
-      vz: 0, // Not tracked in production history
-      nn: 0, // Not tracked in production history
-      visco: 0, // Not tracked in production history
+      pasir: pasirUsageM3,
+      batu: batuUsageM3,
+      semen: totalsKg.semen, // Semen remains in Kg
+      vz: 0, // Not tracked
+      nn: 0,
+      visco: 0,
     };
   }, [date, productionHistory]);
   
@@ -248,7 +246,7 @@ export default function StokMaterialPage() {
                 <TableHead className="w-[15%] font-bold text-white">KETERANGAN</TableHead>
                 <TableHead className="text-center font-bold text-white">PASIR (M³)</TableHead>
                 <TableHead className="text-center font-bold text-white">BATU (M³)</TableHead>
-                <TableHead className="text-center font-bold text-white">SEMEN (M³)</TableHead>
+                <TableHead className="text-center font-bold text-white">SEMEN (Kg)</TableHead>
                 <TableHead className="text-center font-bold text-white">VZ (L)</TableHead>
                 <TableHead className="text-center font-bold text-white">NN (L)</TableHead>
                 <TableHead className="text-center font-bold text-white">VISCO (L)</TableHead>
