@@ -79,9 +79,6 @@ export default function BeratJenisMaterialPage() {
               <Scale className="h-6 w-6 text-primary" />
               Berat Jenis Material
             </CardTitle>
-            <CardDescription>
-              Atur nilai berat jenis (specific gravity) untuk setiap material. Unit dalam gr/cm³.
-            </CardDescription>
           </div>
           <Button asChild variant="outline">
             <Link href="/dashboard">
