@@ -26,6 +26,21 @@ const defaultCenter = {
   lng: 101.447779,
 };
 
+// A more realistic 2D truck icon as an inline SVG
+const truckIconSvg = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234682B4" width="48px" height="48px">
+    <path d="M0 0h24v24H0z" fill="none"/>
+    <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 9.84V11h-4V4h3v5.84z"/>
+  </svg>
+`;
+
+const truckIcon = {
+    url: `data:image/svg+xml;charset=UTF-8,${truckIconSvg}`,
+    scaledSize: new window.google.maps.Size(30, 30),
+    anchor: new window.google.maps.Point(15, 15),
+};
+
+
 const getVehiclesForLocation = (location: UserLocation): Vehicle[] => {
   try {
     const key = `${VEHICLES_STORAGE_KEY_PREFIX}${location}`;
@@ -182,10 +197,7 @@ export default function PetaKendaraanPage() {
                 key={vehicle.id}
                 position={{ lat: vehicle.lat, lng: vehicle.lng }}
                 onClick={() => setSelectedVehicle(vehicle)}
-                icon={{
-                    url: '/truck-icon.svg',
-                    scaledSize: new window.google.maps.Size(40, 40),
-                }}
+                icon={truckIcon}
               />
             ))}
 
