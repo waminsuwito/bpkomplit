@@ -10,7 +10,7 @@ import { Boxes, Calendar as CalendarIcon, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-provider';
 import type { ProductionHistoryEntry } from '@/lib/types';
@@ -31,13 +31,14 @@ const defaultMaterialLabels = {
 type MaterialKey = keyof typeof defaultMaterialLabels;
 type DailyStock = Record<MaterialKey, { awal: number; pemasukan: number; pengiriman: number; pemakaian: number }>;
 
-const initialStock: DailyStock = {
-  pasir1: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, pasir2: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
-  batu1: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, batu2: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
-  batu3: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, batu4: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
-  semen: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, air: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
-  additive1: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 }, additive2: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
-  additive3: { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 },
+const materialKeysInOrder: MaterialKey[] = Object.keys(defaultMaterialLabels) as MaterialKey[];
+
+const createInitialStock = (): DailyStock => {
+    const stock: Partial<DailyStock> = {};
+    for (const key of materialKeysInOrder) {
+        stock[key] = { awal: 0, pemasukan: 0, pemakaian: 0, pengiriman: 0 };
+    }
+    return stock as DailyStock;
 };
 
 const getSpecificGravities = (): Record<string, number> => {
@@ -58,16 +59,27 @@ const getMaterialConfig = (): typeof defaultMaterialLabels => {
   }
 }
 
+const calculateStockAkhirForDay = (dayStock: DailyStock): Record<MaterialKey, number> => {
+  const stockAkhir: Partial<Record<MaterialKey, number>> = {};
+  for (const key of materialKeysInOrder) {
+    const materialData = dayStock[key];
+    const { awal = 0, pemasukan = 0, pemakaian = 0, pengiriman = 0 } = materialData || {};
+    stockAkhir[key] = (awal + pemasukan) - pemakaian - pengiriman;
+  }
+  return stockAkhir as Record<MaterialKey, number>;
+};
+
+
 export default function StokMaterialPage() {
   const [date, setDate] = useState<Date>(new Date());
-  const [stock, setStock] = useState<DailyStock>(initialStock);
+  const [stock, setStock] = useState<DailyStock>(createInitialStock());
   const [productionHistory, setProductionHistory] = useState<ProductionHistoryEntry[]>([]);
   const [materialLabels, setMaterialLabels] = useState(defaultMaterialLabels);
   const [specificGravities, setSpecificGravities] = useState<Record<string,number>>({});
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const getStockKey = (date: Date) => `${STOCK_KEY_PREFIX}${user?.location}-${format(date, 'yyyy-MM-dd')}`;
+  const getStockKey = (d: Date) => `${STOCK_KEY_PREFIX}${user?.location}-${format(d, 'yyyy-MM-dd')}`;
 
   useEffect(() => {
     try {
@@ -84,17 +96,37 @@ export default function StokMaterialPage() {
 
   useEffect(() => {
     if(!user?.location) return;
+
     try {
       const key = getStockKey(date);
       const storedData = localStorage.getItem(key);
+
       if (storedData) {
-        setStock({ ...initialStock, ...JSON.parse(storedData) });
+        // Data for today exists, load it
+        setStock({ ...createInitialStock(), ...JSON.parse(storedData) });
       } else {
-        setStock(initialStock);
+        // No data for today, try to get yesterday's closing stock
+        const yesterday = subDays(date, 1);
+        const yesterdayKey = getStockKey(yesterday);
+        const yesterdayStoredData = localStorage.getItem(yesterdayKey);
+        
+        if (yesterdayStoredData) {
+          const yesterdayStock: DailyStock = { ...createInitialStock(), ...JSON.parse(yesterdayStoredData) };
+          const yesterdayStockAkhir = calculateStockAkhirForDay(yesterdayStock);
+          
+          const newTodayStock = createInitialStock();
+          for (const key of materialKeysInOrder) {
+            newTodayStock[key].awal = yesterdayStockAkhir[key] || 0;
+          }
+          setStock(newTodayStock);
+        } else {
+          // No data for yesterday either, start with fresh initial stock
+          setStock(createInitialStock());
+        }
       }
     } catch (error) {
       console.error("Failed to load stock data:", error);
-      setStock(initialStock);
+      setStock(createInitialStock()); // Reset on error
     }
   }, [date, user]);
 
@@ -105,7 +137,7 @@ export default function StokMaterialPage() {
     );
 
     const usage: Record<MaterialKey, number> = {} as any;
-    for (const key in initialStock) {
+    for (const key of materialKeysInOrder) {
         usage[key as MaterialKey] = 0;
     }
 
@@ -118,16 +150,16 @@ export default function StokMaterialPage() {
       }
     });
     
-    // Convert to M3 for aggregates
-    const pasirDivider = specificGravities['pasir1'] || 1;
-    const batuDivider = specificGravities['batu1'] || 1;
-
-    usage.pasir1 = pasirDivider > 0 ? usage.pasir1 / pasirDivider : usage.pasir1;
-    usage.pasir2 = pasirDivider > 0 ? usage.pasir2 / pasirDivider : usage.pasir2;
-    usage.batu1 = batuDivider > 0 ? usage.batu1 / batuDivider : usage.batu1;
-    usage.batu2 = batuDivider > 0 ? usage.batu2 / batuDivider : usage.batu2;
-    usage.batu3 = batuDivider > 0 ? usage.batu3 / batuDivider : usage.batu3;
-    usage.batu4 = batuDivider > 0 ? usage.batu4 / batuDivider : usage.batu4;
+    // Convert to M3 or L for aggregates/additives
+    for(const key of materialKeysInOrder) {
+        if (key.startsWith('pasir') || key.startsWith('batu')) {
+            const sg = specificGravities[key.substring(0, key.length -1)] || 1;
+            usage[key] = sg > 0 ? usage[key] / sg : usage[key];
+        } else if (key.startsWith('additive')) {
+            const sg = specificGravities[key] || 1;
+            usage[key] = sg > 0 ? usage[key] / sg : usage[key];
+        }
+    }
     
     return usage;
   }, [date, productionHistory, specificGravities]);
@@ -135,9 +167,8 @@ export default function StokMaterialPage() {
   useEffect(() => {
     setStock(prev => {
         const newStock = { ...prev };
-        for (const key in calculatedUsage) {
-            const matKey = key as MaterialKey;
-            newStock[matKey] = { ...newStock[matKey], pemakaian: calculatedUsage[matKey] };
+        for (const key of materialKeysInOrder) {
+            newStock[key] = { ...newStock[key], pemakaian: calculatedUsage[key] || 0 };
         }
         return newStock;
     });
@@ -189,8 +220,6 @@ export default function StokMaterialPage() {
       ? numValue.toLocaleString('id-ID')
       : numValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
-  
-  const materialOrder: MaterialKey[] = Object.keys(defaultMaterialLabels) as MaterialKey[];
 
   return (
     <Card>
@@ -235,7 +264,7 @@ export default function StokMaterialPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[15%] font-bold text-white bg-gray-700 min-w-[150px]">KETERANGAN</TableHead>
-                {materialOrder.map(key => {
+                {materialKeysInOrder.map(key => {
                     let unit = 'Kg';
                     if (key.startsWith('pasir') || key.startsWith('batu')) {
                       unit = 'M³';
@@ -254,7 +283,7 @@ export default function StokMaterialPage() {
             <TableBody>
               <TableRow>
                 <TableCell className="font-semibold">STOK AWAL</TableCell>
-                {materialOrder.map(key => (
+                {materialKeysInOrder.map(key => (
                     <TableCell key={key}>
                         <Input type="number" className="text-center" value={stock[key]?.awal || 0} onChange={e => handleStockChange(key, 'awal', e.target.value)} />
                     </TableCell>
@@ -262,7 +291,7 @@ export default function StokMaterialPage() {
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PEMASUKAN</TableCell>
-                {materialOrder.map(key => (
+                {materialKeysInOrder.map(key => (
                     <TableCell key={key}>
                         <Input type="number" className="text-center" value={stock[key]?.pemasukan || 0} onChange={e => handleStockChange(key, 'pemasukan', e.target.value)} />
                     </TableCell>
@@ -270,7 +299,7 @@ export default function StokMaterialPage() {
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PEMAKAIAN</TableCell>
-                 {materialOrder.map(key => (
+                 {materialKeysInOrder.map(key => (
                     <TableCell key={key}>
                         <Input type="number" className="text-center" value={stock[key]?.pemakaian.toFixed(2) || '0.00'} readOnly disabled />
                     </TableCell>
@@ -278,7 +307,7 @@ export default function StokMaterialPage() {
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">PENGIRIMAN</TableCell>
-                 {materialOrder.map(key => (
+                 {materialKeysInOrder.map(key => (
                     <TableCell key={key}>
                         <Input type="number" className="text-center" value={stock[key]?.pengiriman || 0} onChange={e => handleStockChange(key, 'pengiriman', e.target.value)} />
                     </TableCell>
@@ -286,7 +315,7 @@ export default function StokMaterialPage() {
               </TableRow>
               <TableRow className="bg-muted font-bold">
                 <TableCell>STOK AKHIR</TableCell>
-                 {materialOrder.map(key => (
+                 {materialKeysInOrder.map(key => (
                     <TableCell key={key} className="text-center text-lg">
                         {formatStockValue(calculateStockAkhir(stock[key]))}
                     </TableCell>
@@ -305,4 +334,3 @@ export default function StokMaterialPage() {
     </Card>
   );
 }
-
