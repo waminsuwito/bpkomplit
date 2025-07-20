@@ -144,7 +144,7 @@ export function ControlPanel({
               <SelectContent>
                 {formulas.map((formula) => (
                   <SelectItem key={formula.id} value={formula.id}>
-                    {formula.mutuBeton}
+                    {formula.mutuCode ? `${formula.mutuBeton} ${formula.mutuCode}` : formula.mutuBeton}
                   </SelectItem>
                 ))}
               </SelectContent>
