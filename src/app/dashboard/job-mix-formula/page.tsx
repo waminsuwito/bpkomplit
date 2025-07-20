@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { getFormulas, saveFormulas, type JobMixFormula } from '@/lib/formula';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const MATERIAL_LABELS_KEY = 'app-material-labels';
 
@@ -33,6 +34,8 @@ const defaultMaterialLabels = {
   additive2: 'Additive 2',
   additive3: 'Additive 3',
 };
+
+const mutuCodeOptions = ["BPM", "BPG", "BPS", "BK", "BPP"];
 
 type MaterialKey = keyof typeof defaultMaterialLabels;
 
@@ -52,6 +55,7 @@ EditableLabel.displayName = 'EditableLabel';
 
 const formulaSchema = z.object({
   mutuBeton: z.string().min(1, 'Mutu Beton is required.'),
+  mutuCode: z.string().optional(),
   pasir1: z.coerce.number().min(0, 'Value must be positive.'),
   pasir2: z.coerce.number().min(0, 'Value must be positive.'),
   batu1: z.coerce.number().min(0, 'Value must be positive.'),
@@ -69,6 +73,7 @@ type FormulaFormValues = z.infer<typeof formulaSchema>;
 
 const formDefaultValues: FormulaFormValues = {
   mutuBeton: '',
+  mutuCode: '',
   pasir1: 0,
   pasir2: 0,
   batu1: 0,
@@ -118,7 +123,10 @@ function FormulaManagerPage() {
 
   useEffect(() => {
     if (editingFormula) {
-      form.reset(editingFormula);
+      form.reset({
+        ...editingFormula,
+        mutuCode: editingFormula.mutuCode || ''
+      });
     } else {
       form.reset(formDefaultValues);
     }
@@ -226,13 +234,30 @@ function FormulaManagerPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-6">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-4 items-end">
-                <FormField name="mutuBeton" control={form.control} render={({ field }) => (
-                <FormItem className="col-span-2 lg:col-span-1">
-                    <FormLabel>Mutu Beton</FormLabel>
-                    <FormControl><Input {...field} placeholder="e.g., K225" style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-                )} />
+                <div className="col-span-3 lg:col-span-2 grid grid-cols-3 gap-2">
+                    <FormField name="mutuBeton" control={form.control} render={({ field }) => (
+                    <FormItem className="col-span-2">
+                        <FormLabel>Mutu Beton</FormLabel>
+                        <FormControl><Input {...field} placeholder="e.g., K225" style={{ textTransform: 'uppercase' }} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )} />
+                    <FormField name="mutuCode" control={form.control} render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Kode</FormLabel>
+                            <FormControl>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <SelectTrigger><SelectValue placeholder="-" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="">-</SelectItem>
+                                        {mutuCodeOptions.map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
                 <FormField name="pasir1" control={form.control} render={({ field }) => (
                 <FormItem>
                     <FormLabel><EditableLabel labelKey="pasir1" value={materialLabels.pasir1} onChange={handleLabelChange} /></FormLabel>
@@ -327,6 +352,7 @@ function FormulaManagerPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Mutu Beton</TableHead>
+                <TableHead>Kode</TableHead>
                 <TableHead>{materialLabels.pasir1} (Kg)</TableHead>
                 <TableHead>{materialLabels.pasir2} (Kg)</TableHead>
                 <TableHead>{materialLabels.batu1} (Kg)</TableHead>
@@ -345,11 +371,12 @@ function FormulaManagerPage() {
               {formulas.map((formula) => (
                 <TableRow key={formula.id}>
                   <TableCell className="font-medium">{formula.mutuBeton}</TableCell>
+                  <TableCell className="font-semibold">{formula.mutuCode || '-'}</TableCell>
                   <TableCell>{formula.pasir1}</TableCell>
                   <TableCell>{formula.pasir2}</TableCell>
                   <TableCell>{formula.batu1}</TableCell>
                   <TableCell>{formula.batu2}</TableCell>
-                  <TableCell>{formula.batu3}</TableCell>
+                  <TableCell>{formula.batu3 || 0}</TableCell>
                   <TableCell>{formula.batu4 || 0}</TableCell>
                   <TableCell>{formula.semen}</TableCell>
                   <TableCell>{formula.air}</TableCell>

@@ -92,6 +92,7 @@ export interface Vehicle {
 export interface JobMixFormula {
   id: string;
   mutuBeton: string;
+  mutuCode?: string;
   pasir1: number;
   pasir2: number;
   batu1: number;
