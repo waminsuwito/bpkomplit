@@ -14,6 +14,23 @@ import { Label } from '@/components/ui/label';
 import { getScheduleSheetData } from '@/lib/schedule';
 
 
+interface MaterialStock {
+  awal: number;
+  pemakaian: number;
+  pengiriman: number;
+}
+
+interface DailyStock {
+  pasir: MaterialStock;
+  batu: MaterialStock;
+  semen: MaterialStock;
+  vz: MaterialStock;
+  nn: MaterialStock;
+  visco: MaterialStock;
+}
+
+const getStockKey = (date: Date) => `app-stok-material-${format(date, 'yyyy-MM-dd')}`;
+
 const SectionCard = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType, children: React.ReactNode }) => (
   <Card className="shadow-md hover:shadow-lg transition-shadow">
     <CardHeader>
@@ -66,7 +83,23 @@ export default function OwnerDashboardPage() {
     const [currentDateTime, setCurrentDateTime] = useState(new Date());
     const [selectedLocation, setSelectedLocation] = useState(user?.location || userLocations[0]);
     const [scheduleData, setScheduleData] = useState<ScheduleSheetRow[]>([]);
+    const [stockData, setStockData] = useState<DailyStock | null>(null);
     
+    const loadStockData = () => {
+        const key = getStockKey(new Date());
+        try {
+            const storedData = localStorage.getItem(key);
+            if (storedData) {
+                setStockData(JSON.parse(storedData));
+            } else {
+                setStockData(null);
+            }
+        } catch (e) {
+            console.error("Failed to load stock data for owner dashboard:", e);
+            setStockData(null);
+        }
+    };
+
     useEffect(() => {
         const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
         
@@ -75,17 +108,22 @@ export default function OwnerDashboardPage() {
             setScheduleData(data);
         };
         loadSchedule();
+        loadStockData();
 
-        // Listen for changes from other tabs/windows
-        window.addEventListener('storage', (event) => {
+        const handleStorageChange = (event: StorageEvent) => {
             if (event.key === 'app-schedule-sheet-data') {
                 loadSchedule();
             }
-        });
+            if (event.key?.startsWith('app-stok-material-')) {
+                loadStockData();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
 
         return () => {
             clearInterval(timer);
-            window.removeEventListener('storage', () => {});
+            window.removeEventListener('storage', handleStorageChange);
         };
     }, []);
     
@@ -100,7 +138,6 @@ export default function OwnerDashboardPage() {
         const totalPenambahan = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.penambahanVol) || 0), 0);
         const totalTerkirim = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.terkirim) || 0), 0);
         const totalSisa = activeSchedules.reduce((sum, row) => sum + (parseFloat(row.sisa) || 0), 0);
-
         const jumlahLokasiCor = activeSchedules.length;
 
         return {
@@ -111,6 +148,18 @@ export default function OwnerDashboardPage() {
             sisa: formatNumber(totalSisa),
         };
     }, [scheduleData]);
+
+    const calculateStockAkhir = (material: keyof DailyStock) => {
+        if (!stockData) return 0;
+        const { awal = 0, pemakaian = 0, pengiriman = 0 } = stockData[material] || {};
+        return awal - pemakaian - pengiriman;
+    };
+    
+    const formatStock = (value: number) => {
+        const numValue = Number(value);
+        if (isNaN(numValue)) return '0';
+        return numValue.toLocaleString('id-ID');
+    };
 
     const dummyArmadaData = [
         { name: 'TM', baik: 10, rusak: 2, tanpaSopir: 1 },
@@ -157,12 +206,12 @@ export default function OwnerDashboardPage() {
             </SectionCard>
             
             <SectionCard title="Stok Material Saat Ini" icon={Package}>
-                <DataRow label="Semen" value={50000} unit="Kg" />
-                <DataRow label="Pasir" value={1200} unit="Ton" />
-                <DataRow label="Batu" value={1500} unit="Ton" />
-                <DataRow label="VZ" value={100} unit="L" />
-                <DataRow label="NN" value={80} unit="L" />
-                <DataRow label="Visco" value={120} unit="L" />
+                <DataRow label="Semen" value={formatStock(calculateStockAkhir('semen'))} unit="Kg" />
+                <DataRow label="Pasir" value={formatStock(calculateStockAkhir('pasir'))} unit="Kg" />
+                <DataRow label="Batu" value={formatStock(calculateStockAkhir('batu'))} unit="Kg" />
+                <DataRow label="VZ" value={formatStock(calculateStockAkhir('vz'))} unit="L" />
+                <DataRow label="NN" value={formatStock(calculateStockAkhir('nn'))} unit="L" />
+                <DataRow label="Visco" value={formatStock(calculateStockAkhir('visco'))} unit="L" />
             </SectionCard>
             
             <SectionCard title="Man Power Hari Ini" icon={Users}>
@@ -203,3 +252,5 @@ export default function OwnerDashboardPage() {
     </div>
   );
 }
+
+    
