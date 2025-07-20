@@ -246,10 +246,9 @@ function FormulaManagerPage() {
                         <FormItem>
                             <FormLabel>Kode</FormLabel>
                             <FormControl>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
                                     <SelectTrigger><SelectValue placeholder="-" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">-</SelectItem>
                                         {mutuCodeOptions.map(code => <SelectItem key={code} value={code}>{code}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
@@ -418,3 +417,5 @@ function FormulaManagerPage() {
 }
 
 export default FormulaManagerPage;
+
+    
