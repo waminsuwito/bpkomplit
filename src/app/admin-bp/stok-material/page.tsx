@@ -54,7 +54,6 @@ const getSpecificGravities = (): SpecificGravityData => {
         const storedData = localStorage.getItem(SPECIFIC_GRAVITY_KEY);
         if (storedData) {
             const parsed = JSON.parse(storedData);
-            // Directly return the stored values, defaulting to 0 if a key is missing.
             return {
                 pasir1: parsed.pasir1 || 0,
                 pasir2: parsed.pasir2 || 0,
@@ -131,19 +130,17 @@ export default function StokMaterialPage() {
       totalsKg.semen += item.actualWeights?.semen || 0;
     });
 
-    // Use the specific gravity value as a divisor. If it's 0 or not set, division won't happen.
-    const pasirGravityDivider = specificGravities.pasir1 || 0;
-    const batuGravityDivider = specificGravities.batu1 || 0;
+    const pasirDivider = specificGravities.pasir1 || 0;
+    const batuDivider = specificGravities.batu1 || 0;
     
-    // Convert to M³ only if the divider is set. Otherwise, it remains 0 (or you could choose to show Kg).
-    const pasirUsageM3 = pasirGravityDivider > 0 ? totalsKg.pasir / pasirGravityDivider : 0;
-    const batuUsageM3 = batuGravityDivider > 0 ? totalsKg.batu / batuGravityDivider : 0;
+    const pasirUsageM3 = pasirDivider > 0 ? totalsKg.pasir / pasirDivider : totalsKg.pasir;
+    const batuUsageM3 = batuDivider > 0 ? totalsKg.batu / batuDivider : totalsKg.batu;
     
     return {
       pasir: pasirUsageM3,
       batu: batuUsageM3,
       semen: totalsKg.semen, // Semen remains in Kg
-      vz: 0, // Not tracked
+      vz: 0, 
       nn: 0,
       visco: 0,
     };
@@ -197,6 +194,16 @@ export default function StokMaterialPage() {
     const pengiriman = Number(material.pengiriman) || 0;
     return awal - pemakaian - pengiriman;
   };
+  
+  const formatStockValue = (value: number): string => {
+    const numValue = Number(value);
+    if (isNaN(numValue)) return '0';
+    // If it's a whole number, format without decimals. Otherwise, use 2 decimal places.
+    return numValue % 1 === 0
+      ? numValue.toLocaleString('id-ID')
+      : numValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
 
   return (
     <Card>
@@ -318,12 +325,12 @@ export default function StokMaterialPage() {
               </TableRow>
               <TableRow className="bg-muted font-bold">
                 <TableCell>STOK AKHIR</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.pasir).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.batu).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.semen).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.vz).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.nn).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                <TableCell className="text-center text-lg">{calculateStockAkhir(stock.visco).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.pasir))}</TableCell>
+                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.batu))}</TableCell>
+                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.semen))}</TableCell>
+                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.vz))}</TableCell>
+                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.nn))}</TableCell>
+                <TableCell className="text-center text-lg">{formatStockValue(calculateStockAkhir(stock.visco))}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
