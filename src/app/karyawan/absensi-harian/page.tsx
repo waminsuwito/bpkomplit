@@ -32,7 +32,7 @@ type PersonalAttendanceRecord = {
 };
 type AttendanceAction = 'clockIn' | 'clockOut' | 'none';
 
-export function AttendanceForm() {
+export default function AttendancePage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const [locations, setLocations] = useState<AttendanceLocation[]>([]);
