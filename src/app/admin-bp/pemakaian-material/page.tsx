@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -258,7 +259,7 @@ export default function PemakaianMaterialPage() {
                                         <TableCell>{new Date(item.endTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</TableCell>
                                         <TableCell className="whitespace-pre-wrap break-words">{item.namaPelanggan}</TableCell>
                                         <TableCell className="whitespace-pre-wrap break-words">{item.lokasiProyek}</TableCell>
-                                        <TableCell>{item.mutuBeton}</TableCell>
+                                        <TableCell>{item.mutuBeton}{item.mutuCode ? ` - ${item.mutuCode}` : ''}</TableCell>
                                         <TableCell>{Number(item.targetVolume).toFixed(2)}</TableCell>
                                         <TableCell>{Math.round(item.actualWeights?.pasir1 || 0)}</TableCell>
                                         <TableCell>{Math.round(item.actualWeights?.pasir2 || 0)}</TableCell>

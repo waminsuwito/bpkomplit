@@ -258,6 +258,7 @@ export interface ProductionHistoryEntry {
   noPolisi: string;
   namaSopir: string;
   mutuBeton: string;
+  mutuCode?: string;
   targetVolume: number;
   slump: number;
   startTime: string; // ISO String
@@ -267,16 +268,26 @@ export interface ProductionHistoryEntry {
     pasir2: number;
     batu1: number;
     batu2: number;
+    batu3: number;
+    batu4: number;
     air: number;
     semen: number;
+    additive1: number;
+    additive2: number;
+    additive3: number;
   };
   actualWeights: {
     pasir1: number;
     pasir2: number;
     batu1: number;
     batu2: number;
+    batu3: number;
+    batu4: number;
     air: number;
     semen: number;
+    additive1: number;
+    additive2: number;
+    additive3: number;
   };
 }
 

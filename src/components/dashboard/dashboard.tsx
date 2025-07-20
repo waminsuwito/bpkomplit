@@ -274,11 +274,16 @@ export function Dashboard() {
         pasir2: selectedFormula.pasir2 * volumePerMix,
         batu1: selectedFormula.batu1 * volumePerMix,
         batu2: selectedFormula.batu2 * volumePerMix,
+        batu3: selectedFormula.batu3 * volumePerMix,
+        batu4: selectedFormula.batu4 * volumePerMix,
         air: selectedFormula.air * volumePerMix,
         semen: selectedFormula.semen * volumePerMix,
+        additive1: selectedFormula.additive1 * volumePerMix,
+        additive2: selectedFormula.additive2 * volumePerMix,
+        additive3: selectedFormula.additive3 * volumePerMix,
       };
     }
-    return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, air: 0, semen: 0 };
+    return { pasir1: 0, pasir2: 0, batu1: 0, batu2: 0, batu3: 0, batu4: 0, air: 0, semen: 0, additive1: 0, additive2: 0, additive3: 0 };
   }, [jobInfo.selectedFormulaId, jobInfo.targetVolume, jobInfo.jumlahMixing, formulas]);
   
   const finishAndPrintBatch = () => {
@@ -293,8 +298,13 @@ export function Dashboard() {
             pasir2: generateSimulatedWeight(currentTargetWeights.pasir2, 5),
             batu1: generateSimulatedWeight(currentTargetWeights.batu1, 5),
             batu2: generateSimulatedWeight(currentTargetWeights.batu2, 5),
+            batu3: generateSimulatedWeight(currentTargetWeights.batu3, 5),
+            batu4: generateSimulatedWeight(currentTargetWeights.batu4, 5),
             air: generateSimulatedWeight(currentTargetWeights.air, 1),
             semen: generateSimulatedWeight(currentTargetWeights.semen, 1),
+            additive1: generateSimulatedWeight(currentTargetWeights.additive1, 1),
+            additive2: generateSimulatedWeight(currentTargetWeights.additive2, 1),
+            additive3: generateSimulatedWeight(currentTargetWeights.additive3, 1),
         };
 
         const finalData: ProductionHistoryEntry = {
@@ -304,6 +314,7 @@ export function Dashboard() {
             targetVolume: Number(jobInfo.targetVolume),
             jobId: `SIM-${Date.now().toString().slice(-6)}`,
             mutuBeton: selectedFormula?.mutuBeton || 'N/A',
+            mutuCode: selectedFormula?.mutuCode || '',
             startTime: batchStartTime.toISOString(),
             endTime: new Date().toISOString(),
             targetWeights: currentTargetWeights,
