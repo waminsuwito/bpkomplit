@@ -58,6 +58,7 @@ export const jabatanOptions = [
   "QC",
   "SOPIR DT",
   "SOPIR TM",
+  "TRANSPORTER",
   "TUKANG BOBOK",
   "TUKANG LAS",
 ] as const;
@@ -323,4 +324,21 @@ export interface WorkOrder {
   waktuMulaiTunda?: string | null;
   totalWaktuTundaMs?: number;
   usedSpareParts?: SparePartUsage[];
+}
+
+export interface Assignment {
+  id: string;
+  userId: string;
+  username: string;
+  vehicleId: string;
+  vehicleNomorPolisi: string;
+}
+
+export interface VehiclePosition {
+  id: string;
+  nomorPolisi: string;
+  jenis: string;
+  operator: string | null;
+  lat: number;
+  lng: number;
 }

@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useAuth } from '@/context/auth-provider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database, ChevronDown, Building, Scale } from 'lucide-react';
+import { UserCircle, LogOut, Fingerprint, Settings, Lock, Droplets, Printer, Database, ChevronDown, Building, Scale, Map } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -110,6 +111,17 @@ export function Header() {
                       <Link href="/dashboard/database-produksi">
                         <Database className="mr-2 h-4 w-4" />
                         Database Produksi
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                 {user?.jabatan === 'TRANSPORTER' && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/transporter/peta-kendaraan">
+                        <Map className="mr-2 h-4 w-4" />
+                        Peta Kendaraan
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

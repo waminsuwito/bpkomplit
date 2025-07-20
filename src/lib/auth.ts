@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { type User } from '@/lib/types';
@@ -24,6 +25,7 @@ const initialUsers: User[] = [
   { id: 'admin-logistik-1', username: 'admin_logistik', password: 'password', jabatan: 'ADMIN LOGISTIK', location: 'BP PEKANBARU', nik: 'LOG-001' },
   { id: 'logistik-material-1', username: 'logistik_material', password: 'password', jabatan: 'LOGISTIK MATERIAL', location: 'BP DUMAI', nik: 'LOG-MAT-001' },
   { id: 'admin-bp-1', username: 'admin_bp', password: 'password', jabatan: 'ADMIN BP', location: 'BP PEKANBARU', nik: 'ADMIN-BP-001'},
+  { id: 'transporter-1', username: 'transporter', password: '123', jabatan: 'TRANSPORTER', location: 'BP PEKANBARU', nik: 'TRN-001' },
 ];
 
 /**

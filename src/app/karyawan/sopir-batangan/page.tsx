@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-provider';
-import type { User, Vehicle, UserLocation } from '@/lib/types';
+import type { User, Vehicle, UserLocation, Assignment } from '@/lib/types';
 import { getUsers } from '@/lib/auth';
 import { Users, Trash2, PlusCircle, Inbox } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,14 +27,6 @@ import {
 
 const VEHICLES_STORAGE_KEY_PREFIX = 'app-vehicles-';
 const ASSIGNMENTS_STORAGE_KEY_PREFIX = 'app-assignments-';
-
-interface Assignment {
-  id: string;
-  userId: string;
-  username: string;
-  vehicleId: string;
-  vehicleNomorPolisi: string;
-}
 
 const getAssignments = (location: UserLocation): Assignment[] => {
   try {

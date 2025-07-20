@@ -1,4 +1,5 @@
 
+
 import { type User } from '@/lib/types';
 
 export const getDefaultRouteForUser = (user: { jabatan?: string }): string => {
@@ -15,6 +16,7 @@ export const getDefaultRouteForUser = (user: { jabatan?: string }): string => {
       case 'SOPIR TM': return '/karyawan/checklist-harian-tm';
       case 'KEPALA MEKANIK': return '/karyawan/manajemen-alat';
       case 'KEPALA WORKSHOP': return '/karyawan/manajemen-alat';
+      case 'TRANSPORTER': return '/transporter/peta-kendaraan';
       default: return '/karyawan/absensi-harian';
     }
 };
