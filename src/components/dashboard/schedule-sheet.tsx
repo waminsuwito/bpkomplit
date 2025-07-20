@@ -226,11 +226,14 @@ export function ScheduleSheet({ isOperatorView }: { isOperatorView?: boolean }) 
             <SelectValue placeholder="Pilih Mutu" />
           </SelectTrigger>
           <SelectContent>
-            {formulas.map((formula) => (
-              <SelectItem key={formula.id} value={formula.mutuBeton}>
-                {formula.mutuBeton}
-              </SelectItem>
-            ))}
+            {formulas.map((formula) => {
+              const displayLabel = formula.mutuCode ? `${formula.mutuBeton} ${formula.mutuCode}` : formula.mutuBeton;
+              return (
+                <SelectItem key={formula.id} value={formula.mutuBeton}>
+                  {displayLabel}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       );
